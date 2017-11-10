@@ -1,7 +1,7 @@
-## ygopro-server
+## SRVPro
 一个YGOPro服务器。
 
-现用于[萌卡](https://mycard.moe/)和[YGOPRO 233服](http://mercury233.me/ygosrv233/)。
+现用于[萌卡](https://mycard.moe/)和[YGOPro 233服](https://ygo233.com/)。
 
 ### 支持功能
 * Linux上运行
@@ -12,7 +12,7 @@
 * 广播消息
 * 召唤台词
 * 先行卡一键更新
-* Windbot在线AI
+* WindBot在线AI
 * 萌卡用户登陆
 
 ### 不支持功能
@@ -21,13 +21,12 @@
 ### 使用方法
 * 可参考[wiki](https://github.com/mercury233/ygopro-server/wiki)安装
 * 手动安装：
-  * 安装修改后的YGOPro服务端：https://github.com/mycard/ygopro/tree/server
-  * `git clone https://github.com/mycard/ygopro-server.git`
-  * `cd ygopro-server`
+  * 安装修改后的YGOPro服务端：https://github.com/moecube/ygopro/tree/server
+  * `git clone https://github.com/moecube/srvpro.git`
+  * `cd srvpro`
   * `npm install`
 * 将`config.json`复制为`config.user.json`并进行修改
   * `port`为你想要的端口
-  * `modules.stop`为文本时，表示服务器关闭
   * ~~更多选项参见wiki~~
 * `node ygopro-server.js`即可运行
 * 简易的控制台在 http://mercury233.me/ygosrv233/dashboard.html
@@ -61,3 +60,21 @@
   * expansions updater
 * user and admin account system
 * new database for cloud replay
+
+### License
+SRVPro
+
+Copyright (C) 2013-2017  MoeCube Team
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.

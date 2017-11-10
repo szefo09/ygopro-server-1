@@ -163,6 +163,7 @@ ban_user = (name) ->
 
 # automatically ban user to use random duel
 ROOM_ban_player = (name, ip, reason, countadd = 1)->
+  return if settings.modules.test_mode.no_ban_player
   bannedplayer = _.find ROOM_players_banned, (bannedplayer)->
     ip == bannedplayer.ip
   if bannedplayer
@@ -211,7 +212,8 @@ ROOM_find_or_create_random = (type, player_ip)->
     return room and room.random_type != '' and !room.started and
     ((type == '' and room.random_type != 'T') or room.random_type == type) and
     room.get_playing_player().length < max_player and
-    (room.get_host() == null or room.get_host().ip != ROOM_players_oppentlist[player_ip]) and
+    (settings.modules.random_duel.no_rematch_check or room.get_host() == null or
+    room.get_host().ip != ROOM_players_oppentlist[player_ip]) and
     (playerbanned == room.deprecated or type == 'T')
   if result
     result.welcome = '${random_duel_enter_room_waiting}'
@@ -596,7 +598,7 @@ class Room
 net.createServer (client) ->
   client.ip = client.remoteAddress
   connect_count = ROOM_connected_ip[client.ip] or 0
-  if client.ip != '::ffff:127.0.0.1'
+  if !settings.modules.test_mode.no_connect_count_limit and client.ip != '::ffff:127.0.0.1'
     connect_count++
   ROOM_connected_ip[client.ip] = connect_count
   #log.info "connect", client.ip, ROOM_connected_ip[client.ip]
@@ -862,6 +864,7 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server)->
 
 ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
 #log.info info
+  info.pass=info.pass.trim()
   if settings.modules.stop
     ygopro.stoc_die(client, settings.modules.stop)
     
@@ -905,7 +908,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
     replay_id=Cloud_replay_ids[Math.floor(Math.random()*Cloud_replay_ids.length)]
     redisdb.hgetall "replay:"+replay_id, client.open_cloud_replay
 
-  else if info.version != settings.version and (info.version < 9020 or settings.version != 4927) #强行兼容23333版
+  else if info.version != settings.version # and (info.version < 9020 or settings.version != 4927) #强行兼容23333版
     ygopro.stoc_send_chat(client, settings.modules.update, ygopro.constants.COLORS.RED)
     ygopro.stoc_send client, 'ERROR_MSG', {
       msg: 4
@@ -922,12 +925,12 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
       ygopro.stoc_die(client, '${invalid_password_length}')
       return
 
-    if info.version >= 9020 and settings.version == 4927 #强行兼容23333版
-      info.version = settings.version
-      struct = ygopro.structs["CTOS_JoinGame"]
-      struct._setBuff(buffer)
-      struct.set("version", info.version)
-      buffer = struct.buffer
+    #if info.version >= 9020 and settings.version == 4927 #强行兼容23333版
+    #  info.version = settings.version
+    #  struct = ygopro.structs["CTOS_JoinGame"]
+    #  struct._setBuff(buffer)
+    #  struct.set("version", info.version)
+    #  buffer = struct.buffer
 
     buffer = new Buffer(info.pass[0...8], 'base64')
 
@@ -1097,13 +1100,13 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
     ygopro.stoc_die(client, "${invalid_password_room}")
   
   else
-    if info.version >= 9020 and settings.version == 4927 #强行兼容23333版
-      info.version = settings.version
-      struct = ygopro.structs["CTOS_JoinGame"]
-      struct._setBuff(buffer)
-      struct.set("version", info.version)
-      buffer = struct.buffer
-      #ygopro.stoc_send_chat(client, "看起来你是YGOMobile的用户，请记得更新先行卡补丁，否则会看到白卡", ygopro.constants.COLORS.GREEN)
+    #if info.version >= 9020 and settings.version == 4927 #强行兼容23333版
+    #  info.version = settings.version
+    #  struct = ygopro.structs["CTOS_JoinGame"]
+    #  struct._setBuff(buffer)
+    #  struct.set("version", info.version)
+    #  buffer = struct.buffer
+    #  #ygopro.stoc_send_chat(client, "看起来你是YGOMobile的用户，请记得更新先行卡补丁，否则会看到白卡", ygopro.constants.COLORS.GREEN)
       
     #log.info 'join_game',info.pass, client.name
     room = ROOM_find_or_create_by_name(info.pass, client.ip)
@@ -1175,7 +1178,7 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server)->
       return
 
   if settings.modules.cloud_replay.enable_halfway_watch and !room.watcher
-    room.watcher = watcher = net.connect room.port, ->
+    room.watcher = watcher = if settings.modules.test_mode.watch_public_hand then room.recorder else net.connect room.port, ->
       ygopro.ctos_send watcher, 'PLAYER_INFO', {
         name: "the Big Brother"
       }
@@ -1767,7 +1770,15 @@ if settings.modules.mycard.enabled
 
 # spawn windbot
 if settings.modules.windbot.spawn
-  windbot_process = spawn 'mono', ['WindBot.exe', settings.modules.windbot.port], {cwd: 'windbot'}
+  if /^win/.test(process.platform)
+    windbot_bin = 'WindBot.exe'
+    windbot_parameters = []
+  else
+    windbot_bin = 'mono'
+    windbot_parameters = ['WindBot.exe']
+  windbot_parameters.push('ServerMode=true')
+  windbot_parameters.push('ServerPort='+settings.modules.windbot.port)
+  windbot_process = spawn windbot_bin, windbot_parameters, {cwd: 'windbot'}
   windbot_process.on 'error', (err)->
     log.warn 'WindBot ERROR', err
     return
