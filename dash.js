@@ -112,12 +112,14 @@ var PushExtraScripts = function(msg) {
 	sendResponse("Finished pushing extra scripts");
 }
 var UpdateFilelist = function(msg) {
-	if(!config.client_git_db_path) {
+	if(!config.client_git_db_path || config.client_push_repo) {
 		sendResponse("Permission denied");
 		return;
 	}
-	runcmd("mono", ["update.exe", "-m"], config.client_git_db_path+"update/", "Finished updating filelist", function(code) {
-		if(config.client_branch && config.client_push_repo) {
+	runcmd("git", ["pull", "origin", config.client_branch], config.client_git_db_path, "Finished updating client data", function(code) {
+		execSync('mono update.exe -m', { cwd: config.client_git_db_path+"update/", env: process.env });
+		sendResponse("Finished updating File List");		
+		if(config.client_branch) {
 			execSync('git add . -A', { cwd: config.client_git_db_path, env: process.env });
 			execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
 			execSync('git push '+config.client_push_repo+' '+config.client_branch, { cwd: config.client_git_db_path, env: process.env });
