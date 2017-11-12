@@ -112,7 +112,7 @@ var PushExtraScripts = function(msg) {
 	sendResponse("Finished pushing extra scripts");
 }
 var UpdateFilelist = function(msg) {
-	if(!config.client_git_db_path || config.client_push_repo) {
+	if(!config.client_git_db_path || !config.client_push_repo) {
 		sendResponse("Permission denied");
 		return;
 	}
