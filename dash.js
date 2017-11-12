@@ -116,9 +116,9 @@ var UpdateFilelist = function(msg) {
 		sendResponse("Permission denied");
 		return;
 	}
-	runcmd("git", ["pull", "origin", config.client_branch], config.client_git_db_path, "Finished updating client data", function(code) {
+	runcmd("git", ["pull", "origin", config.client_branch], config.client_git_db_path, "Finished updating File List", function(code) {
 		execSync('mono update.exe -m', { cwd: config.client_git_db_path+"update/", env: process.env });
-		sendResponse("Finished updating File List");		
+		sendResponse("Finished generating File List");		
 		if(config.client_branch) {
 			execSync('git add . -A', { cwd: config.client_git_db_path, env: process.env });
 			execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
