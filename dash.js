@@ -48,6 +48,9 @@ var GitPull = function(msg) {
 	if (config.ocg_git_db_path) {
 		runcmd("git", ["pull", "origin", "master"], config.ocg_git_db_path, "Finished updating OCG data");
 	}
+	if (config.client_git_db_path) {
+		runcmd("git", ["pull", "origin", config.client_branch], config.client_git_db_path, "Finished updating client data");
+	}
 }
 var copyToYGOPRO = function(msg) {
 	execSync('rm -rf ' + config.ygopro_path + 'expansions/*' + '');
@@ -87,6 +90,48 @@ var MakePro = function(msg) {
 }
 var UpdateOCGScripts = function(msg) {
 	runcmd("git", ["pull", "origin", "master"], config.ygopro_path+"script/", "Finished updating OCG scripts");
+}
+var ResetOCGScripts = function(msg) {
+	runcmd("git", ["fetch", "origin", "master"], config.ygopro_path+"script/", "Finished fetching OCG scripts", function(code) {
+		runcmd("git", ["reset", "--hard", "FETCH_HEAD"], config.ygopro_path+"script/", "Finished resetting OCG scripts");
+	});
+}
+var UpdateExtraScripts = function(msg) {
+	if(!config.extra_script_repo) {
+		sendResponse("Permission denied");
+		return;
+	}
+	runcmd("git", ["pull", config.extra_script_repo, "master"], config.ygopro_path+"script/", "Finished updating Extra scripts");
+}
+var PushExtraScripts = function(msg) {
+	if(!config.push_script_repo) {
+		sendResponse("Permission denied");
+		return;
+	}
+	execSync('git push '+config.push_script_repo+' master', { cwd: config.ygopro_path+"script/", env: process.env });
+	sendResponse("Finished pushing extra scripts");
+}
+var UpdateFilelist = function(msg) {
+	if(!config.client_git_db_path) {
+		sendResponse("Permission denied");
+		return;
+	}
+	runcmd("mono", ["update.exe", "-m"], config.client_git_db_path+"update/", "Finished updating filelist", function(code) {
+		if(config.client_branch && config.client_push_repo) {
+			execSync('git add . -A', { cwd: config.client_git_db_path, env: process.env });
+			execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
+			execSync('git push '+config.client_push_repo+' '+config.client_branch, { cwd: config.client_git_db_path, env: process.env });
+			sendResponse("Finished pushing File List");
+		}		
+	});	
+}
+var ZipData = function(msg) {
+	if(!config.client_git_db_path || !config.zip_path) {
+		sendResponse("Permission denied");
+		return;
+	}
+	execSync('rm -rf '+config.zip_path);
+	runcmd("7z", ["a", "-mx9", "-xr!.git*", config.zip_path, "./*"], config.client_git_db_path, "Finish zipping data");	
 }
 var StartServer = function(msg) {
 	if (config.pm2_name) {
@@ -163,6 +208,31 @@ http.createServer(function (req, res) {
 		res.writeHead(200);
 		res.end(u.query.callback+'({"message":"Updating OCG scripts"});');
 		UpdateOCGScripts(u.query.message);
+	}
+	else if (u.pathname === '/api/reset_scripts') {
+		res.writeHead(200);
+		res.end(u.query.callback+'({"message":"Resetting OCG scripts"});');
+		ResetOCGScripts(u.query.message);
+	}
+	else if (u.pathname === '/api/update_extra_scripts') {
+		res.writeHead(200);
+		res.end(u.query.callback+'({"message":"Updating extra scripts"});');
+		UpdateExtraScripts(u.query.message);
+	}
+	else if (u.pathname === '/api/push_extra_scripts') {
+		res.writeHead(200);
+		res.end(u.query.callback+'({"message":"Pushing extra scripts"});');
+		PushExtraScripts(u.query.message);
+	}
+	else if (u.pathname === '/api/zip_data') {
+		res.writeHead(200);
+		res.end(u.query.callback+'({"message":"Started zipping data"});');
+		ZipData(u.query.message);
+	}
+	else if (u.pathname === '/api/update_filelist') {
+		res.writeHead(200);
+		res.end(u.query.callback+'({"message":"Started updating File List"});');
+		UpdateFilelist(u.query.message);
 	}
 	else if (u.pathname === '/api/start_server') {
 		res.writeHead(200);
