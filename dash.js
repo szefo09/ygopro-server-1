@@ -7,8 +7,6 @@ moment.locale('zh-cn');
 
 var config = require('./dash.json');
 
-//全卡HTML列表
-var cardHTMLs=[];
 //http长连接
 var responder;
 
