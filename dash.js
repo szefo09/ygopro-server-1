@@ -1,5 +1,4 @@
 var http = require('http');
-var fs = require('fs');
 var execSync = require('child_process').execSync;
 var spawn = require('child_process').spawn;
 var url = require('url');
