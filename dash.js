@@ -44,31 +44,49 @@ var runcmd = function(cmd, args, path, endmsg, op) {
 }
 
 var GitPull = function(msg) {
-	runcmd("git", ["pull", "origin", "master"], config.git_db_path, "Finished updating data");
+	if (config.git_db_path) {
+		var branch = config.server_branch;
+		if (!branch) {
+			branch = "master";
+		}
+		runcmd("git", ["pull", "origin", branch], config.git_db_path, "Finished updating data");
+	}
 	if (config.ocg_git_db_path) {
-		runcmd("git", ["pull", "origin", "master"], config.ocg_git_db_path, "Finished updating OCG data");
+		var branch = config.ocg_branch;
+		if (!branch) {
+			branch = "master";
+		}
+		runcmd("git", ["pull", "origin", branch], config.ocg_git_db_path, "Finished updating OCG data");
 	}
 	if (config.client_git_db_path) {
-		runcmd("git", ["pull", "origin", config.client_branch], config.client_git_db_path, "Finished updating client data");
+		var branch = config.client_branch;
+		if (!branch) {
+			branch = "master";
+		}
+		runcmd("git", ["pull", "origin", branch], config.client_git_db_path, "Finished updating client data");
 	}
 }
 var copyToYGOPRO = function(msg) {
+	if (!config.ygopro_path || !config.git_db_path) {
+		sendResponse("Permission denied");
+		return;
+	}
 	execSync('rm -rf ' + config.ygopro_path + 'expansions/*' + '');
-	execSync('cp -rf "' + config.db_path + 'expansions' + '" "' + config.ygopro_path + '"');
-	execSync('cp -rf "' + config.db_path + 'gframe' + '" "' + config.ygopro_path + '"');
-	execSync('cp -rf "' + config.db_path + 'ocgcore' + '" "' + config.ygopro_path + '"');
-	execSync('cp -rf "' + config.db_path + 'lflist.conf' + '" "' + config.ygopro_path + '"');
+	execSync('cp -rf "' + config.git_db_path + 'expansions' + '" "' + config.ygopro_path + '"');
+	execSync('cp -rf "' + config.git_db_path + 'gframe' + '" "' + config.ygopro_path + '"');
+	execSync('cp -rf "' + config.git_db_path + 'ocgcore' + '" "' + config.ygopro_path + '"');
+	execSync('cp -rf "' + config.git_db_path + 'lflist.conf' + '" "' + config.ygopro_path + '"');
 	sendResponse("Finished copying to YGOPro");
-	if (config.ocg_db_path) {
-		execSync('cp -rf "' + config.ocg_db_path + 'expansions' + '" "' + config.ygopro_path + '"');
-		execSync('cp -rf "' + config.ocg_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
+	if (config.ocg_git_db_path) {
+		execSync('cp -rf "' + config.ocg_git_db_path + 'expansions' + '" "' + config.ygopro_path + '"');
+		execSync('cp -rf "' + config.ocg_git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
 		sendResponse("Finished copying OCG data to YGOPro");
 	} else {
-		execSync('cp -rf "' + config.db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
+		execSync('cp -rf "' + config.git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
 	}
 }
 var MakePro = function(msg) {
-	if (config.enable_compile) {
+	if (config.ygopro_path && config.enable_compile) {
 		execSync('mkdir ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf ocgcore ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf gframe ygopro-temp', { cwd: config.ygopro_path, env: process.env });
@@ -89,14 +107,26 @@ var MakePro = function(msg) {
 	}
 }
 var UpdateOCGScripts = function(msg) {
+	if (!config.ygopro_path) {
+		sendResponse("Permission denied");
+		return;
+	}
 	runcmd("git", ["pull", "origin", "master"], config.ygopro_path+"script/", "Finished updating OCG scripts");
 }
 var ResetOCGScripts = function(msg) {
+	if (!config.ygopro_path) {
+		sendResponse("Permission denied");
+		return;
+	}
 	runcmd("git", ["fetch", "origin", "master"], config.ygopro_path+"script/", "Finished fetching OCG scripts", function(code) {
 		runcmd("git", ["reset", "--hard", "FETCH_HEAD"], config.ygopro_path+"script/", "Finished resetting OCG scripts");
 	});
 }
 var UpdateExtraScripts = function(msg) {
+	if (!config.ygopro_path) {
+		sendResponse("Permission denied");
+		return;
+	}
 	if(!config.extra_script_repo) {
 		sendResponse("Permission denied");
 		return;
@@ -104,25 +134,55 @@ var UpdateExtraScripts = function(msg) {
 	runcmd("git", ["pull", config.extra_script_repo, "master"], config.ygopro_path+"script/", "Finished updating Extra scripts");
 }
 var PushExtraScripts = function(msg) {
+	if (!config.ygopro_path) {
+		sendResponse("Permission denied");
+		return;
+	}
 	if(!config.push_script_repo) {
 		sendResponse("Permission denied");
 		return;
 	}
-	execSync('git push '+config.push_script_repo+' master', { cwd: config.ygopro_path+"script/", env: process.env });
+	try {
+		execSync('git push '+config.push_script_repo+' master', { cwd: config.ygopro_path+"script/", env: process.env });
+    } catch (error) {
+        sendResponse("git error: "+error.stdout);
+		sendResponse("Failed pushing extra scripts");
+		return;
+    }	
 	sendResponse("Finished pushing extra scripts");
 }
 var UpdateFilelist = function(msg) {
-	if(!config.client_git_db_path || !config.client_push_repo) {
+	if(!config.client_git_db_path) {
 		sendResponse("Permission denied");
 		return;
 	}
-	runcmd("git", ["pull", "origin", config.client_branch], config.client_git_db_path, "Finished updating File List", function(code) {
-		execSync('mono update.exe -m', { cwd: config.client_git_db_path+"update/", env: process.env });
+	var branch = config.client_branch;
+	if (!branch) {
+		branch = "master";
+	}
+	runcmd("git", ["pull", "origin", branch], config.client_git_db_path, "Finished updating File List", function(code) {
+		try {
+			execSync('mono update.exe -m', { cwd: config.client_git_db_path+"update/", env: process.env });
+		} catch (error) {
+			try {
+				execSync('update.exe -m', { cwd: config.client_git_db_path+"update/", env: process.env });
+			} catch (error) {
+				sendResponse(error);			
+				sendResponse("Failed generating File List");
+				return;
+			}
+		}		
 		sendResponse("Finished generating File List");		
-		if(config.client_branch) {
-			execSync('git add . -A', { cwd: config.client_git_db_path, env: process.env });
-			execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
-			execSync('git push '+config.client_push_repo+' '+config.client_branch, { cwd: config.client_git_db_path, env: process.env });
+		if(config.client_push_repo) {
+			try {
+				execSync('git add . -A', { cwd: config.client_git_db_path, env: process.env });
+				execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
+				execSync('git push '+config.client_push_repo+' '+branch, { cwd: config.client_git_db_path, env: process.env });
+			} catch (error) {
+				sendResponse("git error: "+error.stdout);
+				sendResponse("Failed pushing File List");
+				return;
+			}
 			sendResponse("Finished pushing File List");
 		}		
 	});	
