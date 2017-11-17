@@ -158,19 +158,8 @@ var UpdateFilelist = function(msg) {
 		branch = "master";
 	}
 	runcmd("git", ["pull", "origin", branch], config.client_git_db_path, "Finished updating File List", function(code) {
-		try {
-			execSync('mono update.exe -ci', { cwd: config.client_git_db_path+"update/", env: process.env });
-		} catch (error) {
-			try {
-				execSync('update.exe -ci', { cwd: config.client_git_db_path+"update/", env: process.env });
-			} catch (error) {
-				sendResponse(error);			
-				sendResponse("Failed generating File List");
-				return;
-			}
-		}		
-		sendResponse("Finished generating File List");		
-		if(config.client_push_repo) {
+		var success_function = function() {
+			sendResponse("Finished generating File List");	
 			try {
 				execSync('git add . -A', { cwd: config.client_git_db_path, env: process.env });
 				execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
@@ -180,7 +169,18 @@ var UpdateFilelist = function(msg) {
 				sendResponse("Failed pushing File List");
 				return;
 			}
-			sendResponse("Finished pushing File List");
+		};
+		sendResponse("Finished updating client data");	
+		try {
+			runcmd("mono", ["update.exe", "-ci"], config.client_git_db_path+"update/", "Finished pushing File List",success_function)
+		} catch (error) {
+			try {
+				runcmd("update.exe", ["-ci"], config.client_git_db_path+"update/", "Finished pushing File List",success_function)
+			} catch (error) {
+				sendResponse(error);			
+				sendResponse("Failed generating File List");
+				return;
+			}
 		}		
 	});	
 }
