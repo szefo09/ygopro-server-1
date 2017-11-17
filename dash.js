@@ -166,7 +166,7 @@ var UpdateFilelist = function(msg) {
 					execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
 					execSync('git push '+config.client_push_repo+' '+branch, { cwd: config.client_git_db_path, env: process.env });
 				} catch (error) {
-					sendResponse("git error: "+error.stdout);
+					sendResponse("git error: "+error);
 					sendResponse("Failed pushing File List");
 					return;
 				}
