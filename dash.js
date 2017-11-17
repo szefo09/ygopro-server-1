@@ -159,15 +159,17 @@ var UpdateFilelist = function(msg) {
 	}
 	runcmd("git", ["pull", "origin", branch], config.client_git_db_path, "Finished updating File List", function(code) {
 		var success_function = function() {
-			sendResponse("Finished generating File List");	
-			try {
-				execSync('git add . -A', { cwd: config.client_git_db_path, env: process.env });
-				execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
-				execSync('git push '+config.client_push_repo+' '+branch, { cwd: config.client_git_db_path, env: process.env });
-			} catch (error) {
-				sendResponse("git error: "+error.stdout);
-				sendResponse("Failed pushing File List");
-				return;
+			sendResponse("Finished generating File List");
+			if (config.client_push_repo) {
+				try {
+					execSync('git add . -A', { cwd: config.client_git_db_path, env: process.env });
+					execSync('git commit -m Filelist', { cwd: config.client_git_db_path, env: process.env });
+					execSync('git push '+config.client_push_repo+' '+branch, { cwd: config.client_git_db_path, env: process.env });
+				} catch (error) {
+					sendResponse("git error: "+error.stdout);
+					sendResponse("Failed pushing File List");
+					return;
+				}
 			}
 		};
 		sendResponse("Finished updating client data");	
