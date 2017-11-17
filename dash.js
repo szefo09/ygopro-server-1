@@ -159,10 +159,10 @@ var UpdateFilelist = function(msg) {
 	}
 	runcmd("git", ["pull", "origin", branch], config.client_git_db_path, "Finished updating File List", function(code) {
 		try {
-			execSync('mono update.exe -m', { cwd: config.client_git_db_path+"update/", env: process.env });
+			execSync('mono update.exe -ci', { cwd: config.client_git_db_path+"update/", env: process.env });
 		} catch (error) {
 			try {
-				execSync('update.exe -m', { cwd: config.client_git_db_path+"update/", env: process.env });
+				execSync('update.exe -ci', { cwd: config.client_git_db_path+"update/", env: process.env });
 			} catch (error) {
 				sendResponse(error);			
 				sendResponse("Failed generating File List");
