@@ -197,6 +197,8 @@ var ZipData = function(msg) {
 var StartServer = function(msg) {
 	if (config.pm2_name) {
 		runcmd("pm2", ["restart", config.pm2_name], ".", "Server Started");
+	} else if (config.minecraft_id) {
+		runcmd("pm2", ["restart", config.minecraft_id], ".", "Minecraft Server Started");		
 	} else {
 		sendResponse("Permission denied");
 	}
@@ -204,6 +206,8 @@ var StartServer = function(msg) {
 var StopServer = function(msg) {
 	if (config.pm2_name) {
 		runcmd("pm2", ["stop", config.pm2_name], ".", "Server Stopped");
+	} else if (config.minecraft_id) {
+		runcmd("pm2", ["stop", config.minecraft_id], ".", "Minecraft Server Stopped");		
 	} else {
 		sendResponse("Permission denied");
 	}
@@ -220,6 +224,13 @@ var RunCommand = function(msg) {
 			}
 			runcmd(cmd[0], args, config.ygopro_path, "Finshed Running Command");
 		}
+	} else {
+		sendResponse("Permission denied");
+	}
+}
+var RunMinecraftCommand = function(msg) {
+	if (config.minecraft_id) {
+		runcmd("pm2", ["send", config.minecraft_id, msg], ".", "Finshed Running Minecraft Command");
 	} else {
 		sendResponse("Permission denied");
 	}
@@ -309,6 +320,11 @@ http.createServer(function (req, res) {
 		res.writeHead(200);
 		res.end(u.query.callback+'({"message":"Running Command"});');
 		RunCommand(u.query.message);
+	}
+	else if (u.pathname === '/api/run_minecraft_command') {
+		res.writeHead(200);
+		res.end(u.query.callback+'({"message":"Running Minecraft Command"});');
+		RunMinecraftCommand(u.query.message);
 	}
 	else {
 		res.writeHead(400);
