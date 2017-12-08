@@ -91,7 +91,7 @@ var copyToYGOPRO = function(msg) {
 		execSync('cp -rf "' + config.pre_git_db_path + 'unofficial/expansions/pre-release.cdb' + '" "' + config.ygopro_path + 'expansions/"');
 		sendResponse("Finished copying Pre-release data to YGOPro");
 	} else if (config.pre_database_url) {
-		runcmd("wget", ["-O", config.ygopro_path + 'expansions/pre-release.cdb', config.pre_database_url, '--no-check-certificate'], ".", "Finished downloading pre-release database");		
+		runcmd("wget", ["-O", config.ygopro_path + 'expansions/pre-release.cdb', config.pre_database_url, '--no-check-certificate'], ".", "Finished downloading Pre-release database");		
 	}
 }
 var MakePro = function(msg) {
@@ -102,14 +102,13 @@ var MakePro = function(msg) {
 		execSync('cp -rf premake ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf premake4.lua ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf premake5.lua ygopro-temp', { cwd: config.ygopro_path, env: process.env });
-		runcmd("../premake5", ["gmake"], config.ygopro_path+"ygopro-temp/", "Finished making YGOPro", function (code) {
-			sendResponse("Finished pre-making");
-			runcmd("make", ["config=release"], config.ygopro_path+"ygopro-temp/build/", "Finished building", function (code) {
-				sendResponse("Build complete");
+		runcmd("../premake5", ["gmake"], config.ygopro_path+"ygopro-temp/", "Finished pre-making", function (code) {
+			runcmd("make", ["config=release"], config.ygopro_path+"ygopro-temp/build/", "Build complete", function (code) {
 				execSync('cp -rf ygopro-temp/bin .', { cwd: config.ygopro_path, env: process.env });
 				execSync('cp -rf ygopro-temp/obj .', { cwd: config.ygopro_path, env: process.env });
 				execSync('cp -rf ygopro-temp/build .', { cwd: config.ygopro_path, env: process.env });
-				execSync('rm -rf ygopro-temp', { cwd: config.ygopro_path, env: process.env });		
+				execSync('rm -rf ygopro-temp', { cwd: config.ygopro_path, env: process.env });
+				sendResponse("Finished making YGOPro");				
 			});
 		});
 	} else {
