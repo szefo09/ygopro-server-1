@@ -69,6 +69,13 @@ var GitPull = function(msg) {
 		}
 		runcmd("git", ["pull", "origin", branch], config.client_git_db_path, "Finished updating client data");
 	}
+	if (config.windbot_git_db_path) {
+		var branch = config.windbot_branch;
+		if (!branch) {
+			branch = "master";
+		}
+		runcmd("git", ["pull", "origin", branch], config.windbot_git_db_path, "Finished updating windbot");
+	}
 }
 var copyToYGOPRO = function(msg) {
 	if (!config.ygopro_path || !config.git_db_path) {
@@ -105,6 +112,18 @@ var MakePro = function(msg) {
 				execSync('cp -rf ygopro-temp/build .', { cwd: config.ygopro_path, env: process.env });
 				execSync('rm -rf ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 				sendResponse("Build complete");				
+			});
+		});
+	} else {
+		sendResponse("Permission denied");
+	}
+}
+var MakeWindbot = function(msg) {
+	if (config.windbot_git_db_path) {
+		runcmd("xbuild", ["WindBot.sln", "/m", "/property:Configuration=Release"], config.windbot_git_db_path, "Finished pre-making", function (code) {
+			runcmd("make", ["config=release"], config.ygopro_path+"ygopro-temp/build/", "Finished making WindBot", function (code) {
+				execSync('cp -rf bin/Release/* .', { cwd: config.windbot_git_db_path, env: process.env });
+				sendResponse("Finished copying WindBot");
 			});
 		});
 	} else {
@@ -283,6 +302,11 @@ http.createServer(function (req, res) {
 		res.writeHead(200);
 		res.end(u.query.callback+'({"message":"Started making YGOPro"});');
 		MakePro(u.query.message);
+	}
+	else if (u.pathname === '/api/make_windbot') {
+		res.writeHead(200);
+		res.end(u.query.callback+'({"message":"Started making WindBot"});');
+		MakeWindbot(u.query.message);
 	}
 	else if (u.pathname === '/api/update_ocg_scripts') {
 		res.writeHead(200);
