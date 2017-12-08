@@ -60,7 +60,7 @@ var GitPull = function(msg) {
 		if (!branch) {
 			branch = "master";
 		}
-		runcmd("git", ["pull", "origin", branch], config.pre_git_db_path, "Finished updating Pre-release scripts");
+		runcmd("git", ["pull", "origin", branch], config.pre_scripts_branch, "Finished updating Pre-release scripts");
 	}
 	if (config.client_git_db_path) {
 		var branch = config.client_branch;
