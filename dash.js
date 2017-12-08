@@ -79,6 +79,7 @@ var copyToYGOPRO = function(msg) {
 	execSync('cp -rf "' + config.git_db_path + 'expansions' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'gframe' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'ocgcore' + '" "' + config.ygopro_path + '"');
+	execSync('cp -rf "' + config.git_db_path + 'premake' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'lflist.conf' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
 	sendResponse("Finished copying to YGOPro");
@@ -99,9 +100,9 @@ var MakePro = function(msg) {
 		execSync('mkdir ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf ocgcore ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf gframe ygopro-temp', { cwd: config.ygopro_path, env: process.env });
-		execSync('cp -rf premake ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf premake4.lua ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf premake5.lua ygopro-temp', { cwd: config.ygopro_path, env: process.env });
+		execSync('cp -rf premake/* ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		runcmd("../premake5", ["gmake"], config.ygopro_path+"ygopro-temp/", "Finished pre-making", function (code) {
 			runcmd("make", ["config=release"], config.ygopro_path+"ygopro-temp/build/", "Finished making YGOPro", function (code) {
 				execSync('cp -rf ygopro-temp/bin .', { cwd: config.ygopro_path, env: process.env });
