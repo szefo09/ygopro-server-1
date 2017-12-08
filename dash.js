@@ -88,7 +88,7 @@ var copyToYGOPRO = function(msg) {
 	}
 	sendResponse("Finished copying to YGOPro");
 	if (config.pre_scripts_git_db_path) {
-		execSync('find "' + config.pre_scripts_git_db_path + '/scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/"');
+		execSync('find "' + config.pre_scripts_git_db_path + 'scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/"');
 		sendResponse("Finished copying Pre-release scripts to YGOPro");
 	}
 }
