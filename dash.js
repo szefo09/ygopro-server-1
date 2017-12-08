@@ -84,8 +84,12 @@ var copyToYGOPRO = function(msg) {
 	sendResponse("Finished copying to YGOPro");
 	if (config.pre_git_db_path) {
 		execSync('cp -rf "' + config.pre_git_db_path + 'unofficial/expansions/pre-release.cdb' + '" "' + config.ygopro_path + 'expansions/"');
-		execSync('find "' + config.pre_scripts_git_db_path + '/scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/"');
 		sendResponse("Finished copying Pre-release data to YGOPro");
+	}
+	sendResponse("Finished copying to YGOPro");
+	if (config.pre_scripts_git_db_path) {
+		execSync('find "' + config.pre_scripts_git_db_path + '/scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/"');
+		sendResponse("Finished copying Pre-release scripts to YGOPro");
 	}
 }
 var MakePro = function(msg) {
