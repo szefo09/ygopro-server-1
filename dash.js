@@ -83,7 +83,7 @@ var copyToYGOPRO = function(msg) {
 	execSync('cp -rf "' + config.git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
 	sendResponse("Finished copying to YGOPro");
 	if (config.pre_scripts_git_db_path) {
-		execSync('mkdir ' + config.ygopro_path + 'expansions/script' + '');
+		execSync('mkdir "' + config.ygopro_path + 'expansions/script' + '"');
 		execSync('find "' + config.pre_scripts_git_db_path + 'scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/script/"');
 		sendResponse("Finished copying Pre-release scripts to YGOPro");
 	}
