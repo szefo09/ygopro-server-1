@@ -82,14 +82,15 @@ var copyToYGOPRO = function(msg) {
 	execSync('cp -rf "' + config.git_db_path + 'lflist.conf' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
 	sendResponse("Finished copying to YGOPro");
-	if (config.pre_git_db_path) {
-		execSync('cp -rf "' + config.pre_git_db_path + 'unofficial/expansions/pre-release.cdb' + '" "' + config.ygopro_path + 'expansions/"');
-		sendResponse("Finished copying Pre-release data to YGOPro");
-	}
-	sendResponse("Finished copying to YGOPro");
 	if (config.pre_scripts_git_db_path) {
 		execSync('find "' + config.pre_scripts_git_db_path + 'scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/"');
 		sendResponse("Finished copying Pre-release scripts to YGOPro");
+	}
+	if (config.pre_git_db_path) {
+		execSync('cp -rf "' + config.pre_git_db_path + 'unofficial/expansions/pre-release.cdb' + '" "' + config.ygopro_path + 'expansions/"');
+		sendResponse("Finished copying Pre-release data to YGOPro");
+	} else if (config.pre_database_url) {
+		runcmd("wget", ["-O", config.ygopro_path + 'expansions/pre-release.cdb', config.pre_database_url, '--no-check-certificate'], ".", "Finished downloading pre-release database");		
 	}
 }
 var MakePro = function(msg) {
