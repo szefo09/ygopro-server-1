@@ -75,7 +75,7 @@ var copyToYGOPRO = function(msg) {
 		sendResponse("Permission denied");
 		return;
 	}
-	execSync('rm -rf ' + config.ygopro_path + 'expansions/*' + '');
+	execSync('rm -rf "' + config.ygopro_path + 'expansions/*' + '"');
 	execSync('cp -rf "' + config.git_db_path + 'expansions' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'gframe' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'ocgcore' + '" "' + config.ygopro_path + '"');
@@ -83,7 +83,8 @@ var copyToYGOPRO = function(msg) {
 	execSync('cp -rf "' + config.git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
 	sendResponse("Finished copying to YGOPro");
 	if (config.pre_scripts_git_db_path) {
-		execSync('find "' + config.pre_scripts_git_db_path + 'scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/"');
+		execSync('mkdir ' + config.ygopro_path + 'expansions/script' + '');
+		execSync('find "' + config.pre_scripts_git_db_path + 'scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/script/"');
 		sendResponse("Finished copying Pre-release scripts to YGOPro");
 	}
 	if (config.pre_git_db_path) {
