@@ -75,13 +75,8 @@ var copyToYGOPRO = function(msg) {
 		sendResponse("Permission denied");
 		return;
 	}
-	execSync('rm -rf ' + config.ygopro_path + 'expansions/*' + '');
-	execSync('cp -rf "' + config.git_db_path + 'expansions' + '" "' + config.ygopro_path + '"');
-	execSync('cp -rf "' + config.git_db_path + 'gframe' + '" "' + config.ygopro_path + '"');
-	execSync('cp -rf "' + config.git_db_path + 'ocgcore' + '" "' + config.ygopro_path + '"');
-	execSync('cp -rf "' + config.git_db_path + 'premake' + '" "' + config.ygopro_path + '"');
-	execSync('cp -rf "' + config.git_db_path + 'lflist.conf' + '" "' + config.ygopro_path + '"');
-	execSync('cp -rf "' + config.git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
+	execSync('rm -rf ' + config.ygopro_path + 'expansions/*');
+	execSync('cp -rf ' + config.git_db_path + '* ' + config.ygopro_path);
 	sendResponse("Finished copying to YGOPro");
 	if (config.pre_scripts_git_db_path) {
 		execSync('mkdir "' + config.ygopro_path + 'expansions/script' + '"');
