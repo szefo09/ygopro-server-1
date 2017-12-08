@@ -90,11 +90,6 @@ var copyToYGOPRO = function(msg) {
 }
 var MakePro = function(msg) {
 	if (config.ygopro_path && config.enable_compile) {
-		if (config.lua_path) {
-			execSync('make linux test', { cwd: config.lua_path, env: process.env });
-			execSync('make install', { cwd: config.lua_path, env: process.env });
-			sendResponse("Finished making Lua");
-		}
 		execSync('mkdir ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf ocgcore ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf gframe ygopro-temp', { cwd: config.ygopro_path, env: process.env });
