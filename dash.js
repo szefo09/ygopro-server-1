@@ -48,12 +48,19 @@ var GitPull = function(msg) {
 		}
 		runcmd("git", ["pull", "origin", branch], config.git_db_path, "Finished updating data");
 	}
-	if (config.ocg_git_db_path) {
-		var branch = config.ocg_branch;
+	if (config.pre_git_db_path) {
+		var branch = config.pre_branch;
 		if (!branch) {
 			branch = "master";
 		}
-		runcmd("git", ["pull", "origin", branch], config.ocg_git_db_path, "Finished updating OCG data");
+		runcmd("git", ["pull", "origin", branch], config.pre_git_db_path, "Finished updating Pre-release data");
+	}
+	if (config.pre_scripts_git_db_path) {
+		var branch = config.pre_scripts_branch;
+		if (!branch) {
+			branch = "master";
+		}
+		runcmd("git", ["pull", "origin", branch], config.pre_git_db_path, "Finished updating Pre-release scripts");
 	}
 	if (config.client_git_db_path) {
 		var branch = config.client_branch;
@@ -73,13 +80,12 @@ var copyToYGOPRO = function(msg) {
 	execSync('cp -rf "' + config.git_db_path + 'gframe' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'ocgcore' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'lflist.conf' + '" "' + config.ygopro_path + '"');
+	execSync('cp -rf "' + config.git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
 	sendResponse("Finished copying to YGOPro");
-	if (config.ocg_git_db_path) {
-		execSync('cp -rf "' + config.ocg_git_db_path + 'expansions' + '" "' + config.ygopro_path + '"');
-		execSync('cp -rf "' + config.ocg_git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
-		sendResponse("Finished copying OCG data to YGOPro");
-	} else {
-		execSync('cp -rf "' + config.git_db_path + 'cards.cdb' + '" "' + config.ygopro_path + '"');
+	if (config.pre_git_db_path) {
+		execSync('cp -rf "' + config.pre_git_db_path + 'unofficial/expansions/pre-release.cdb' + '" "' + config.ygopro_path + 'expansions/"');
+		execSync('find "' + config.pre_scripts_git_db_path + '/scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/"');
+		sendResponse("Finished copying Pre-release data to YGOPro");
 	}
 }
 var MakePro = function(msg) {
