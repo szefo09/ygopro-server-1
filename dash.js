@@ -75,7 +75,7 @@ var copyToYGOPRO = function(msg) {
 		sendResponse("Permission denied");
 		return;
 	}
-	execSync('rm -rf "' + config.ygopro_path + 'expansions/*' + '"');
+	execSync('rm -rf ' + config.ygopro_path + 'expansions/*' + '');
 	execSync('cp -rf "' + config.git_db_path + 'expansions' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'gframe' + '" "' + config.ygopro_path + '"');
 	execSync('cp -rf "' + config.git_db_path + 'ocgcore' + '" "' + config.ygopro_path + '"');
