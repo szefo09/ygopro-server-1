@@ -13,7 +13,6 @@ config.*.json
 /node_modules/
 /ssl
 /ygosrv233
-/dash.json
 
 test*
 *.heapsnapshot
