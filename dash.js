@@ -5,12 +5,7 @@ var url = require('url');
 var moment = require('moment');
 moment.locale('zh-cn');
 
-var nconf = require('nconf');
-nconf.file('./dash.json');
-var defaultconfig = require('./dash_sample.json');
-nconf.defaults(defaultconfig);
-var settings = nconf.get();
-config=settings.modules;
+var config = require('./dash.json');
 
 //http长连接
 var responder;
