@@ -105,7 +105,11 @@ var MakePro = function(msg) {
 		execSync('cp -rf premake4.lua ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf premake5.lua ygopro-temp', { cwd: config.ygopro_path, env: process.env });
 		execSync('cp -rf premake/* ygopro-temp', { cwd: config.ygopro_path, env: process.env });
-		runcmd("../premake5", ["gmake"], config.ygopro_path+"ygopro-temp/", "Finished pre-making", function (code) {
+		var premake_command = "../premake5";
+		if (config.premake_command) {
+			premake_command = premake_command;
+		}
+		runcmd(premake_command, ["gmake"], config.ygopro_path+"ygopro-temp/", "Finished pre-making", function (code) {
 			runcmd("make", ["config=release"], config.ygopro_path+"ygopro-temp/build/", "Finished making YGOPro", function (code) {
 				execSync('cp -rf ygopro-temp/bin .', { cwd: config.ygopro_path, env: process.env });
 				execSync('cp -rf ygopro-temp/obj .', { cwd: config.ygopro_path, env: process.env });
