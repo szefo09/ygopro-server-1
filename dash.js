@@ -90,6 +90,10 @@ var copyToYGOPRO = function(msg) {
 		execSync('find "' + config.pre_scripts_git_db_path + 'scripts' + '" -name c?????????.lua | xargs -I {} cp -rf {} "' + config.ygopro_path + 'expansions/script/"');
 		sendResponse("Finished copying Pre-release scripts to YGOPro");
 	}
+	if (config.client_git_db_path) {
+		execSync('cp -rf "' + config.client_git_db_path + '/expansions' + '" "' + config.ygopro_path + '"');
+		sendResponse("Finished copying custom card data to YGOPro");
+	}
 	if (config.pre_git_db_path) {
 		execSync('cp -rf "' + config.pre_git_db_path + 'unofficial/expansions/pre-release.cdb' + '" "' + config.ygopro_path + 'expansions/"');
 		sendResponse("Finished copying Pre-release data to YGOPro");
