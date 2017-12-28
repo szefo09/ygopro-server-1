@@ -96,9 +96,23 @@
   }
 
   settings.lflist = (function() {
-    var j, len, ref, results;
-    ref = fs.readFileSync('ygopro/lflist.conf', 'utf8').match(/!.*/g);
+    var j, len, ref, ref_custom, results;
     results = [];
+	try {
+		ref = fs.readFileSync('ygopro/expansions/lflist.conf', 'utf8').match(/!.*/g);
+		for (j = 0, len = ref.length; j < len; j++) {
+		  list = ref[j];
+		  date = list.match(/!([\d\.]+)/);
+		  if (!date) {
+			continue;
+		  }
+		  results.push({
+			date: moment(list.match(/!([\d\.]+)/)[1], 'YYYY.MM.DD').utcOffset("-08:00"),
+			tcg: list.indexOf('TCG') !== -1
+		  });
+		}
+	} catch (error1) {}
+    ref = fs.readFileSync('ygopro/lflist.conf', 'utf8').match(/!.*/g);
     for (j = 0, len = ref.length; j < len; j++) {
       list = ref[j];
       date = list.match(/!([\d\.]+)/);
