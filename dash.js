@@ -115,6 +115,7 @@ var MakePro = function(msg) {
 		}
 		runcmd(premake_command, ["gmake"], config.ygopro_path+"ygopro-temp/", "Finished pre-making", function (code) {
 			runcmd("make", ["config=release"], config.ygopro_path+"ygopro-temp/build/", "Finished making YGOPro", function (code) {
+				execSync('strip ygopro-temp/bin/release/ygopro', { cwd: config.ygopro_path, env: process.env });				
 				execSync('cp -rf ygopro-temp/bin .', { cwd: config.ygopro_path, env: process.env });
 				execSync('cp -rf ygopro-temp/obj .', { cwd: config.ygopro_path, env: process.env });
 				execSync('cp -rf ygopro-temp/build .', { cwd: config.ygopro_path, env: process.env });
