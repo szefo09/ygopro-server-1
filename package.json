@@ -11,11 +11,14 @@
   "author": "zh99998 <zh99998@gmail.com>, mercury233 <me@mercury233.me>",
   "dependencies": {
     "bunyan": "latest",
+    "http": "latest",
     "moment": "latest",
     "nconf": "latest",
+    "redis": "latest",
     "request": "latest",
     "underscore": "latest",
     "underscore.string": "latest"
+    "ws": "latest"
   },
   "license": "AGPL-3.0",
   "scripts": {
