@@ -17,7 +17,7 @@
     "redis": "latest",
     "request": "latest",
     "underscore": "latest",
-    "underscore.string": "latest"
+    "underscore.string": "latest",
     "ws": "latest"
   },
   "license": "AGPL-3.0",
