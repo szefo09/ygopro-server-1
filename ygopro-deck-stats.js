@@ -47,7 +47,7 @@ function add_to_all_list(LIST,id,use) {
 
 function read_deck_file(filename) {
     console.log("reading "+filename);
-    var deck_text=fs.readFileSync(config.deckpath+"\\"+filename,{encoding:"ASCII"})
+    var deck_text=fs.readFileSync(config.deckpath+"/"+filename,{encoding:"ASCII"})
     var deck_array=deck_text.split("\n");
     var deck_main={};
     var deck_side={};
