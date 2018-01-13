@@ -2082,7 +2082,7 @@
     client.main = buff_main;
     client.side = buff_side;
     if (room.random_type || room.arena) {
-      if (client.is_host) {
+      if (client.pos === 0) {
         room.waiting_for_player = room.waiting_for_player2;
       }
       room.last_active_time = moment();
