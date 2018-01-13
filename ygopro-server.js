@@ -1530,6 +1530,7 @@
       room.winner = pos;
       if (room && !room.finished && room.dueling_players[pos]) {
         room.winner_name = room.dueling_players[pos].name;
+		ygopro.stoc_send_chat_to_room(room, room.winner_name+" won.", ygopro.constants.COLORS.PINK);
         room.scores[room.winner_name] = room.scores[room.winner_name] + 1;
       }
     }
