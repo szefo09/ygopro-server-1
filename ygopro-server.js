@@ -1508,7 +1508,7 @@
       playertype = buffer.readUInt8(1);
       client.is_first = !(playertype & 0xf);
       client.lp = room.hostinfo.start_lp;
-      if (client.is_host) {
+      if (client.pos === 0) {
         room.turn = 0;
       }
 	  ygopro.stoc_send_chat(client, "Your position is: "+client.pos, ygopro.constants.COLORS.BABYBLUE);
