@@ -1511,9 +1511,7 @@
       if (client.is_host) {
         room.turn = 0;
       }
-	  if (client.is_first) {
-	    ygopro.stoc_send_chat(client, "FIRST", ygopro.constants.COLORS.BABYBLUE);
-	  }
+	  ygopro.stoc_send_chat(client, "Your position is: "+client.pos, ygopro.constants.COLORS.BABYBLUE);
     }
     if (ygopro.constants.MSG[msg] === 'NEW_TURN') {
       if (client.is_host) {
