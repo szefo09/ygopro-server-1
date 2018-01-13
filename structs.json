@@ -76,6 +76,10 @@
         {"name": "player", "type": "unsigned short"},
         {"name": "msg", "type": "unsigned short", "length": 255, "encoding": "UTF-16LE"}
     ],
+    "STOC_Music": [
+        {"name": "music_type", "type": "unsigned short"},
+        {"name": "music", "type": "unsigned short", "length": 255, "encoding": "UTF-16LE"}
+    ],
     "STOC_HS_PlayerEnter": [
         {"name": "name", "type": "unsigned short", "length": 20, "encoding": "UTF-16LE"},
         {"name": "pos", "type": "unsigned char"}
