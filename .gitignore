@@ -10,7 +10,7 @@ config.*.json
 /windbot
 /decks/
 /decks_save*
-/node_modules/
+/node_modules
 /ssl
 /ygosrv233
 /dash.json
