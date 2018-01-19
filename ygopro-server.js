@@ -1576,7 +1576,7 @@
 	    var hint_type = buffer.readUInt8(1);
         pos = buffer.readUInt8(2);
 		var music_id = buffer.readUInt32LE(3);
-        if (hint_type === 11 && music_list_rev[music_id])
+        if (hint_type === 11 && music_list_rev[music_id]) {
 		  ygopro.stoc_send_chat(client, "${play_music}"+music_list_rev[music_id], ygopro.constants.COLORS.BABYBLUE);
         }
       }
