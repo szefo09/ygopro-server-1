@@ -2017,7 +2017,7 @@
 			ygopro.stoc_send_chat_to_room(room, "${play_music}"+music, ygopro.constants.COLORS.BABYBLUE);
 			ygopro.stoc_send_chat_to_room(room, "${play_music_user}"+client.name, ygopro.constants.COLORS.BABYBLUE);
           } else {
-            ygopro.stoc_send_chat(client, "Music "+music+" not found.", ygopro.constants.COLORS.RED);
+            ygopro.stoc_send_chat(client, "${music_not_found}"+music, ygopro.constants.COLORS.RED);
           }
         }
         break;

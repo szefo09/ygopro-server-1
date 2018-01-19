@@ -185,7 +185,7 @@
     "play_music": "正在播放：",
     "play_music_user": "当前音乐由以下玩家点选：",
     "stop_music_user": "当前音乐被以下玩家终止：",
-    "music_not_found": "找不到音乐：",
+    "music_not_found": "找不到音乐文件：",
     "unwelcome_warn_part1": "如果您经常",
     "unwelcome_warn_part2": "，您的对手可能会离你而去。",
     "unwelcome_tip_part1": "因为您的对手有",
