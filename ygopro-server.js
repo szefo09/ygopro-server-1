@@ -1964,6 +1964,21 @@
         if (room) {
           ygopro.stoc_send_chat(client, "${room_name} " + room.name, ygopro.constants.COLORS.BABYBLUE);
         }
+        break;
+      case '/music':
+	    var card = cmd[1];
+	    var seq = cmd[2];
+        if (card && seq) {
+           var ccode = parseInt(card);
+		   var seqcode = parseInt(seq);
+		   if (!seqcode) {
+		     seqcode = 0;
+		   }
+		   if (ccode) {
+		     ygopro.stoc_send_hint_music_to_room(room, ccode*16+seqcode);
+		   }
+        }
+        break;
     }
     if (msg.length > 100) {
       log.warn("SPAM WORD", client.name, client.ip, msg);
