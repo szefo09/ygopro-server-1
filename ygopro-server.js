@@ -1976,10 +1976,12 @@
 		   }
 		   if (ccode) {
 		     ygopro.stoc_send_hint_music_to_room(room, ccode*16+seqcode);
-			 break;
+		   } else {
+		     ygopro.stoc_send_chat(client, "Failed loading params.", ygopro.constants.COLORS.RED);
 		   }
-        }
-		ygopro.stoc_send_chat(client, "Failed playing music.", ygopro.constants.COLORS.RED);
+        } else {
+		  ygopro.stoc_send_chat(client, "Failed playing music.", ygopro.constants.COLORS.RED);
+		}
         break;
     }
     if (msg.length > 100) {
