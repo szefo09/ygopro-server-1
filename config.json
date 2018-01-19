@@ -38,6 +38,10 @@
       "enabled": true,
       "get": "http://mercury233.me/ygosrv233/dialogues.json"
     },
+    "music": {
+      "enabled": false,
+      "dbpath": "expansions/222DIY.cdb"
+    },
     "random_duel": {
       "enabled": false,
       "no_rematch_check": false,

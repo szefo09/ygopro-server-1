@@ -1776,6 +1776,26 @@
       }
     }, 30000);
   }
+  var music_list = {};
+  if (settings.modules.music.enabled) {
+    var sqlite3 = require('sqlite3').verbose();
+	var db=new sqlite3.Database("./ygopro/" + settings.modules.music.dbpath);
+	db.each("select * from datas,texts where datas.id=texts.id", function (err,result) {
+		if (err) {
+			log.info("music load errored", err);
+			return;
+		} else {
+			for (i = 1, len = 16; i <= len; i++) {
+				var song_name = result["str"+i];
+				if (song_name && !music_list[song_name]) {
+					music_list[song_name] = result.id * 16 + i - 1; 
+				}
+			}
+		}
+	}, function() {
+		log.info("music loaded", music_list.length());
+	});
+  }
 
   ygopro.stoc_follow('DUEL_START', false, function(buffer, info, client, server) {
     var deck_arena, deck_name, deck_text, j, len, player, ref, room;
@@ -1966,22 +1986,16 @@
         }
         break;
       case '/music':
-	    var card = cmd[1];
-	    var seq = cmd[2];
-        if (card && seq) {
-           var ccode = parseInt(card);
-		   var seqcode = parseInt(seq);
-		   if (!seqcode) {
-		     seqcode = 0;
-		   }
-		   if (ccode) {
-		     ygopro.stoc_send_hint_music_to_room(room, ccode*16+seqcode);
-		   } else {
-		     ygopro.stoc_send_chat(client, "Failed loading params.", ygopro.constants.COLORS.RED);
-		   }
-        } else {
-		  ygopro.stoc_send_chat(client, "Failed playing music.", ygopro.constants.COLORS.RED);
-		}
+	    var music = cmd[1];
+        if (settings.modules.music.enabled && music) {
+		  var music_id = music_list[music];
+          if (music_id) {
+            ygopro.stoc_send_hint_music_to_room(room, music_id);
+			ygopro.stoc_send_chat_to_room(room, "Playing "+music+" sent by "+client.name+".", ygopro.constants.COLORS.BABYBLUE);
+          } else {
+            ygopro.stoc_send_chat(client, "Music "+music+" not found.", ygopro.constants.COLORS.RED);
+          }
+        }
         break;
     }
     if (msg.length > 100) {
