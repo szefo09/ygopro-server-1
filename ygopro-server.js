@@ -1571,6 +1571,16 @@
         ygopro.stoc_send_chat_to_room(room, "${lp_low_self}", ygopro.constants.COLORS.PINK);
       }
     }
+    if (settings.modules.music.enabled) {
+      if (ygopro.constants.MSG[msg] === 'HINT') {
+	    var hint_type = buffer.readUInt8(1);
+        pos = buffer.readUInt8(2);
+		var music_id = buffer.readUInt32LE(3);
+        if (hint_type === 11 && music_list_rev[music_id])
+		  ygopro.stoc_send_chat(client, "${play_music}"+music_list_rev[music_id], ygopro.constants.COLORS.BABYBLUE);
+        }
+      }
+    }
     if (settings.modules.dialogues.enabled) {
       if (ygopro.constants.MSG[msg] === 'SUMMONING' || ygopro.constants.MSG[msg] === 'SPSUMMONING') {
         card = buffer.readUInt32LE(1);
@@ -1777,10 +1787,11 @@
     }, 30000);
   }
   var music_list = {};
+  var music_list_rev = {};
+  var music_count = 0;
   if (settings.modules.music.enabled) {
     var sqlite3 = require('sqlite3').verbose();
 	var db=new sqlite3.Database("./ygopro/" + settings.modules.music.dbpath);
-	var count = 0;
 	db.each("select * from datas,texts where datas.id=texts.id", function (err,result) {
 		if (err) {
 			log.info("music load errored", err);
@@ -1788,14 +1799,18 @@
 		} else {
 			for (i = 1, len = 16; i <= len; i++) {
 				var song_name = result["str"+i];
-				if (song_name && !music_list[song_name]) {
-					music_list[song_name] = result.id * 16 + i - 1;
-					count++;
+				if (song_name) {
+					var music_id = result.id * 16 + i - 1;
+					music_list_rev[music_id] = song_name;
+					if (!music_list[song_name]) {
+						music_list[song_name] = music_id;
+						music_count++;
+					}
 				}
 			}
 		}
 	}, function() {
-		log.info("music loaded", count);
+		log.info("music loaded", music_count);
 	});
   }
 
@@ -1992,13 +2007,15 @@
         if (settings.modules.music.enabled && music) {
 		  if (music === "stop") {
 		    ygopro.stoc_send_hint_music_to_room(room, 0);
-			ygopro.stoc_send_chat_to_room(room, "Music stopped by "+client.name+".", ygopro.constants.COLORS.BABYBLUE);
+			ygopro.stoc_send_chat_to_room(room, "${play_music}"+music, ygopro.constants.COLORS.BABYBLUE);
+			ygopro.stoc_send_chat_to_room(room, "${stop_music_user}"+client.name, ygopro.constants.COLORS.BABYBLUE);
 			break;
 		  }
 		  var music_id = music_list[music];
           if (music_id) {
             ygopro.stoc_send_hint_music_to_room(room, music_id);
-			ygopro.stoc_send_chat_to_room(room, "Playing "+music+" sent by "+client.name+".", ygopro.constants.COLORS.BABYBLUE);
+			ygopro.stoc_send_chat_to_room(room, "${play_music}"+music, ygopro.constants.COLORS.BABYBLUE);
+			ygopro.stoc_send_chat_to_room(room, "${play_music_user}"+client.name, ygopro.constants.COLORS.BABYBLUE);
           } else {
             ygopro.stoc_send_chat(client, "Music "+music+" not found.", ygopro.constants.COLORS.RED);
           }
