@@ -1780,6 +1780,7 @@
   if (settings.modules.music.enabled) {
     var sqlite3 = require('sqlite3').verbose();
 	var db=new sqlite3.Database("./ygopro/" + settings.modules.music.dbpath);
+	var count = 0;
 	db.each("select * from datas,texts where datas.id=texts.id", function (err,result) {
 		if (err) {
 			log.info("music load errored", err);
@@ -1788,12 +1789,13 @@
 			for (i = 1, len = 16; i <= len; i++) {
 				var song_name = result["str"+i];
 				if (song_name && !music_list[song_name]) {
-					music_list[song_name] = result.id * 16 + i - 1; 
+					music_list[song_name] = result.id * 16 + i - 1;
+					count++;
 				}
 			}
 		}
 	}, function() {
-		log.info("music loaded", music_list.length());
+		log.info("music loaded", count);
 	});
   }
 
