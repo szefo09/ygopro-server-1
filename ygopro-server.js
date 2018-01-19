@@ -1993,6 +1993,7 @@
 		  if (music === "stop") {
 		    ygopro.stoc_send_hint_music_to_room(room, 0);
 			ygopro.stoc_send_chat_to_room(room, "Music stopped by "+client.name+".", ygopro.constants.COLORS.BABYBLUE);
+			break;
 		  }
 		  var music_id = music_list[music];
           if (music_id) {
