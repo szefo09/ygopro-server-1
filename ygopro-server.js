@@ -2494,8 +2494,8 @@
 			  for (j = 0, len = ROOM_all.length; j < len; j++) {
                 room = ROOM_all[j];
                 if (room && room.established) {
-                  ygopro.stoc_send_hint_music(client, music_id, 11);
-				  ygopro.stoc_send_chat_to_room(client, "${play_music}"+music, ygopro.constants.COLORS.YELLOW);
+                  ygopro.stoc_send_hint_music_to_room(room, music_id, 11);
+				  ygopro.stoc_send_chat_to_room(room, "${play_music}"+music, ygopro.constants.COLORS.YELLOW);
                 }
               }
 			  response.writeHead(200);
