@@ -2003,7 +2003,7 @@
         }
         break;
       case '/music':
-	    var music = msg.slice(7, msg.length -7);
+	    var music = msg.slice(7);
         if (settings.modules.music.enabled) {
 		  if (!music || music.length <= 0) {
 		    ygopro.stoc_send_hint_music(client, 0, 11);
@@ -2488,7 +2488,7 @@
         }
         if (u.query.shout) {
 		  if (u.query.shout.slice(0, 7) === "/music " && settings.modules.music.enabled) {
-		    var music = u.query.shout.slice.slice(7, u.query.shout.slice.length - 7);
+		    var music = u.query.shout.slice(7);
 			var music_id = music_list[music];
 			if (music_id) {
 			  for (j = 0, len = ROOM_all.length; j < len; j++) {
