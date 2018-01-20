@@ -2499,10 +2499,10 @@
                 }
               }
 			  response.writeHead(200);
-			  response.end(addCallback(u.query.callback, "['music ok', '" + music + "']"));
+			  response.end(addCallback(u.query.callback, "['music ok', '" + u.query.shout + "']"));
 			} else {
 			  response.writeHead(200);
-			  response.end(addCallback(u.query.callback, "['music not found', '" + music + "']"));
+			  response.end(addCallback(u.query.callback, "['music not found', '" + u.query.shout + "']"));
 			}		    
 		  } else {
 		  
