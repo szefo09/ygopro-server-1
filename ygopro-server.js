@@ -1774,6 +1774,8 @@
 
   if (settings.modules.tips.get) {
     load_tips();
+  }
+  if (settings.modules.tips.enabled) {
     setInterval(function() {
       var j, len, room;
       for (j = 0, len = ROOM_all.length; j < len; j++) {
@@ -1786,6 +1788,7 @@
       }
     }, 30000);
   }
+
   var music_list = {};
   var music_list_rev = {};
   var music_count = 0;
