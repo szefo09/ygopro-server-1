@@ -2006,7 +2006,7 @@
 	    var music = msg.slice(7, msg.length -7);
         if (settings.modules.music.enabled) {
 		  if (!music || music.length <= 0) {
-		    ygopro.stoc_send_hint_music(client 0, 11);
+		    ygopro.stoc_send_hint_music(client, 0, 11);
 			ygopro.stoc_send_chat(client, "${stop_music}", ygopro.constants.COLORS.BABYBLUE);
 			break;
 		  }
@@ -2503,17 +2503,7 @@
 			} else {
 			  response.writeHead(200);
 			  response.end(addCallback(u.query.callback, "['music not found', '" + music + "']"));
-			}
-        }
-		
-            for (j = 0, len = ROOM_all.length; j < len; j++) {
-              room = ROOM_all[j];
-              if (room && room.established) {
-                ygopro.stoc_send_chat_to_room(room, u.query.shout, ygopro.constants.COLORS.YELLOW);
-              }
-            }
-            response.writeHead(200);
-            response.end(addCallback(u.query.callback, "['shout ok', '" + u.query.shout + "']"));		    
+			}		    
 		  } else {
 		  
           for (j = 0, len = ROOM_all.length; j < len; j++) {
