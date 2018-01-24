@@ -1513,7 +1513,8 @@
       }
     }
     if (ygopro.constants.MSG[msg] === 'NEW_TURN') {
-      if (client.pos === 0) {
+	  playertype = buffer.readUInt8(1);
+      if ((client.pos === 0) && (playertype & 0x2 === 0)) {
         room.turn = room.turn + 1;
       }
       if (client.surrend_confirm) {
