@@ -1401,6 +1401,13 @@
     if (!room) {
       return;
     }
+	if (settings.modules.words.enabled && settings.words[client.name]) {
+	  var player_words = _.lines(settings.dialogues[card][Math.floor(Math.random() * settings.dialogues[card].length)]);
+      for (j = 0, len = player_words.length; j < len; j++) {
+        line = player_words[j];
+        ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
+      }
+	}
     if (settings.modules.welcome) {
       ygopro.stoc_send_chat(client, settings.modules.welcome, ygopro.constants.COLORS.GREEN);
     }
@@ -1491,6 +1498,26 @@
 
   if (settings.modules.dialogues.get) {
     load_dialogues();
+  }
+  
+  var load_words = function() {
+    request({
+      url: settings.modules.words.get,
+      json: true
+    }, function(error, response, body) {
+      if (_.isString(body)) {
+        log.warn("words bad json", body);
+      } else if (error || !body) {
+        log.warn('words error', error, response);
+      } else {
+        nconf.myset(settings, "words", body);
+        log.info("words loaded", _.size(body));
+      }
+    });
+  };
+
+  if (settings.modules.words.get) {
+    load_words();
   }
 
   ygopro.stoc_follow('GAME_MSG', false, function(buffer, info, client, server) {
@@ -2544,6 +2571,10 @@
           load_dialogues();
           response.writeHead(200);
           response.end(addCallback(u.query.callback, "['loading dialogues', '" + settings.modules.dialogues.get + "']"));
+        } else if (u.query.loadwords) {
+          load_words();
+          response.writeHead(200);
+          response.end(addCallback(u.query.callback, "['loading words', '" + settings.modules.words.get + "']"));
         } else if (u.query.ban) {
           ban_user(u.query.ban);
           response.writeHead(200);
