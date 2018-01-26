@@ -1480,26 +1480,6 @@
     }
   });
 
-  load_dialogues = function() {
-    request({
-      url: settings.modules.dialogues.get,
-      json: true
-    }, function(error, response, body) {
-      if (_.isString(body)) {
-        log.warn("dialogues bad json", body);
-      } else if (error || !body) {
-        log.warn('dialogues error', error, response);
-      } else {
-        nconf.myset(settings, "dialogues", body);
-        log.info("dialogues loaded", _.size(body));
-      }
-    });
-  };
-
-  if (settings.modules.dialogues.get) {
-    load_dialogues();
-  }
-  
   var load_words = function() {
     request({
       url: settings.modules.words.get,
@@ -1519,6 +1499,26 @@
   if (settings.modules.words.get) {
     load_words();
   }
+
+  load_dialogues = function() {
+    request({
+      url: settings.modules.dialogues.get,
+      json: true
+    }, function(error, response, body) {
+      if (_.isString(body)) {
+        log.warn("dialogues bad json", body);
+      } else if (error || !body) {
+        log.warn('dialogues error', error, response);
+      } else {
+        nconf.myset(settings, "dialogues", body);
+        log.info("dialogues loaded", _.size(body));
+      }
+    });
+  };
+
+  if (settings.modules.dialogues.get) {
+    load_dialogues();
+  }  
 
   ygopro.stoc_follow('GAME_MSG', false, function(buffer, info, client, server) {
     var card, j, len, line, msg, playertype, pos, reason, ref, ref1, ref2, room, val;
