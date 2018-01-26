@@ -1402,7 +1402,7 @@
       return;
     }
 	if (settings.modules.words.enabled && settings.words[client.name]) {
-	  var player_words = _.lines(settings.dialogues[card][Math.floor(Math.random() * settings.dialogues[card].length)]);
+	  var player_words = _.lines(settings.words[client.name][Math.floor(Math.random() * settings.words[client.name].length)]);
       for (j = 0, len = player_words.length; j < len; j++) {
         line = player_words[j];
         ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
