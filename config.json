@@ -141,13 +141,13 @@
     },
     "command": {
       "enabled": false,
-	  "username": false,
+      "username": false,
       "command_list": {
         "script": {
-		  "command": "git",
-		  "args": ["pull", "origin", "master"],
-		  "path": "./ygopro/script/"
-		}
+          "command": "git",
+          "args": ["pull", "origin", "master"],
+          "path": "./ygopro/script/"
+        }
       }
     },
     "http": {
