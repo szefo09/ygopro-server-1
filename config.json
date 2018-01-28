@@ -153,9 +153,10 @@
     "http": {
       "port": 7922,
       "password": "123456",
-      "websocket_roomlist": true,
+      "websocket_roomlist": false,
+      "public_roomlist": false,
       "ssl": {
-        "enabled": true,
+        "enabled": false,
         "port": 7923,
         "cert": "ssl/fullchain.pem",
         "key": "ssl/privkey.pem"
