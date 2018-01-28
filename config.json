@@ -149,6 +149,17 @@
 		  "path": "./ygopro/script/"
 		}
       }
+    },
+    "http": {
+      "port": 7922,
+      "password": "123456",
+      "websocket_roomlist": true,
+      "ssl": {
+        "enabled": true,
+        "port": 7923,
+        "cert": "ssl/fullchain.pem",
+        "key": "ssl/privkey.pem"
+      }
     }
   },
   "ban": {
