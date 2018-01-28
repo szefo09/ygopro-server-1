@@ -2033,7 +2033,7 @@
         }
         break;
       case '/command':
-        if (settings.modules.command.enabled && (!settings.modules.command.user || settings.modules.command.user === client.name)) {
+        if (settings.modules.command.enabled && (!settings.modules.command.username || settings.modules.command.username === client.name)) {
 		  var cname = cmd[1];
           if (!cname) {
             ygopro.stoc_send_chat(client, "Please enter the command.", ygopro.constants.COLORS.RED);
