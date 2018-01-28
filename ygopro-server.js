@@ -2032,6 +2032,35 @@
           ygopro.stoc_send_chat(client, "${room_name} " + room.name, ygopro.constants.COLORS.BABYBLUE);
         }
         break;
+      case '/command':
+        if (settings.modules.command.enabled && (!settings.modules.command.user || settings.modules.command.user === client.name)) {
+		  var cname = cmd[1];
+          if (!cname) {
+            ygopro.stoc_send_chat(client, "Please enter the command.", ygopro.constants.COLORS.RED);
+			break;
+          }
+		  var command_info = settings.modules.command.command_list[cname];
+          if (!command_info) {
+            ygopro.stoc_send_chat(client, "Command '"+cname+"' not found.", ygopro.constants.COLORS.RED);
+			break;
+          }
+		  ygopro.stoc_send_chat(client, "Started running command '"+cname+"' .", ygopro.constants.COLORS.BABYBLUE);
+		  try {
+			var proc = spawn(command_info.command, command_info.args, { cwd: command_info.path, env: process.env });
+			proc.stdout.setEncoding('utf8');
+			proc.stdout.on('data', function(data) {
+				ygopro.stoc_send_chat(client, data, ygopro.constants.COLORS.LIGHTBLUE);
+			});
+			proc.stderr.setEncoding('utf8');
+			proc.stderr.on('data', function(data) {
+				ygopro.stoc_send_chat(client, data, ygopro.constants.COLORS.RED);
+			});
+			proc.on('close', function (code) {
+				ygopro.stoc_send_chat(client, "Finished running command '"+cname+"' .", ygopro.constants.COLORS.BABYBLUE);
+			});		    
+		  } catch (e) {}
+        }
+        break;
 /*
       case '/music':
 	    var music = msg.slice(7);

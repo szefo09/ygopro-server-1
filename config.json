@@ -139,16 +139,15 @@
         }
       ]
     },
-    "http": {
-      "port": 7922,
-      "password": "123456",
-      "websocket_roomlist": false,
-      "public_roomlist": false,
-      "ssl": {
-        "enabled": false,
-        "port": 7923,
-        "cert": "ssl/fullchain.pem",
-        "key": "ssl/privkey.pem"
+    "command": {
+      "enabled": false,
+	  "username": false,
+      "command_list": {
+        "script": {
+		  "command": "git",
+		  "args": ["pull", "origin", "master"],
+		  "path": "./ygopro/script/"
+		}
       }
     }
   },
