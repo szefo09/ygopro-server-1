@@ -141,7 +141,10 @@
     },
     "command": {
       "enabled": false,
-      "username": false,
+      "identity": {
+        "username1": "password1",
+        "username1": "password2",
+      },
       "command_list": {
         "script": {
           "command": "git",
