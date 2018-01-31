@@ -2361,7 +2361,7 @@
               var push_data = {
                 username: client.name,
                 position: client.pos
-              },
+              };
               if (settings.modules.tournament_mode.show_ip) {
                 push_data.username = client.name + " (" + client.ip + ")";
               }

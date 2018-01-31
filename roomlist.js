@@ -27,7 +27,7 @@
           var push_data = {
             username: client.name,
             position: client.pos
-          },
+          };
           if (settings.modules.http.show_ip) {
             push_data.username = client.name + " (" + client.ip + ")";
           }
