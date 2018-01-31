@@ -2358,10 +2358,14 @@
             results = [];
             for (k = 0, len1 = ref1.length; k < len1; k++) {
               player = ref1[k];
-              results.push({
-                name: player.name,
-                winner: player.pos === room.winner
-              });
+              var push_data = {
+                username: client.name,
+                position: client.pos
+              },
+              if (settings.modules.tournament_mode.show_ip) {
+                push_data.username = client.name + " (" + client.ip + ")";
+              }
+              results.push(push_data);
             }
             return results;
           })()

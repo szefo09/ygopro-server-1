@@ -24,10 +24,14 @@
         results = [];
         for (i = 0, len = ref.length; i < len; i++) {
           client = ref[i];
-          results.push({
+          var push_data = {
             username: client.name,
             position: client.pos
-          });
+          },
+          if (settings.modules.http.show_ip) {
+            push_data.username = client.name + " (" + client.ip + ")";
+          }
+          results.push(push_data);
         }
         return results;
       })(),
