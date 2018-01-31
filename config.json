@@ -94,7 +94,7 @@
       "deck_path": "./decks/",
       "replay_safe": true,
       "replay_path": "./replays/",
-	  "show_ip": false,
+      "show_ip": false,
       "duel_log": [],
       "password": "123456",
       "port": 7933
