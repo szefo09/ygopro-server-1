@@ -2495,10 +2495,14 @@
                       results1 = [];
                       for (k = 0, len1 = ref.length; k < len1; k++) {
                         player = ref[k];
+                        var cname = player.name;
+                        if (settings.modules.http.show_ip) {
+                          cname = player.name + " (" + player.ip + ")";
+                        }
                         if (player.pos != null) {
                           results1.push({
                             id: (-1).toString(),
-                            name: player.name,
+                            name: cname,
                             pos: player.pos
                           });
                         }
