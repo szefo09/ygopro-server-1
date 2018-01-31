@@ -2496,7 +2496,7 @@
                       for (k = 0, len1 = ref.length; k < len1; k++) {
                         player = ref[k];
                         var cname = player.name;
-                        if (settings.modules.http.show_ip) {
+                        if (settings.modules.http.show_ip && pass_validated) {
                           cname = player.name + " (" + player.ip + ")";
                         }
                         if (player.pos != null) {
