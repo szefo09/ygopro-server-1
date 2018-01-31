@@ -24,12 +24,8 @@
         results = [];
         for (i = 0, len = ref.length; i < len; i++) {
           client = ref[i];
-          var cname = client.name;
-          if (settings.modules.http.show_ip) {
-            cname = client.name + " (" + client.ip + ")";
-          }
           results.push({
-            username: cname,
+            username: client.name,
             position: client.pos
           });
         }
