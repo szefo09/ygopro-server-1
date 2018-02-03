@@ -147,9 +147,70 @@
         "username1": "password2"
       },
       "command_list": {
+        "ygopro": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "./ygopro/"
+        },
+        "make": {
+          "command": "make",
+          "args": [
+            "config=release"
+          ],
+          "path": "./ygopro/build/"
+        },
+        "srvpro": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "."
+        },
+        "windbot": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "/home/windbot/"
+        },
+        "buildbot": {
+          "command": "xbuild",
+          "args": [
+            "/property:Configuration=Release"
+          ],
+          "path": "/home/windbot/"
+        },
+        "restartbot": {
+          "command": "pm2",
+          "args": [
+            "restart",
+            "windbot-server"
+          ],
+          "path": "."
+        },
+        "restart": {
+          "command": "pm2",
+          "args": [
+            "restart",
+            "ygopro-server"
+          ],
+          "path": "."
+        },
         "script": {
           "command": "git",
-          "args": ["pull", "origin", "master"],
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
           "path": "./ygopro/script/"
         }
       }
