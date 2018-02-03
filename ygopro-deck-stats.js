@@ -166,6 +166,9 @@ function output_csv(list,filename) {
     var file=fs.openSync(filename,"w");
     for (var i in list) {
         var card=ALL_CARD_DATAS[i];
+		if (!card) {
+			continue;
+		}
         var card_usage=list[i];
         
         console.log("writing "+card.name);
