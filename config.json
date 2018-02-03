@@ -179,14 +179,14 @@
             "origin",
             "master"
           ],
-          "path": "/home/windbot/"
+          "path": "./windbot/"
         },
         "buildbot": {
           "command": "xbuild",
           "args": [
             "/property:Configuration=Release"
           ],
-          "path": "/home/windbot/"
+          "path": "./windbot/"
         },
         "restartbot": {
           "command": "pm2",
