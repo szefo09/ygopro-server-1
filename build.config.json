@@ -52,7 +52,7 @@
       "hang_timeout": 90
     },
     "cloud_replay": {
-      "enabled": false,
+      "enabled": true,
       "redis_port": 6379,
       "enable_halfway_watch": true
     },
