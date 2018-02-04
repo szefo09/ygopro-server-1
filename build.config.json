@@ -1,0 +1,261 @@
+{
+  "port": 7210,
+  "version": 4924,
+  "hostinfo": {
+    "lflist": 0,
+    "rule": 0,
+    "mode": 0,
+    "comment": "rule: 0=OCGONLY, 1=TCGONLY, 2=OT; mode: 0=SINGLE, 1=MATCH, 2=TAG",
+    "enable_priority": false,
+    "no_check_deck": false,
+    "no_shuffle_deck": false,
+    "start_lp": 8000,
+    "start_hand": 5,
+    "draw_count": 1,
+    "time_limit": 180
+  },
+  "modules": {
+    "welcome": "MyCard YGOPro Server",
+    "update": "请更新游戏版本",
+    "stop": false,
+    "i18n": {
+      "auto_pick": false,
+      "default": "zh-cn",
+      "fallback": "en-us",
+      "map": {
+        "CN": "zh-cn",
+        "HK": "zh-cn",
+        "MO": "zh-cn",
+        "TW": "zh-cn",
+        "KR": "ko-kr"
+      }
+    },
+    "tips": {
+      "enabled": true,
+      "get": false
+    },
+    "dialogues": {
+      "enabled": true,
+      "get": "http://mercury233.me/ygosrv233/dialogues.json"
+    },
+    "words": {
+      "enabled": true,
+      "get": false
+    },
+    "music": {
+      "enabled": false,
+      "dbpath": "expansions/222DIY.cdb"
+    },
+    "random_duel": {
+      "enabled": false,
+      "no_rematch_check": false,
+      "hang_timeout": 90
+    },
+    "cloud_replay": {
+      "enabled": false,
+      "redis_port": 6379,
+      "enable_halfway_watch": true
+    },
+    "windbot": {
+      "enabled": true,
+      "botlist": "./windbot/bots.json",
+      "spawn": false,
+      "port": 2399
+    },
+    "mycard": {
+      "enabled": false,
+      "auth_base_url": "https://ygobbs.com",
+      "auth_database": "postgres://233@233.mycard.moe/233",
+      "auth_key": "233333"
+    },
+    "deck_log": {
+      "enabled": true,
+      "accesskey": "233",
+      "local": "./deck_save/",
+      "post": false,
+      "arena": "233"
+    },
+    "big_brother": {
+      "enabled": false,
+      "accesskey": "233",
+      "post": "https://api.mycard.moe/ygopro/big-brother"
+    },
+    "arena_mode": {
+      "enabled": false,
+      "mode": "entertain",
+      "comment": "mode: athletic / entertain",
+      "accesskey": "233",
+      "post_score": false,
+      "get_score": false
+    },
+    "tournament_mode": {
+      "enabled": false,
+      "deck_check": true,
+      "deck_path": "./decks/",
+      "replay_safe": true,
+      "replay_path": "./replays/",
+      "show_ip": false,
+      "duel_log": [],
+      "password": "Nanahira",
+      "port": 7212
+    },
+    "test_mode": {
+      "watch_public_hand": false,
+      "no_connect_count_limit": false,
+      "no_ban_player": false
+    },
+    "pre_util": {
+      "enabled": false,
+      "port": 7944,
+      "password": "123456",
+      "git_html_path": "../mercury233.github.io/",
+      "html_path": "../mercury233.github.io/ygosrv233/",
+      "html_filename": "pre.html",
+      "git_db_path": "../ygopro-pre-data/",
+      "db_path": "../ygopro-pre-data/unofficial/",
+      "html_img_rel_path": "pre/pics/",
+      "html_img_thumbnail": "thumbnail/",
+      "html_img_thumbnail_suffix": "!thumb",
+      "cdn": {
+        "enabled": false,
+        "exe": "upx",
+        "params": ["sync"],
+        "local": "./ygosrv233",
+        "remote": "/ygosrv233",
+        "pics_remote": "/ygopro/"
+      },
+      "ygopro_path": "../ygopro-pre/",
+      "only_show_dbs": {
+        "news.cdb": true,
+        "pre-release.cdb": true
+        },
+      "html_gits": [
+        {
+          "name": "GitHub",
+          "push": ["push", "origin"]
+        },
+        {
+          "name": "Coding",
+          "push": ["push", "coding", "master:master"]
+        }
+      ]
+    },
+    "command": {
+      "enabled": true,
+      "identity": {
+        "Nanahira": "Halozy"
+      },
+      "command_list": {
+        "ygopro": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "./ygopro/"
+        },
+        "make": {
+          "command": "make",
+          "args": [
+            "config=release"
+          ],
+          "path": "./ygopro/build/"
+        },
+        "srvpro": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "."
+        },
+        "windbot": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "./windbot/"
+        },
+        "buildbot": {
+          "command": "xbuild",
+          "args": [
+            "/property:Configuration=Release"
+          ],
+          "path": "./windbot/"
+        },
+        "restartbot": {
+          "command": "pm2",
+          "args": [
+            "restart",
+            "windbot-server"
+          ],
+          "path": "."
+        },
+        "restart": {
+          "command": "pm2",
+          "args": [
+            "restart",
+            "ygopro-server"
+          ],
+          "path": "."
+        },
+        "script": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "./ygopro/script/"
+        }
+      }
+    },
+    "http": {
+      "port": 7211,
+      "password": "Nanahira",
+      "websocket_roomlist": false,
+      "public_roomlist": false,
+	  "show_ip": false,
+      "ssl": {
+        "enabled": false,
+        "port": 7923,
+        "cert": "ssl/fullchain.pem",
+        "key": "ssl/privkey.pem"
+      }
+    }
+  },
+  "ban": {
+    "banned_user": [],
+    "banned_ip": [],
+    "badword_level0": ["滚", "衮", "操", "草", "艹", "狗", "日", "曰", "妈", "娘", "逼"],
+    "badword_level1": ["傻逼", "鸡巴"],
+    "badword_level2": ["死妈", "草你妈"],
+    "badword_level3": ["迷奸", "仿真枪"],
+    "illegal_id": ["^Lv\\.-*\\d+\\s*(.*)", "^VIP\\.\\d+\\s*(.*)"],
+    "spam_word": ["——"]
+  },
+  "tips": [
+    "欢迎来到本服务器",
+    "本服务器使用萌卡代码搭建"
+  ],
+  "words": {
+    "test1": [
+      "test_word_1"
+    ],
+    "test2": [
+      "test_word_2"
+    ]
+  },
+  "dialogues": {
+    "46986414": [
+      "出来吧，我最强的仆人，黑魔导！"
+    ],
+    "58481572": [
+      "我们来做朋友吧！"
+    ]
+  }
+}
