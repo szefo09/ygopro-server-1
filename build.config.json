@@ -32,7 +32,7 @@
     },
     "tips": {
       "enabled": true,
-      "get": false
+      "get": "http://mycard.moe/tips.json"
     },
     "dialogues": {
       "enabled": true,
