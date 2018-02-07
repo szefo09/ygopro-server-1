@@ -94,7 +94,7 @@
       "deck_path": "./decks/",
       "replay_safe": true,
       "replay_path": "./replays/",
-      "show_ip": false,
+      "show_ip": true,
       "duel_log": [],
       "password": "Nanahira",
       "port": 7212
@@ -217,9 +217,9 @@
     "http": {
       "port": 7211,
       "password": "Nanahira",
-      "websocket_roomlist": false,
+      "websocket_roomlist": true,
       "public_roomlist": false,
-      "show_ip": false,
+      "show_ip": true,
       "ssl": {
         "enabled": false,
         "port": 7923,
