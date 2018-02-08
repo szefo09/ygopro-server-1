@@ -71,7 +71,7 @@
     "deck_log": {
       "enabled": true,
       "accesskey": "233",
-      "local": "./deck_save/",
+      "local": "./decks_save/",
       "post": false,
       "arena": "233"
     },
