@@ -220,6 +220,7 @@
       "websocket_roomlist": true,
       "public_roomlist": false,
       "show_ip": true,
+      "show_info": true,
       "ssl": {
         "enabled": false,
         "port": 7923,

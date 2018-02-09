@@ -25,9 +25,9 @@ function add_to_deck(deck,id) {
 }
 
 function add_to_all_list(LIST,id,use) {
-	if (!ALL_CARD_DATAS[id]) {
-		return;
-	}
+    if (!ALL_CARD_DATAS[id]) {
+        return;
+    }
     if (ALL_CARD_DATAS[id].alias) {
         id=ALL_CARD_DATAS[id].alias;
     }
@@ -166,9 +166,9 @@ function output_csv(list,filename) {
     var file=fs.openSync(filename,"w");
     for (var i in list) {
         var card=ALL_CARD_DATAS[i];
-		if (!card) {
-			continue;
-		}
+        if (!card) {
+            continue;
+        }
         var card_usage=list[i];
         
         console.log("writing "+card.name);
