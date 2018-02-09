@@ -1628,7 +1628,7 @@
     if (!room) {
       return;
     }
-    if (room.arena !== "athletic" || client.ip === "::ffff:127.0.0.1") {
+    if (!room.arena || client.ip === "::ffff:127.0.0.1") {
       return false;
     }
     ref = room.players;
