@@ -47,7 +47,7 @@
       "dbpath": "expansions/222DIY.cdb"
     },
     "random_duel": {
-      "enabled": false,
+      "enabled": true,
       "no_rematch_check": false,
       "hang_timeout": 90
     },
