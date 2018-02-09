@@ -1912,7 +1912,7 @@
         deck_arena = deck_arena + 'custom';
       }
       if (settings.modules.deck_log.local) {
-        deck_name = moment().format('YYYY-MM-DD HH-mm-ss') + ' ' + room.port + ' ' + client.pos + ' ' + client.ip + ' ' + client.name.replace(/[\/\\\?\*]/g, '_');
+        deck_name = moment().format('YYYY-MM-DD HH-mm-ss') + ' ' + room.port + ' ' + client.pos + ' ' + client.ip.slice(7) + ' ' + client.name.replace(/[\/\\\?\*]/g, '_');
         fs.writeFile(settings.modules.deck_log.local + deck_name + '.ydk', deck_text, 'utf-8', function(err) {
           if (err) {
             return log.warn('DECK SAVE ERROR', err);
@@ -2379,8 +2379,8 @@
             for (k = 0, len1 = ref1.length; k < len1; k++) {
               player = ref1[k];
               var cname = player.name;
-              if (settings.modules.tournament_mode.show_ip) {
-                cname = player.name + " (" + player.ip + ")";
+              if (settings.modules.tournament_mode.show_ip && player.ip !== '::ffff:127.0.0.1') {
+                cname = player.name + " (IP: " + player.ip.slice(7) + ")"
               }
               results.push({
                 name: cname,
@@ -2516,9 +2516,12 @@
                       for (k = 0, len1 = ref.length; k < len1; k++) {
                         player = ref[k];
                         var cname = player.name;
-                        if (settings.modules.http.show_ip && pass_validated) {
-                          cname = player.name + " (" + player.ip + ")";
-                        }    
+                        if (settings.modules.http.show_ip && pass_validated && player.ip !== '::ffff:127.0.0.1') {
+                          cname = cname + " (IP: " + player.ip.slice(7) + ")";
+                        }
+                        if (settings.modules.http.show_info && room.started && !(room.hostinfo.mode === 2 && player.pos > 1)) {
+                          cname = cname + " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : 0) + ")";
+                        }						
                         if (player.pos != null) {
                           results1.push({
                             id: (-1).toString(),
@@ -2529,7 +2532,7 @@
                       }
                       return results1;
                     })(),
-                    istart: room.started ? 'start' : 'wait'
+                    istart: room.started ? ((settings.modules.http.show_info) ? ("Turn: " + (room.turn != null ? room.turn : 0)) : 'start') : 'wait'
                   });
                 }
               }
