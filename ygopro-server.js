@@ -2520,7 +2520,7 @@
                           cname = cname + " (IP: " + player.ip.slice(7) + ")";
                         }
                         if (settings.modules.http.show_info && room.started && !(room.hostinfo.mode === 2 && player.pos > 1)) {
-                          cname = cname + " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : 0) + ")";
+                          cname = cname + " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + ")";
                         }						
                         if (player.pos != null) {
                           results1.push({
