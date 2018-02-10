@@ -95,6 +95,7 @@
       "replay_safe": true,
       "replay_path": "./replays/",
       "show_ip": true,
+      "show_info": true,
       "duel_log": [],
       "password": "Nanahira",
       "port": 7212
