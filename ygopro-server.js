@@ -2537,7 +2537,7 @@
                       }
                       return results1;
                     })(),
-                    istart: room.started ? ((settings.modules.http.show_info) ? ("Duel:" + room.duel_count + " Turn: " + (room.turn != null ? room.turn : 0)) : 'start') : 'wait'
+                    istart: room.started ? ((settings.modules.http.show_info) ? ("Duel:" + room.duel_count + " Turn:" + (room.turn != null ? room.turn : 0)) : 'start') : 'wait'
                   });
                 }
               }
