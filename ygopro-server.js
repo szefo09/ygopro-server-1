@@ -448,7 +448,7 @@
       this.random_type = '';
       this.welcome = '';
       this.scores = {};
-	  this.duel_count = 0;
+      this.duel_count = 0;
       ROOM_all.push(this);
       this.hostinfo || (this.hostinfo = JSON.parse(JSON.stringify(settings.hostinfo)));
       if (settings.lflist.length) {
@@ -1538,7 +1538,7 @@
       client.lp = room.hostinfo.start_lp;
       if (client.pos === 0) {
         room.turn = 0;
-		room.duel_count = room.duel_count + 1;
+        room.duel_count = room.duel_count + 1;
       }
     }
     if (ygopro.constants.MSG[msg] === 'NEW_TURN') {
@@ -2370,7 +2370,7 @@
         replay_filename = replay_filename.replace(/[\/\\\?\*]/g, '_') + ".yrp";
         duellog = {
           time: dueltime,
-          name: room.name + (settings.modules.tournament_mode.show_info ? (" (Duel:" + room.duel_count + ")") : ""),
+          name: room.name + (settings.modules.tournament_mode.show_info ? " (Duel:" + room.duel_count + ")" : ""),
           roomid: room.port.toString(),
           cloud_replay_id: "R#" + room.cloud_replay_id,
           replay_filename: replay_filename,
@@ -2380,15 +2380,8 @@
             results = [];
             for (k = 0, len1 = ref1.length; k < len1; k++) {
               player = ref1[k];
-              var cname = player.name;
-              if (settings.modules.tournament_mode.show_ip && player.ip !== '::ffff:127.0.0.1') {
-                cname = player.name + " (IP: " + player.ip.slice(7) + ")";
-              }
-              if (settings.modules.http.show_info && room.started && !(room.hostinfo.mode === 2 && player.pos > 1)) {
-                cname = cname + " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + ")";
-              }
               results.push({
-                name: cname,
+                name: player.name + (settings.modules.tournament_mode.show_ip && player.ip !== '::ffff:127.0.0.1' ? " (IP: " + player.ip.slice(7) + ")" : "") + (settings.modules.tournament_mode.show_info && !(room.hostinfo.mode === 2 && player.pos > 1) ? " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + ")" : ""),
                 winner: player.pos === room.winner
               });
             }
@@ -2519,18 +2512,11 @@
                       ref = room.players;
                       results1 = [];
                       for (k = 0, len1 = ref.length; k < len1; k++) {
-                        player = ref[k];
-                        var cname = player.name;
-                        if (settings.modules.http.show_ip && pass_validated && player.ip !== '::ffff:127.0.0.1') {
-                          cname = cname + " (IP: " + player.ip.slice(7) + ")";
-                        }
-                        if (settings.modules.http.show_info && room.started && !(room.hostinfo.mode === 2 && player.pos > 1)) {
-                          cname = cname + " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + ")";
-                        }						
+                        player = ref[k];						
                         if (player.pos != null) {
                           results1.push({
                             id: (-1).toString(),
-                            name: cname,
+                            name: player.name + (settings.modules.http.show_ip && pass_validated && player.ip !== '::ffff:127.0.0.1' ? " (IP: " + player.ip.slice(7) + ")" : "") + (settings.modules.http.show_info && room.started && !(room.hostinfo.mode === 2 && player.pos > 1) ? " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + ")" : ""),
                             pos: player.pos
                           });
                         }
