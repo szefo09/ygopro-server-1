@@ -32,7 +32,7 @@
     },
     "tips": {
       "enabled": true,
-      "get": "https://github.com/purerosefallen/ygopro-tips/raw/master/tips.json"
+      "get": "https://purerosefallen.github.io/ygopro-tips/tips.json"
     },
     "dialogues": {
       "enabled": true,
