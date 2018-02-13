@@ -313,6 +313,7 @@ class Room
     @welcome = ''
     @scores = {}
     @duel_count = 0
+    @death = 0
     @dueling = false
     ROOM_all.push this
 
@@ -2036,7 +2037,9 @@ if settings.modules.http
         response.end(addCallback(u.query.callback, "['ban ok', '" + u.query.ban + "']"))
 
       else if u.query.death
-        for room in ROOM_all when room and room.established and room.started and !room.death and (u.query.death == "all" or u.query.death == room.name.split('$', 2)[0])
+        death_room_found = false
+        for room in ROOM_all when room and room.established and room.started and !room.death and (u.query.death == "all" or u.query.death == room.port.toString())
+          death_room_found = true
           if room.dueling
             room.death = (if room.turn then room.turn + 4 else 5)
             ygopro.stoc_send_chat_to_room(room, "${death_start}", ygopro.constants.COLORS.BABYBLUE)   
@@ -2044,14 +2047,22 @@ if settings.modules.http
             room.death = -1
             ygopro.stoc_send_chat_to_room(room, "${death_start_siding}", ygopro.constants.COLORS.BABYBLUE)			
         response.writeHead(200)
-        response.end(addCallback(u.query.callback, "['death ok', '" + u.query.death + "']"))
+        if death_room_found
+          response.end(addCallback(u.query.callback, "['death ok', '" + u.query.death + "']"))
+        else
+          response.end(addCallback(u.query.callback, "['room not found', '" + u.query.death + "']"))
 
       else if u.query.deathcancel
-        for room in ROOM_all when room and room.established and room.started and room.death and (u.query.death == "all" or u.query.death == room.name.split('$', 2)[0])
+        death_room_found = false
+        for room in ROOM_all when room and room.established and room.started and room.death and (u.query.deathcancel == "all" or u.query.deathcancel == room.port.toString())
+          death_room_found = true
           room.death = 0
           ygopro.stoc_send_chat_to_room(room, "${death_cancel}", ygopro.constants.COLORS.BABYBLUE)         
         response.writeHead(200)
-        response.end(addCallback(u.query.callback, "['death cancel ok', '" + u.query.deathcancel + "']"))
+        if death_room_found
+          response.end(addCallback(u.query.callback, "['death cancel ok', '" + u.query.deathcancel + "']"))
+        else
+          response.end(addCallback(u.query.callback, "['room not found', '" + u.query.deathcancel + "']"))
 
       else
         response.writeHead(400)

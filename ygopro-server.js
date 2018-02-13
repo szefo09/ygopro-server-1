@@ -433,6 +433,7 @@
       this.welcome = '';
       this.scores = {};
       this.duel_count = 0;
+      this.death = 0;
       this.dueling = false;
       ROOM_all.push(this);
       this.hostinfo || (this.hostinfo = JSON.parse(JSON.stringify(settings.hostinfo)));
@@ -2374,7 +2375,7 @@
       return callback + "( " + text + " );";
     };
     requestListener = function(request, response) {
-      var archive_args, archive_name, archive_process, duellog, error, filename, getpath, j, k, l, len, len1, len2, len3, m, parseQueryString, pass_validated, player, ref, replay, room, roomsjson, u;
+      var archive_args, archive_name, archive_process, death_room_found, duellog, error, filename, getpath, j, k, l, len, len1, len2, len3, m, parseQueryString, pass_validated, player, ref, replay, room, roomsjson, u;
       parseQueryString = true;
       u = url.parse(request.url, parseQueryString);
       pass_validated = u.query.pass === settings.modules.http.password;
@@ -2566,31 +2567,44 @@
           response.writeHead(200);
           response.end(addCallback(u.query.callback, "['ban ok', '" + u.query.ban + "']"));
         } else if (u.query.death) {
+          death_room_found = false;
           for (l = 0, len2 = ROOM_all.length; l < len2; l++) {
             room = ROOM_all[l];
-            if (room && room.established && room.started && !room.death && (u.query.death === "all" || u.query.death === room.name.split('$', 2)[0])) {
-              if (room.dueling) {
-                room.death = (room.turn ? room.turn + 4 : 5);
-                ygopro.stoc_send_chat_to_room(room, "${death_start}", ygopro.constants.COLORS.BABYBLUE);
-              } else {
-                room.death = -1;
-                ygopro.stoc_send_chat_to_room(room, "${death_start_siding}", ygopro.constants.COLORS.BABYBLUE);
-              }
+            if (!(room && room.established && room.started && !room.death && (u.query.death === "all" || u.query.death === room.port.toString()))) {
+              continue;
+            }
+            death_room_found = true;
+            if (room.dueling) {
+              room.death = (room.turn ? room.turn + 4 : 5);
+              ygopro.stoc_send_chat_to_room(room, "${death_start}", ygopro.constants.COLORS.BABYBLUE);
+            } else {
+              room.death = -1;
+              ygopro.stoc_send_chat_to_room(room, "${death_start_siding}", ygopro.constants.COLORS.BABYBLUE);
             }
           }
           response.writeHead(200);
-          response.end(addCallback(u.query.callback, "['death ok', '" + u.query.death + "']"));
+          if (death_room_found) {
+            response.end(addCallback(u.query.callback, "['death ok', '" + u.query.death + "']"));
+          } else {
+            response.end(addCallback(u.query.callback, "['room not found', '" + u.query.death + "']"));
+          }
         } else if (u.query.deathcancel) {
+          death_room_found = false;
           for (m = 0, len3 = ROOM_all.length; m < len3; m++) {
             room = ROOM_all[m];
-            if (!(room && room.established && room.started && room.death && (u.query.death === "all" || u.query.death === room.name.split('$', 2)[0]))) {
+            if (!(room && room.established && room.started && room.death && (u.query.deathcancel === "all" || u.query.deathcancel === room.port.toString()))) {
               continue;
             }
+            death_room_found = true;
             room.death = 0;
             ygopro.stoc_send_chat_to_room(room, "${death_cancel}", ygopro.constants.COLORS.BABYBLUE);
           }
           response.writeHead(200);
-          response.end(addCallback(u.query.callback, "['death cancel ok', '" + u.query.deathcancel + "']"));
+          if (death_room_found) {
+            response.end(addCallback(u.query.callback, "['death cancel ok', '" + u.query.deathcancel + "']"));
+          } else {
+            response.end(addCallback(u.query.callback, "['room not found', '" + u.query.deathcancel + "']"));
+          }
         } else {
           response.writeHead(400);
           response.end();
