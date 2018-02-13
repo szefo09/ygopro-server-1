@@ -1280,7 +1280,7 @@ ygopro.stoc_follow 'GAME_MSG', false, (buffer, info, client, server)->
     reason = buffer.readUInt8(2)
     room.siding = true
     if room.death
-	  room.death = -1
+      room.death = -1
     #log.info {winner: pos, reason: reason}
     #room.duels.push {winner: pos, reason: reason}
     room.winner = pos
