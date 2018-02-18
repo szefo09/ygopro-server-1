@@ -1931,16 +1931,18 @@ if settings.modules.http
         response.writeHead(403)
         response.end("Invalid password.")
         return
-      else if !settings.modules.tournament_mode.duel_log.size
-        response.writeHead(403)
-        response.end("Duel logs not found.")
-        return
       else
         try
           archive_name = moment().format('YYYY-MM-DD HH:mm:ss') + ".zip"
           archive_args = ["a", "-mx0", "-y", archive_name]
+          check = false
           for replay in settings.modules.tournament_mode.duel_log
+            check = true
             archive_args.push(replay.replay_filename)
+          if !check
+            response.writeHead(403)
+            response.end("Duel logs not found.")
+            return
           archive_process = spawn settings.modules.tournament_mode.replay_archive_tool, archive_args, {cwd: settings.modules.tournament_mode.replay_path}
           archive_process.on 'error', (err)=>
             response.writeHead(403)
