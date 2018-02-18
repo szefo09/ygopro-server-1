@@ -1250,6 +1250,11 @@ ygopro.stoc_follow 'GAME_MSG', false, (buffer, info, client, server)->
     if client.pos == 0
       room.turn = 0
       room.duel_count = room.duel_count + 1
+      if room.death and room.duel_count > 1
+        if room.death == -1
+          ygopro.stoc_send_chat_to_room(room, "${death_start_final}", ygopro.constants.COLORS.BABYBLUE)
+        else
+          ygopro.stoc_send_chat_to_room(room, "${death_start_extra}", ygopro.constants.COLORS.BABYBLUE)
 
   #ygopro.stoc_send_chat_to_room(room, "LP跟踪调试信息: #{client.name} 初始LP #{client.lp}")
 
@@ -2040,7 +2045,7 @@ if settings.modules.http
         death_room_found = false
         for room in ROOM_all when room and room.established and room.started and !room.death and (u.query.death == "all" or u.query.death == room.port.toString())
           death_room_found = true
-          if !room.changing_side
+          if !room.changing_side and (!room.duel_count or room.turn)
             room.death = (if room.turn then room.turn + 4 else 5)
             ygopro.stoc_send_chat_to_room(room, "${death_start}", ygopro.constants.COLORS.BABYBLUE)   
           else
