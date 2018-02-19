@@ -75,9 +75,9 @@
     }
     if (oldconfig.words) {
       oldwords = {};
-      olddialogues.file = './config/words.json';
-      olddialogues.words = oldconfig.words;
-      fs.writeFileSync(olddialogues.file, JSON.stringify(oldwords, null, 2));
+      oldwords.file = './config/words.json';
+      oldwords.words = oldconfig.words;
+      fs.writeFileSync(oldwords.file, JSON.stringify(oldwords, null, 2));
       delete oldconfig.words;
     }
     if (oldconfig.dialogues) {
