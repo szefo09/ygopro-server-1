@@ -1,6 +1,7 @@
 {
-  "port": 7911,
-  "version": 4924,
+  "file": "./config/config.json",
+  "port": 7210,
+  "version": 4930,
   "hostinfo": {
     "lflist": 0,
     "rule": 0,
@@ -15,7 +16,7 @@
     "time_limit": 180
   },
   "modules": {
-    "welcome": "MyCard YGOPro Server",
+    "welcome": "YGOPro Server by Koishi",
     "update": "请更新游戏版本",
     "stop": false,
     "i18n": {
@@ -32,14 +33,14 @@
     },
     "tips": {
       "enabled": true,
-      "get": false
+      "get": "https://purerosefallen.github.io/ygopro-tips/tips.json"
     },
     "dialogues": {
       "enabled": true,
       "get": "http://mercury233.me/ygosrv233/dialogues.json"
     },
     "words": {
-      "enabled": true,
+      "enabled": false,
       "get": false
     },
     "music": {
@@ -47,17 +48,17 @@
       "dbpath": "expansions/222DIY.cdb"
     },
     "random_duel": {
-      "enabled": false,
+      "enabled": true,
       "no_rematch_check": false,
       "hang_timeout": 90
     },
     "cloud_replay": {
-      "enabled": false,
+      "enabled": true,
       "redis_port": 6379,
       "enable_halfway_watch": true
     },
     "windbot": {
-      "enabled": false,
+      "enabled": true,
       "botlist": "./windbot/bots.json",
       "spawn": false,
       "port": 2399
@@ -95,11 +96,11 @@
       "replay_safe": true,
       "replay_path": "./replays/",
       "replay_archive_tool": "7z",
-      "show_ip": false,
+      "show_ip": true,
       "show_info": true,
       "duel_log": [],
-      "password": "123456",
-      "port": 7933
+      "password": "Nanahira",
+      "port": 7212
     },
     "test_mode": {
       "watch_public_hand": false,
@@ -121,7 +122,9 @@
       "cdn": {
         "enabled": false,
         "exe": "upx",
-        "params": ["sync"],
+        "params": [
+          "sync"
+        ],
         "local": "./ygosrv233",
         "remote": "/ygosrv233",
         "pics_remote": "/ygopro/"
@@ -130,20 +133,52 @@
       "only_show_dbs": {
         "news.cdb": true,
         "pre-release.cdb": true
-        },
+      },
       "html_gits": [
         {
           "name": "GitHub",
-          "push": ["push", "origin"]
+          "push": [
+            "push",
+            "origin"
+          ]
         },
         {
           "name": "Coding",
-          "push": ["push", "coding", "master:master"]
+          "push": [
+            "push",
+            "coding",
+            "master:master"
+          ]
+        }
+      ]
+    },
+    "update_util": {
+      "enabled": false,
+      "port": 7955,
+      "password": "123456",
+      "git_html_path": "../ygo233-web/",
+      "html_path": "../ygo233-web/",
+      "changelog_filename": "changelog.json",
+      "html_gits": [
+        {
+          "name": "GitHub",
+          "push": [
+            "push",
+            "origin"
+          ]
+        },
+        {
+          "name": "Coding",
+          "push": [
+            "push",
+            "coding",
+            "master:master"
+          ]
         }
       ]
     },
     "command": {
-      "enabled": false,
+      "enabled": true,
       "identity": {
         "username1": "password1",
         "username1": "password2"
@@ -218,13 +253,13 @@
       }
     },
     "http": {
-      "port": 7922,
-      "password": "123456",
-      "websocket_roomlist": false,
+      "port": 7211,
+      "password": "Nanahira",
+      "websocket_roomlist": true,
       "public_roomlist": false,
-      "show_ip": false,
+      "show_ip": true,
       "show_info": true,
-      "quick_death_rule": false,
+      "quick_death_rule": true,
       "ssl": {
         "enabled": false,
         "port": 7923,
@@ -236,31 +271,12 @@
   "ban": {
     "banned_user": [],
     "banned_ip": [],
-    "badword_level0": ["滚", "衮", "操", "草", "艹", "狗", "日", "曰", "妈", "娘", "逼"],
-    "badword_level1": ["傻逼", "鸡巴"],
-    "badword_level2": ["死妈", "草你妈"],
-    "badword_level3": ["迷奸", "仿真枪"],
-    "illegal_id": ["^Lv\\.-*\\d+\\s*(.*)", "^VIP\\.\\d+\\s*(.*)"],
-    "spam_word": ["——"]
-  },
-  "tips": [
-    "欢迎来到本服务器",
-    "本服务器使用萌卡代码搭建"
-  ],
-  "words": {
-    "test1": [
-      "test_word_1"
+    "illegal_id": [
+      "^Lv\\.-*\\d+\\s*(.*)",
+      "^VIP\\.\\d+\\s*(.*)"
     ],
-    "test2": [
-      "test_word_2"
-    ]
-  },
-  "dialogues": {
-    "46986414": [
-      "出来吧，我最强的仆人，黑魔导！"
-    ],
-    "58481572": [
-      "我们来做朋友吧！"
+    "spam_word": [
+      "——"
     ]
   }
 }

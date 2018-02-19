@@ -6,6 +6,8 @@ coffeelint.json
 password.json
 config.*.json
 
+/bak
+/config
 /ygopro
 /windbot
 /decks/
@@ -30,3 +32,5 @@ $RECYCLE.BIN/
 .DS_Store
 
 *.csv
+
+config.user.bak

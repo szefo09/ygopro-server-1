@@ -8,8 +8,8 @@
 */
 var sqlite3 = require('sqlite3').verbose();
 var fs = require('fs');
-var config = require('./config.deckstats.json'); //{ "deckpath": "../decks", "dbfile": "cards.cdb" }
-var constants = require('./constants.json');
+var config = require('./config/deckstats.json'); //{ "deckpath": "../decks", "dbfile": "cards.cdb" }
+var constants = require('./data/constants.json');
 
 var ALL_MAIN_CARDS={};
 var ALL_SIDE_CARDS={};
