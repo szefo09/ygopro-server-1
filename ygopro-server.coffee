@@ -6,6 +6,7 @@ path = require 'path'
 fs = require 'fs'
 os = require 'os'
 crypto = require 'crypto'
+exec = require('child_process').exec
 execFile = require('child_process').execFile
 spawn = require('child_process').spawn
 spawnSync = require('child_process').spawnSync
@@ -162,6 +163,7 @@ if settings.modules.tournament_mode.enabled
     duel_log.file = 'duel_log.' + moment().format('YYYY-MM-DD HH-mm-ss') + '.json'
     duel_log.duel_log = []
     setting_save(duel_log)
+    return
   clearlog()
 
 # 组件
@@ -196,20 +198,28 @@ if settings.modules.mycard.enabled
   pg_client.connect()
 
 # 获取可用内存
+memory_usage = 0
 get_memory_usage = ()->
-  prc_free = spawnSync("free", [])
-  if (prc_free.stdout)
-    lines = prc_free.stdout.toString().split(/\n/g)
+  prc_free = exec("free")
+  prc_free.stdout.on 'data', (data)->
+    lines = data.toString().split(/\n/g)
+    line = lines[0].split(/\s+/)
+    new_free = if line[6] == 'available' then true else false
     line = lines[1].split(/\s+/)
     total = parseInt(line[1], 10)
     free = parseInt(line[3], 10)
     buffers = parseInt(line[5], 10)
-    cached = parseInt(line[6], 10)
-    actualFree = free + buffers + cached
+    if new_free
+      actualFree = parseInt(line[6], 10)
+    else
+      cached = parseInt(line[6], 10)
+      actualFree = free + buffers + cached
     percentUsed = parseFloat(((1 - (actualFree / total)) * 100).toFixed(2))
-  else
-    percentUsed = 0
-  return percentUsed
+    memory_usage = percentUsed
+    return
+  return
+get_memory_usage()
+setInterval(get_memory_usage, 3000)
 
 Cloud_replay_ids = []
 
@@ -261,7 +271,7 @@ ROOM_find_or_create_by_name = (name, player_ip)->
     return ROOM_find_or_create_random(uname, player_ip)
   if room = ROOM_find_by_name(name)
     return room
-  else if get_memory_usage() >= 90
+  else if memory_usage >= 90
     return null
   else
     return new Room(name)
@@ -292,7 +302,7 @@ ROOM_find_or_create_random = (type, player_ip)->
   if result
     result.welcome = '${random_duel_enter_room_waiting}'
     #log.info 'found room', player_name
-  else if get_memory_usage() < 90
+  else if memory_usage < 90
     type = if type then type else 'S'
     name = type + ',RANDOM#' + Math.floor(Math.random() * 100000)
     result = new Room(name)
@@ -617,7 +627,7 @@ class Room
   add_windbot: (botdata)->
     @windbot = botdata
     request
-      url: "http://127.0.0.1:#{settings.modules.windbot.port}/?name=#{encodeURIComponent(botdata.name)}&deck=#{encodeURIComponent(botdata.deck)}&host=127.0.0.1&port=#{settings.port}&dialog=#{encodeURIComponent(botdata.dialog)}&version=#{settings.version}&password=#{encodeURIComponent(@name)}"
+      url: "http://#{settings.modules.windbot.server_ip}:#{settings.modules.windbot.port}/?name=#{encodeURIComponent(botdata.name)}&deck=#{encodeURIComponent(botdata.deck)}&host=#{settings.modules.windbot.my_ip}&port=#{settings.port}&dialog=#{encodeURIComponent(botdata.dialog)}&version=#{settings.version}&password=#{encodeURIComponent(@name)}"
     , (error, response, body)=>
       if error
         log.warn 'windbot add error', error, this.name
@@ -682,8 +692,10 @@ class Room
 # 网络连接
 net.createServer (client) ->
   client.ip = client.remoteAddress
+  client.is_local = client.ip and (client.ip.includes('127.0.0.1') or client.ip.includes(settings.modules.windbot.server_ip))
+
   connect_count = ROOM_connected_ip[client.ip] or 0
-  if !settings.modules.test_mode.no_connect_count_limit and client.ip != '::ffff:127.0.0.1'
+  if !settings.modules.test_mode.no_connect_count_limit and !client.is_local
     connect_count++
   ROOM_connected_ip[client.ip] = connect_count
   #log.info "connect", client.ip, ROOM_connected_ip[client.ip]
@@ -773,7 +785,7 @@ net.createServer (client) ->
           return
         return
       return
-    
+      
   # 需要重构
   # 客户端到服务端(ctos)协议分析
   
@@ -935,7 +947,7 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server)->
   buffer = struct.buffer
   client.name = name
 
-  if not settings.modules.i18n.auto_pick or client.ip=="::ffff:127.0.0.1"
+  if not settings.modules.i18n.auto_pick or client.is_local
     client.lang=settings.modules.i18n.default
   else
     geo = geoip.lookup(client.ip)
@@ -1232,7 +1244,7 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server)->
     ygopro.stoc_send_chat(client, settings.modules.welcome, ygopro.constants.COLORS.GREEN)
   if room.welcome
     ygopro.stoc_send_chat(client, room.welcome, ygopro.constants.COLORS.BABYBLUE)
-  if settings.modules.arena_mode.enabled and client.ip != '::ffff:127.0.0.1' #and not client.score_shown
+  if settings.modules.arena_mode.enabled and !client.is_local #and not client.score_shown
     request
       url: settings.modules.arena_mode.get_score + encodeURIComponent(client.name),
       json: true
@@ -1416,7 +1428,7 @@ ygopro.stoc_follow 'GAME_MSG', false, (buffer, info, client, server)->
 ygopro.ctos_follow 'HS_TOOBSERVER', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
   return unless room
-  if not room.arena or client.ip == "::ffff:127.0.0.1"
+  if not room.arena or client.is_local
     return false
   for player in room.players
     if player == client
@@ -1612,7 +1624,6 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server)->
         return
     client.deck_saved = true
   return
-
 
 ygopro.ctos_follow 'SURRENDER', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
@@ -1893,7 +1904,7 @@ ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server)->
         cloud_replay_id: "R#"+room.cloud_replay_id,
         replay_filename: replay_filename,
         players: (for player in room.dueling_players
-          name: player.name + (if settings.modules.tournament_mode.show_ip and player.ip != '::ffff:127.0.0.1' then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.tournament_mode.show_info and not (room.hostinfo.mode == 2 and player.pos > 1) then (" (Score:" + room.scores[player.name] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + ")") else ""),
+          name: player.name + (if settings.modules.tournament_mode.show_ip and !player.is_local then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.tournament_mode.show_info and not (room.hostinfo.mode == 2 and player.pos > 1) then (" (Score:" + room.scores[player.name] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + ")") else ""),
           winner: player.pos == room.winner
         )
       }
@@ -1991,7 +2002,7 @@ if settings.modules.http
           needpass: (room.name.indexOf('$') != -1).toString(),
           users: (for player in room.players when player.pos?
             id: (-1).toString(),
-            name: player.name + (if settings.modules.http.show_ip and pass_validated and player.ip != '::ffff:127.0.0.1' then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.http.show_info and room.started and not (room.hostinfo.mode == 2 and player.pos > 1) then (" (Score:" + room.scores[player.name] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + ")") else ""),
+            name: player.name + (if settings.modules.http.show_ip and pass_validated and !player.is_local then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.http.show_info and room.started and not (room.hostinfo.mode == 2 and player.pos > 1) then (" (Score:" + room.scores[player.name] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + ")") else ""),
             pos: player.pos
           ),
           istart: if room.started then (if settings.modules.http.show_info then ("Duel:" + room.duel_count + " " + (if room.changing_side then "Siding" else "Turn:" + (if room.turn? then room.turn else 0) + (if room.death then "/" + (if room.death > 0 then room.death - 1 else "Death") else ""))) else 'start') else 'wait'
@@ -2076,6 +2087,7 @@ if settings.modules.http
           else
             response.writeHead(200, { "Content-Type": "application/octet-stream", "Content-Disposition": "attachment" })
             response.end(buffer)
+          return
         )
 
     else if u.pathname == '/api/message'
