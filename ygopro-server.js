@@ -168,6 +168,13 @@
   }
 
   try {
+    words = require('./config/words.json');
+  } catch (error1) {
+    words = default_data.words;
+    setting_save(words);
+  }
+
+  try {
     dialogues = require('./config/dialogues.json');
   } catch (error1) {
     dialogues = default_data.dialogues;
@@ -1607,7 +1614,7 @@
         log.warn('words error', error, response);
       } else {
         setting_change(words, "words", body);
-        log.info("words loaded", _.size(body));
+        log.info("words loaded", _.size(words.words));
       }
     });
   };
