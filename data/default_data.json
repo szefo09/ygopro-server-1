@@ -15,12 +15,14 @@
   },
   "words": {
     "file": "./config/words.json",
-    "test1": [
-      "test_word_1"
-    ],
-    "test2": [
-      "test_word_2"
-    ]
+    "words": {
+      "test1": [
+        "test_word_1"
+      ],
+      "test2": [
+        "test_word_2"
+      ]
+    }
   },
   "dialogues": {
     "file": "./config/dialogues.json",
