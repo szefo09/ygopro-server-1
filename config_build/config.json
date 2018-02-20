@@ -74,7 +74,7 @@
     "deck_log": {
       "enabled": false,
       "accesskey": "233",
-      "local": "./deck_log/",
+      "local": "./decks_save/",
       "post": "https://api.mycard.moe/ygopro/analytics/deck/text",
       "arena": "233"
     },
