@@ -5,6 +5,7 @@ coffeelint.json
 
 password.json
 config.*.json
+config.user.bak
 
 /bak
 /config

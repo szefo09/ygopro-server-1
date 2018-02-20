@@ -34,5 +34,9 @@
         "我们来做朋友吧！"
       ]
     }
+  },
+  "duel_log": {
+    "file": "./config/duel_log.json",
+    "duel_log": []
   }
 }
