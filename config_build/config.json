@@ -75,7 +75,7 @@
       "enabled": false,
       "accesskey": "233",
       "local": "./decks_save/",
-      "post": "false",
+      "post": false,
       "arena": "233"
     },
     "big_brother": {
