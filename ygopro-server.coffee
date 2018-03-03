@@ -1711,21 +1711,19 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
 
     when '/color'
       if settings.modules.chat_color.enabled
-        cip = if settings.modules.mycard.enabled then client.name else client.ip
+        cip = (if settings.modules.mycard.enabled then client.name else client.ip.slice(7))
         if cmsg = cmd[1]
           if cmsg.toLowerCase() == "help"
             ygopro.stoc_send_chat(client, "${show_color_list}", ygopro.constants.COLORS.BABYBLUE)
             for cname,cvalue of ygopro.constants.COLORS when cvalue > 10
               ygopro.stoc_send_chat(client, cname, cvalue)
           else if cmsg.toLowerCase() == "default"
-            chat_color.save_list[cip] = false
-            setting_save(chat_color)
+            setting_change(chat_color, 'save_list:' + cip, false)
             ygopro.stoc_send_chat(client, "${set_chat_color_default}", ygopro.constants.COLORS.BABYBLUE)
           else
             ccolor = cmsg.toUpperCase()
-            if ygopro.constants.COLORS[ccolor] and ygopro.constants.COLORS[ccolor] > 10 and ygopro.constants.COLORS[ccolor] < 20
-              chat_color.save_list[cip] = ccolor
-              setting_save(chat_color)
+            if ygopro.constants.COLORS[ccolor] and ygopro.constants.COLORS[ccolor] > 10
+              setting_change(chat_color, 'save_list:' + cip, ccolor)
               ygopro.stoc_send_chat(client, "${set_chat_color_part1}" + ccolor + "${set_chat_color_part2}", ygopro.constants.COLORS.BABYBLUE)
             else
               ygopro.stoc_send_chat(client, "${color_not_found_part1}" + ccolor + "${color_not_found_part2}", ygopro.constants.COLORS.RED)              
@@ -1911,7 +1909,7 @@ ygopro.stoc_follow 'CHAT', true, (buffer, info, client, server)->
   for player in room.players when player and player.pos == pid
     tplayer = player
   return unless tplayer
-  tcolor = chat_color.save_list[if settings.modules.mycard.enabled then tplayer.name else tplayer.ip]
+  tcolor = chat_color.save_list[(if settings.modules.mycard.enabled then tplayer.name else tplayer.ip.slice(7))]
   if tcolor
     ygopro.stoc_send client, 'CHAT', {
         player: ygopro.constants.COLORS[tcolor]

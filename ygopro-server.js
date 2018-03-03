@@ -2,6 +2,8 @@
 (function() {
   var Cloud_replay_ids, ROOM_all, ROOM_bad_ip, ROOM_ban_player, ROOM_connected_ip, ROOM_find_by_name, ROOM_find_by_port, ROOM_find_by_title, ROOM_find_or_create_ai, ROOM_find_or_create_by_name, ROOM_find_or_create_random, ROOM_players_banned, ROOM_players_oppentlist, ROOM_unwelcome, ROOM_validate, Room, _, addCallback, badwords, ban_user, bunyan, chat_color, config, cppversion, crypto, date, default_config, default_data, dialogues, duel_log, e, exec, execFile, fs, geoip, get_memory_usage, http, http_server, https, https_server, lflists, list, load_dialogues, load_tips, log, memory_usage, merge, moment, net, oldbadwords, oldconfig, olddialogues, oldduellog, oldtips, options, os, path, pgClient, pg_client, pg_query, redis, redisdb, report_to_big_brother, request, requestListener, roomlist, setting_change, setting_save, settings, spawn, spawnSync, tips, url, users_cache, wait_room_start, wait_room_start_arena, windbot_bin, windbot_parameters, windbot_process, windbots, ygopro, zlib;
 
+  var words, oldwords;
+  
   net = require('net');
 
   http = require('http');
@@ -72,6 +74,13 @@
       oldtips.tips = oldconfig.tips;
       fs.writeFileSync(oldtips.file, JSON.stringify(oldtips, null, 2));
       delete oldconfig.tips;
+    }
+    if (oldconfig.words) {
+      oldwords = {};
+      oldwords.file = './config/words.json';
+      oldwords.words = oldconfig.words;
+      fs.writeFileSync(oldwords.file, JSON.stringify(oldwords, null, 2));
+      delete oldconfig.words;
     }
     if (oldconfig.dialogues) {
       olddialogues = {};
@@ -168,6 +177,13 @@
   }
 
   try {
+    words = require('./config/words.json');
+  } catch (error1) {
+    words = default_data.words;
+    setting_save(words);
+  }
+
+  try {
     dialogues = require('./config/dialogues.json');
   } catch (error1) {
     dialogues = default_data.dialogues;
@@ -204,20 +220,36 @@
   }
 
   lflists = (function() {
-    var j, len, ref, results;
-    ref = fs.readFileSync('ygopro/lflist.conf', 'utf8').match(/!.*/g);
+    var j, len, ref, ref_custom, results;
     results = [];
-    for (j = 0, len = ref.length; j < len; j++) {
-      list = ref[j];
-      date = list.match(/!([\d\.]+)/);
-      if (!date) {
-        continue;
-      }
-      results.push({
-        date: moment(list.match(/!([\d\.]+)/)[1], 'YYYY.MM.DD').utcOffset("-08:00"),
-        tcg: list.indexOf('TCG') !== -1
-      });
-    }
+    try {
+        ref_custom = fs.readFileSync('ygopro/expansions/lflist.conf', 'utf8').match(/!.*/g);
+        for (j = 0, len = ref_custom.length; j < len; j++) {
+          list = ref_custom[j];
+          date = list.match(/!([\d\.]+)/);
+          if (!date) {
+            continue;
+          }
+          results.push({
+            date: moment(list.match(/!([\d\.]+)/)[1], 'YYYY.MM.DD').utcOffset("-08:00"),
+            tcg: list.indexOf('TCG') !== -1
+          });
+        }
+    } catch (error1) {}
+    try {
+        ref = fs.readFileSync('ygopro/lflist.conf', 'utf8').match(/!.*/g);
+        for (j = 0, len = ref.length; j < len; j++) {
+          list = ref[j];
+          date = list.match(/!([\d\.]+)/);
+          if (!date) {
+            continue;
+          }
+          results.push({
+            date: moment(list.match(/!([\d\.]+)/)[1], 'YYYY.MM.DD').utcOffset("-08:00"),
+            tcg: list.indexOf('TCG') !== -1
+          });
+        }
+    } catch (error1) {}
     return results;
   })();
 
@@ -573,6 +605,8 @@
       } else if (name.slice(0, 3) === 'AI#') {
         this.hostinfo.rule = 2;
         this.hostinfo.lflist = -1;
+        this.hostinfo.time_limit = 0;
+        this.hostinfo.no_check_deck = true;
       } else if ((param = name.match(/^(\d)(\d)(T|F)(T|F)(T|F)(\d+),(\d+),(\d+)/i))) {
         this.hostinfo.rule = parseInt(param[1]);
         this.hostinfo.mode = parseInt(param[2]);
@@ -1514,6 +1548,13 @@
     if (!room) {
       return;
     }
+    if (settings.modules.words.enabled && words.words[client.name]) {
+      var player_words = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
+      for (j = 0, len = player_words.length; j < len; j++) {
+        line = player_words[j];
+        ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
+      }
+    }
     if (settings.modules.welcome) {
       ygopro.stoc_send_chat(client, settings.modules.welcome, ygopro.constants.COLORS.GREEN);
     }
@@ -1586,6 +1627,26 @@
     }
   });
 
+  var load_words = function() {
+    request({
+      url: settings.modules.words.get,
+      json: true
+    }, function(error, response, body) {
+      if (_.isString(body)) {
+        log.warn("words bad json", body);
+      } else if (error || !body) {
+        log.warn('words error', error, response);
+      } else {
+        setting_change(words, "words", body);
+        log.info("words loaded", _.size(words.words));
+      }
+    });
+  };
+
+  if (settings.modules.words.get) {
+    load_words();
+  }
+
   load_dialogues = function() {
     request({
       url: settings.modules.dialogues.get,
@@ -1604,7 +1665,7 @@
 
   if (settings.modules.dialogues.get) {
     load_dialogues();
-  }
+  }  
 
   ygopro.stoc_follow('GAME_MSG', false, function(buffer, info, client, server) {
     var card, j, len, line, msg, playertype, pos, reason, ref, ref1, ref2, room, val;
@@ -1711,6 +1772,16 @@
       room.dueling_players[pos].lp -= val;
       if ((0 < (ref1 = room.dueling_players[pos].lp) && ref1 <= 100)) {
         ygopro.stoc_send_chat_to_room(room, "${lp_low_self}", ygopro.constants.COLORS.PINK);
+      }
+    }
+    if (settings.modules.music.enabled) {
+      if (ygopro.constants.MSG[msg] === 'HINT') {
+        var hint_type = buffer.readUInt8(1);
+        pos = buffer.readUInt8(2);
+        var music_id = buffer.readUInt32LE(3);
+        if (hint_type === 11 && music_list_rev[music_id]) {
+          ygopro.stoc_send_chat(client, "${play_music}"+music_list_rev[music_id], ygopro.constants.COLORS.PINK);
+        }
       }
     }
     if (settings.modules.dialogues.enabled) {
@@ -1926,6 +1997,8 @@
 
   if (settings.modules.tips.get) {
     load_tips();
+  }
+  if (settings.modules.tips.enabled) {
     setInterval(function() {
       var j, len, room;
       for (j = 0, len = ROOM_all.length; j < len; j++) {
@@ -1937,6 +2010,34 @@
         }
       }
     }, 30000);
+  }
+
+  var music_list = {};
+  var music_list_rev = {};
+  var music_count = 0;
+  if (settings.modules.music.enabled) {
+    var sqlite3 = require('sqlite3').verbose();
+    var db=new sqlite3.Database("./ygopro/" + settings.modules.music.dbpath);
+    db.each("select * from datas,texts where datas.id=texts.id", function (err,result) {
+        if (err) {
+            log.info("music load errored", err);
+            return;
+        } else {
+            for (i = 1, len = 16; i <= len; i++) {
+                var song_name = result["str"+i];
+                if (song_name) {
+                    var music_id = result.id * 16 + i - 1;
+                    music_list_rev[music_id] = song_name;
+                    if (!music_list[song_name]) {
+                        music_list[song_name] = music_id;
+                        music_count++;
+                    }
+                }
+            }
+        }
+    }, function() {
+        log.info("music loaded", music_count);
+    });
   }
 
   ygopro.stoc_follow('DUEL_START', false, function(buffer, info, client, server) {
@@ -2133,9 +2234,57 @@
           ygopro.stoc_send_chat(client, "${room_name} " + room.name, ygopro.constants.COLORS.BABYBLUE);
         }
         break;
+      case '/command':
+        if (settings.modules.command.enabled && (!settings.modules.command.identity || (settings.modules.command.identity[client.name] && settings.modules.command.identity[client.name] === room.name))) {
+          var cname = cmd[1];
+          if (!cname) {
+            ygopro.stoc_send_chat(client, "Please enter the command.", ygopro.constants.COLORS.RED);
+            break;
+          }
+          var command_info = settings.modules.command.command_list[cname];
+          if (!command_info) {
+            ygopro.stoc_send_chat(client, "Command '"+cname+"' not found.", ygopro.constants.COLORS.RED);
+            break;
+          }
+          ygopro.stoc_send_chat(client, "Started running command '"+cname+"' .", ygopro.constants.COLORS.BABYBLUE);
+          try {
+            var proc = spawn(command_info.command, command_info.args, { cwd: command_info.path, env: process.env });
+            proc.stdout.setEncoding('utf8');
+            proc.stdout.on('data', function(data) {
+                ygopro.stoc_send_chat(client, data, ygopro.constants.COLORS.LIGHTBLUE);
+            });
+            proc.stderr.setEncoding('utf8');
+            proc.stderr.on('data', function(data) {
+                ygopro.stoc_send_chat(client, data, ygopro.constants.COLORS.RED);
+            });
+            proc.on('close', function (code) {
+                ygopro.stoc_send_chat(client, "Finished running command '"+cname+"' .", ygopro.constants.COLORS.BABYBLUE);
+            });            
+          } catch (e) {}
+        }
+        break;
+/*
+      case '/music':
+        var music = msg.slice(7);
+        if (settings.modules.music.enabled) {
+          if (!music || music.length <= 0) {
+            ygopro.stoc_send_hint_music(client, 0, 11);
+            ygopro.stoc_send_chat(client, "${stop_music}", ygopro.constants.COLORS.BABYBLUE);
+            break;
+          }
+          var music_id = music_list[music];
+          if (music_id) {
+            ygopro.stoc_send_hint_music(client, music_id, 11);
+            ygopro.stoc_send_chat(client, "${play_music}"+music, ygopro.constants.COLORS.BABYBLUE);
+          } else {
+            ygopro.stoc_send_chat(client, "${music_not_found_1}"+music+"${music_not_found_2}", ygopro.constants.COLORS.RED);
+          }
+        }
+        break;
+*/
       case '/color':
         if (settings.modules.chat_color.enabled) {
-          cip = settings.modules.mycard.enabled ? client.name : client.ip;
+          cip = (settings.modules.mycard.enabled ? client.name : client.ip.slice(7));
           if (cmsg = cmd[1]) {
             if (cmsg.toLowerCase() === "help") {
               ygopro.stoc_send_chat(client, "${show_color_list}", ygopro.constants.COLORS.BABYBLUE);
@@ -2147,14 +2296,12 @@
                 }
               }
             } else if (cmsg.toLowerCase() === "default") {
-              chat_color.save_list[cip] = false;
-              setting_save(chat_color);
+              setting_change(chat_color, 'save_list:' + cip, false);
               ygopro.stoc_send_chat(client, "${set_chat_color_default}", ygopro.constants.COLORS.BABYBLUE);
             } else {
               ccolor = cmsg.toUpperCase();
-              if (ygopro.constants.COLORS[ccolor] && ygopro.constants.COLORS[ccolor] > 10 && ygopro.constants.COLORS[ccolor] < 20) {
-                chat_color.save_list[cip] = ccolor;
-                setting_save(chat_color);
+              if (ygopro.constants.COLORS[ccolor] && ygopro.constants.COLORS[ccolor] > 10) {
+                setting_change(chat_color, 'save_list:' + cip, ccolor);
                 ygopro.stoc_send_chat(client, "${set_chat_color_part1}" + ccolor + "${set_chat_color_part2}", ygopro.constants.COLORS.BABYBLUE);
               } else {
                 ygopro.stoc_send_chat(client, "${color_not_found_part1}" + ccolor + "${color_not_found_part2}", ygopro.constants.COLORS.RED);
@@ -2293,7 +2440,7 @@
         room.waiting_for_player = room.waiting_for_player2;
       }
       room.last_active_time = moment();
-    } else if (!room.started && room.hostinfo.mode === 1 && settings.modules.tournament_mode.enabled && settings.modules.tournament_mode.deck_check) {
+    } else if (!room.started && settings.modules.tournament_mode.enabled && settings.modules.tournament_mode.deck_check && fs.readdirSync(settings.modules.tournament_mode.deck_path).length) {
       struct = ygopro.structs["deck"];
       struct._setBuff(buffer);
       struct.set("mainc", 1);
@@ -2408,7 +2555,7 @@
     if (!tplayer) {
       return;
     }
-    tcolor = chat_color.save_list[settings.modules.mycard.enabled ? tplayer.name : tplayer.ip];
+    tcolor = chat_color.save_list[(settings.modules.mycard.enabled ? tplayer.name : tplayer.ip.slice(7))];
     if (tcolor) {
       ygopro.stoc_send(client, 'CHAT', {
         player: ygopro.constants.COLORS[tcolor],
@@ -2645,7 +2792,7 @@
                       ref = room.players;
                       results1 = [];
                       for (k = 0, len1 = ref.length; k < len1; k++) {
-                        player = ref[k];
+                        player = ref[k];						
                         if (player.pos != null) {
                           results1.push({
                             id: (-1).toString(),
@@ -2785,6 +2932,26 @@
           return;
         }
         if (u.query.shout) {
+/*
+          if (u.query.shout.slice(0, 7) === "/music " && settings.modules.music.enabled) {
+            var music = u.query.shout.slice(7);
+            var music_id = music_list[music];
+            if (music_id) {
+              for (j = 0, len = ROOM_all.length; j < len; j++) {
+                room = ROOM_all[j];
+                if (room && room.established) {
+                  ygopro.stoc_send_hint_music_to_room(room, music_id, 11);
+                  ygopro.stoc_send_chat_to_room(room, "${play_music}"+music, ygopro.constants.COLORS.YELLOW);
+                }
+              }
+              response.writeHead(200);
+              response.end(addCallback(u.query.callback, "['music ok', '" + u.query.shout + "']"));
+            } else {
+              response.writeHead(200);
+              response.end(addCallback(u.query.callback, "['music not found', '" + u.query.shout + "']"));
+            }            
+          } else {
+*/
           for (k = 0, len1 = ROOM_all.length; k < len1; k++) {
             room = ROOM_all[k];
             if (room && room.established) {
@@ -2793,6 +2960,8 @@
           }
           response.writeHead(200);
           response.end(addCallback(u.query.callback, "['shout ok', '" + u.query.shout + "']"));
+          
+//          }
         } else if (u.query.stop) {
           if (u.query.stop === 'false') {
             u.query.stop = false;
@@ -2815,6 +2984,10 @@
           load_dialogues();
           response.writeHead(200);
           response.end(addCallback(u.query.callback, "['loading dialogues', '" + settings.modules.dialogues.get + "']"));
+        } else if (u.query.loadwords) {
+          load_words();
+          response.writeHead(200);
+          response.end(addCallback(u.query.callback, "['loading words', '" + settings.modules.words.get + "']"));
         } else if (u.query.ban) {
           ban_user(u.query.ban);
           response.writeHead(200);
