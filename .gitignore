@@ -15,7 +15,7 @@ ygopro-2pick
 /config
 /ygopro
 /windbot
-/decks/
+/decks
 /decks_save*
 /replays
 /node_modules
