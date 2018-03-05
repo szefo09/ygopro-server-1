@@ -17,6 +17,7 @@ ygopro-2pick
 /windbot
 /decks/
 /decks_save*
+/replays
 /node_modules
 /ssl
 /ygosrv233
