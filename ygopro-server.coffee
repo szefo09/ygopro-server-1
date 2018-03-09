@@ -1364,9 +1364,10 @@ ygopro.stoc_follow 'GAME_MSG', false, (buffer, info, client, server)->
       room.turn = room.turn + 1
       if room.death
         if room.turn >= room.death
-          if room.dueling_players[0].lp != room.dueling_players[1].lp and room.turn > 1
-            ygopro.stoc_send_chat_to_room(room, "${death_finish_part1}" + (if room.dueling_players[0].lp > room.dueling_players[1].lp then room.dueling_players[0] else room.dueling_players[1]).name + "${death_finish_part2}", ygopro.constants.COLORS.BABYBLUE)
-            ygopro.ctos_send((if room.dueling_players[0].lp > room.dueling_players[1].lp then room.dueling_players[1] else room.dueling_players[0]).server, 'SURRENDER')
+          oppo_pos = if room.hostinfo.mode == 2 then 2 else 1
+          if room.dueling_players[0].lp != room.dueling_players[oppo_pos].lp and room.turn > 1
+            ygopro.stoc_send_chat_to_room(room, "${death_finish_part1}" + (if room.dueling_players[0].lp > room.dueling_players[oppo_pos].lp then room.dueling_players[0] else room.dueling_players[oppo_pos]).name + "${death_finish_part2}", ygopro.constants.COLORS.BABYBLUE)
+            ygopro.ctos_send((if room.dueling_players[0].lp > room.dueling_players[oppo_pos].lp then room.dueling_players[oppo_pos] else room.dueling_players[0]).server, 'SURRENDER')
           else
             room.death = -1
             ygopro.stoc_send_chat_to_room(room, "${death_remain_final}", ygopro.constants.COLORS.BABYBLUE)            
@@ -1379,6 +1380,7 @@ ygopro.stoc_follow 'GAME_MSG', false, (buffer, info, client, server)->
   if ygopro.constants.MSG[msg] == 'WIN' and client.pos == 0
     pos = buffer.readUInt8(1)
     pos = 1 - pos unless client.is_first or pos == 2
+    pos = pos * 2 if pos >= 0 and room.hostinfo.mode == 2
     reason = buffer.readUInt8(2)
     #log.info {winner: pos, reason: reason}
     #room.duels.push {winner: pos, reason: reason}
@@ -1398,6 +1400,7 @@ ygopro.stoc_follow 'GAME_MSG', false, (buffer, info, client, server)->
   if ygopro.constants.MSG[msg] == 'DAMAGE' and client.pos == 0
     pos = buffer.readUInt8(1)
     pos = 1 - pos unless client.is_first
+    pos = pos * 2 if pos >= 0 and room.hostinfo.mode == 2
     val = buffer.readInt32LE(2)
     room.dueling_players[pos].lp -= val
     room.dueling_players[pos].lp = 0 if room.dueling_players[pos].lp < 0
@@ -1407,18 +1410,21 @@ ygopro.stoc_follow 'GAME_MSG', false, (buffer, info, client, server)->
   if ygopro.constants.MSG[msg] == 'RECOVER' and client.pos == 0
     pos = buffer.readUInt8(1)
     pos = 1 - pos unless client.is_first
+    pos = pos * 2 if pos >= 0 and room.hostinfo.mode == 2
     val = buffer.readInt32LE(2)
     room.dueling_players[pos].lp += val
 
   if ygopro.constants.MSG[msg] == 'LPUPDATE' and client.pos == 0
     pos = buffer.readUInt8(1)
     pos = 1 - pos unless client.is_first
+    pos = pos * 2 if pos >= 0 and room.hostinfo.mode == 2
     val = buffer.readInt32LE(2)
     room.dueling_players[pos].lp = val
 
   if ygopro.constants.MSG[msg] == 'PAY_LPCOST' and client.pos == 0
     pos = buffer.readUInt8(1)
     pos = 1 - pos unless client.is_first
+    pos = pos * 2 if pos >= 0 and room.hostinfo.mode == 2
     val = buffer.readInt32LE(2)
     room.dueling_players[pos].lp -= val
     room.dueling_players[pos].lp = 0 if room.dueling_players[pos].lp < 0
@@ -1979,8 +1985,12 @@ ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server)->
     if client.pos == 0
       dueltime=moment().format('YYYY-MM-DD HH:mm:ss')
       replay_filename=dueltime
-      for player,i in room.dueling_players
-        replay_filename=replay_filename + (if i > 0 then " VS " else " ") + player.name
+      if room.hostinfo.mode != 2
+        for player,i in room.dueling_players
+          replay_filename=replay_filename + (if i > 0 then " VS " else " ") + player.name
+      else
+        for player,i in room.dueling_players
+          replay_filename=replay_filename + (if i > 0 then (if i == 2 then " VS " else " & ") else " ") + player.name
       replay_filename=replay_filename.replace(/[\/\\\?\*]/g, '_')+".yrp"
       duellog = {
         time: dueltime,
@@ -1988,8 +1998,9 @@ ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server)->
         roomid: room.port.toString(),
         cloud_replay_id: "R#"+room.cloud_replay_id,
         replay_filename: replay_filename,
+        roommode: room.hostinfo.mode,
         players: (for player in room.dueling_players
-          name: player.name + (if settings.modules.tournament_mode.show_ip and !player.is_local then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.tournament_mode.show_info and not (room.hostinfo.mode == 2 and player.pos > 1) then (" (Score:" + room.scores[player.name] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + ")") else ""),
+          name: player.name + (if settings.modules.tournament_mode.show_ip and !player.is_local then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.tournament_mode.show_info and not (room.hostinfo.mode == 2 and player.pos % 2 > 0) then (" (Score:" + room.scores[player.name] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + ")") else ""),
           winner: player.pos == room.winner
         )
       }
@@ -2084,10 +2095,11 @@ if settings.modules.http
           pid: room.process.pid.toString(),
           roomid: room.port.toString(),
           roomname: if pass_validated then room.name else room.name.split('$', 2)[0],
+          roommode: room.hostinfo.mode,
           needpass: (room.name.indexOf('$') != -1).toString(),
           users: (for player in room.players when player.pos?
             id: (-1).toString(),
-            name: player.name + (if settings.modules.http.show_ip and pass_validated and !player.is_local then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.http.show_info and room.started and not (room.hostinfo.mode == 2 and player.pos > 1) then (" (Score:" + room.scores[player.name] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + ")") else ""),
+            name: player.name + (if settings.modules.http.show_ip and pass_validated and !player.is_local then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.http.show_info and room.started and not (room.hostinfo.mode == 2 and player.pos % 2 > 0) then (" (Score:" + room.scores[player.name] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + ")") else ""),
             pos: player.pos
           ),
           istart: if room.started then (if settings.modules.http.show_info then ("Duel:" + room.duel_count + " " + (if room.changing_side then "Siding" else "Turn:" + (if room.turn? then room.turn else 0) + (if room.death then "/" + (if room.death > 0 then room.death - 1 else "Death") else ""))) else 'start') else 'wait'
@@ -2226,7 +2238,7 @@ if settings.modules.http
 
       else if u.query.death
         death_room_found = false
-        for room in ROOM_all when room and room.established and room.started and !room.death and (u.query.death == "all" or u.query.death == room.port.toString())
+        for room in ROOM_all when room and room.established and room.started and !room.death and (u.query.death == "all" or u.query.death == room.port.toString()) and room.hostinfo.mode != 2
           death_room_found = true
           if !room.changing_side and (!room.duel_count or room.turn)
             room.death = (if room.turn then room.turn + 4 else 5)
