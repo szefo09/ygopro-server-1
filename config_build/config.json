@@ -158,6 +158,43 @@
         }
       ]
     },
+    "webhook": {
+      "enabled": true,
+      "port": 7213,
+      "password": "Nanahira",
+      "hooks": {
+        "script": {
+          "path": "./ygopro/script/",
+          "remote": "origin",
+          "branch": "master",
+          "callback": false
+        },
+        "windbot": {
+          "path": "./windbot/",
+          "remote": "origin",
+          "branch": "master",
+          "callback": {
+            "command": "xbuild",
+            "args": [
+              "/property:Configuration=Release"
+            ],
+            "path": "./windbot/"
+          }
+        },
+        "ygopro": {
+          "path": "./ygopro/",
+          "remote": "origin",
+          "branch": "server",
+          "callback": {
+            "command": "make",
+            "args": [
+              "config=release"
+            ],
+            "path": "./ygopro/build/"
+          }
+        }
+      }
+    },
     "update_util": {
       "enabled": false,
       "port": 7955,
