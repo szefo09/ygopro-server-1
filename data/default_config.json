@@ -198,7 +198,7 @@
         "srvpro": {
           "path": ".",
           "remote": "origin",
-          "branch": "master"
+          "branch": "master",
           "callback": {
             "command": "npm",
             "args": [
