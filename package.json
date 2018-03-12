@@ -20,6 +20,7 @@
     "request": "latest",
     "underscore": "latest",
     "underscore.string": "latest",
+    "sqlite": "latest",
     "ws": "latest"
   },
   "license": "AGPL-3.0",
