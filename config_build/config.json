@@ -167,7 +167,15 @@
           "path": "./ygopro/script/",
           "remote": "origin",
           "branch": "master",
-          "callback": false
+          "callback": {
+            "command": "git",
+            "args": [
+              "reset",
+              "--hard",
+              "FETCH_HEAD"
+            ],
+            "path": "./ygopro/script/"
+          }
         },
         "windbot": {
           "path": "./windbot/",
