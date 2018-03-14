@@ -192,7 +192,7 @@
         "ygopro": {
           "path": "./ygopro/",
           "remote": "origin",
-          "branch": "server",
+          "branch": "master",
           "callback": {
             "command": "bash",
             "args": [
