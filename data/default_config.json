@@ -11,6 +11,7 @@
     "no_check_deck": false,
     "no_shuffle_deck": false,
     "start_lp": 8000,
+    "start_lp_1": 8000,
     "start_hand": 5,
     "draw_count": 1,
     "time_limit": 180

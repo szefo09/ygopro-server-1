@@ -658,8 +658,6 @@
             start_lp = 99999;
           }
           this.hostinfo.start_lp_1 = start_lp;
-        } else {
-          this.hostinfo.start_lp_1 = this.hostinfo.start_lp;
         }
         if ((param = rule.match(/(^|，|,)(TIME|TM|TI)(\d+)(，|,|$)/))) {
           time_limit = parseInt(param[3]);
