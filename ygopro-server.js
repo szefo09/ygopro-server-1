@@ -649,6 +649,18 @@
           }
           this.hostinfo.start_lp = start_lp;
         }
+        if ((param = rule.match(/(^|，|,)OLP(\d+)(，|,|$)/))) {
+          start_lp = parseInt(param[2]);
+          if (start_lp <= 0) {
+            start_lp = 1;
+          }
+          if (start_lp >= 99999) {
+            start_lp = 99999;
+          }
+          this.hostinfo.start_lp_1 = start_lp;
+        } else {
+          this.hostinfo.start_lp_1 = this.hostinfo.start_lp;
+        }
         if ((param = rule.match(/(^|，|,)(TIME|TM|TI)(\d+)(，|,|$)/))) {
           time_limit = parseInt(param[3]);
           if (time_limit < 0) {
@@ -699,7 +711,7 @@
           this.hostinfo.enable_priority = true;
         }
       }
-      param = [0, this.hostinfo.lflist, this.hostinfo.rule, this.hostinfo.mode, (this.hostinfo.enable_priority ? 'T' : 'F'), (this.hostinfo.no_check_deck ? 'T' : 'F'), (this.hostinfo.no_shuffle_deck ? 'T' : 'F'), this.hostinfo.start_lp, this.hostinfo.start_hand, this.hostinfo.draw_count, this.hostinfo.time_limit, this.hostinfo.replay_mode];
+      param = [0, this.hostinfo.lflist, this.hostinfo.rule, this.hostinfo.mode, (this.hostinfo.enable_priority ? 'T' : 'F'), (this.hostinfo.no_check_deck ? 'T' : 'F'), (this.hostinfo.no_shuffle_deck ? 'T' : 'F'), this.hostinfo.start_lp, this.hostinfo.start_hand, this.hostinfo.draw_count, this.hostinfo.time_limit, this.hostinfo.replay_mode, this.hostinfo.start_lp_1];
       try {
         this.process = spawn('./ygopro', param, {
           cwd: 'ygopro'
