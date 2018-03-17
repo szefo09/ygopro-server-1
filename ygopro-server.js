@@ -1696,6 +1696,9 @@
       playertype = buffer.readUInt8(1);
       client.is_first = !(playertype & 0xf);
       client.lp = room.hostinfo.start_lp;
+      if ((room.hostinfo.mode === 2 && client.pos >= 2 && client.pos <= 3) || (room.hostinfo.mode !== 2 && client.pos === 1)) {
+        client.lp = room.hostinfo.start_lp_1;        
+      }
       if (client.pos === 0) {
         room.turn = 0;
         room.duel_count = room.duel_count + 1;
