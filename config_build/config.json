@@ -102,6 +102,7 @@
       "replay_safe": true,
       "replay_path": "./replays/",
       "replay_archive_tool": "7z",
+      "block_replay_to_player": true,
       "show_ip": true,
       "show_info": true,
       "log_save_path": "./config/",
