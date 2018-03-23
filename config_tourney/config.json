@@ -76,7 +76,7 @@
       "auth_key": "233333"
     },
     "deck_log": {
-      "enabled": true,
+      "enabled": false,
       "accesskey": "233",
       "local": "./decks_save/",
       "post": false,
