@@ -2,7 +2,7 @@
 (function() {
   var Cloud_replay_ids, ROOM_all, ROOM_bad_ip, ROOM_ban_player, ROOM_connected_ip, ROOM_find_by_name, ROOM_find_by_port, ROOM_find_by_title, ROOM_find_or_create_ai, ROOM_find_or_create_by_name, ROOM_find_or_create_random, ROOM_players_banned, ROOM_players_oppentlist, ROOM_unwelcome, ROOM_validate, Room, _, addCallback, badwords, ban_user, bunyan, chat_color, config, cppversion, crypto, date, default_config, default_data, dialogues, duel_log, e, exec, execFile, fs, geoip, get_memory_usage, http, http_server, https, https_server, lflists, list, loadJSON, load_dialogues, load_tips, log, memory_usage, merge, moment, net, oldbadwords, oldconfig, olddialogues, oldduellog, oldtips, options, os, path, pgClient, pg_client, pg_query, redis, redisdb, report_to_big_brother, request, requestListener, roomlist, setting_change, setting_save, settings, spawn, spawnSync, tips, url, users_cache, wait_room_start, wait_room_start_arena, windbot_bin, windbot_parameters, windbot_process, windbots, ygopro, zlib;
 
-  var words, oldwords;
+  var words, oldwords, load_dialogues_custom;
   
   net = require('net');
 
@@ -88,6 +88,7 @@
       olddialogues = {};
       olddialogues.file = './config/dialogues.json';
       olddialogues.dialogues = oldconfig.dialogues;
+      olddialogues.dialogues_custom = {};
       fs.writeFileSync(olddialogues.file, JSON.stringify(olddialogues, null, 2));
       delete oldconfig.dialogues;
     }
@@ -187,6 +188,10 @@
 
   try {
     dialogues = loadJSON('./config/dialogues.json');
+    if (!dialogues.dialogues_custom) {
+      dialogues.dialogues_custom = {};
+      setting_save(dialogues);
+	}
   } catch (error1) {
     dialogues = default_data.dialogues;
     setting_save(dialogues);
@@ -1665,8 +1670,28 @@
     });
   };
 
+  load_dialogues_custom = function() {
+    request({
+      url: settings.modules.dialogues.get_custom,
+      json: true
+    }, function(error, response, body) {
+      if (_.isString(body)) {
+        log.warn("custom dialogues bad json", body);
+      } else if (error || !body) {
+        log.warn('custom dialogues error', error, response);
+      } else {
+        setting_change(dialogues, "dialogues_custom", body);
+        log.info("custom dialogues loaded", _.size(dialogues.dialogues_custom));
+      }
+    });
+  };
+
   if (settings.modules.dialogues.get) {
     load_dialogues();
+  }  
+
+  if (settings.modules.dialogues.get_custom) {
+    load_dialogues_custom();
   }  
 
   ygopro.stoc_follow('GAME_MSG', false, function(buffer, info, client, server) {
@@ -1813,6 +1838,12 @@
         card = buffer.readUInt32LE(1);
         if (dialogues.dialogues[card]) {
           ref2 = _.lines(dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]);
+          for (j = 0, len = ref2.length; j < len; j++) {
+            line = ref2[j];
+            ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK);
+          }
+        } else if (dialogues.dialogues_custom[card]) {
+          ref2 = _.lines(dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]);
           for (j = 0, len = ref2.length; j < len; j++) {
             line = ref2[j];
             ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK);
@@ -3015,8 +3046,11 @@
           response.end(addCallback(u.query.callback, "['loading tip', '" + settings.modules.tips.get + "']"));
         } else if (u.query.loaddialogues) {
           load_dialogues();
+          if (settings.modules.dialogues.get_custom) {
+            load_dialogues_custom();
+          }
           response.writeHead(200);
-          response.end(addCallback(u.query.callback, "['loading dialogues', '" + settings.modules.dialogues.get + "']"));
+          response.end(addCallback(u.query.callback, "['loading dialogues', '" + settings.modules.dialogues.get + (settings.modules.dialogues.get_custom ? (" and " + settings.modules.dialogues.get_custom) : "") + "']"));
         } else if (u.query.loadwords) {
           load_words();
           response.writeHead(200);
