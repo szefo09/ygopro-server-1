@@ -1,0 +1,349 @@
+{
+  "file": "./config/config.json",
+  "port": 1262,
+  "version": 4930,
+  "hostinfo": {
+    "lflist": 0,
+    "rule": 0,
+    "mode": 0,
+    "comment": "rule: 0=OCGONLY, 1=TCGONLY, 2=OT; mode: 0=SINGLE, 1=MATCH, 2=TAG",
+    "enable_priority": false,
+    "no_check_deck": false,
+    "no_shuffle_deck": false,
+    "start_lp": 8000,
+    "start_hand": 5,
+    "draw_count": 1,
+    "time_limit": 180
+  },
+  "modules": {
+    "welcome": "YGOPro Tourney",
+    "update": "请更新游戏版本",
+    "stop": false,
+    "side_timeout": 3,
+    "i18n": {
+      "auto_pick": false,
+      "default": "zh-cn",
+      "fallback": "en-us",
+      "map": {
+        "CN": "zh-cn",
+        "HK": "zh-cn",
+        "MO": "zh-cn",
+        "TW": "zh-cn",
+        "KR": "ko-kr"
+      }
+    },
+    "tips": {
+      "enabled": true,
+      "get": "https://purerosefallen.github.io/ygopro-tips/tips.json"
+    },
+    "dialogues": {
+      "enabled": true,
+      "get": "http://mercury233.me/ygosrv233/dialogues.json"
+    },
+    "words": {
+      "enabled": false,
+      "get": false
+    },
+    "music": {
+      "enabled": false,
+      "dbpath": "expansions/222DIY.cdb"
+    },
+    "random_duel": {
+      "enabled": false,
+      "no_rematch_check": false,
+      "hang_timeout": 90
+    },
+    "cloud_replay": {
+      "enabled": true,
+      "redis_port": 6379,
+      "enable_halfway_watch": true
+    },
+    "windbot": {
+      "enabled": false,
+      "botlist": "./windbot/bots.json",
+      "spawn": false,
+      "port": 2399,
+      "server_ip": "127.0.0.1",
+      "my_ip": "127.0.0.1"
+    },
+    "chat_color": {
+      "enabled": false
+    },
+    "mycard": {
+      "enabled": false,
+      "auth_base_url": "https://ygobbs.com",
+      "auth_database": "postgres://233@233.mycard.moe/233",
+      "auth_key": "233333"
+    },
+    "deck_log": {
+      "enabled": true,
+      "accesskey": "233",
+      "local": "./decks_save/",
+      "post": false,
+      "arena": "233"
+    },
+    "big_brother": {
+      "enabled": false,
+      "accesskey": "233",
+      "post": "https://api.mycard.moe/ygopro/big-brother"
+    },
+    "arena_mode": {
+      "enabled": false,
+      "mode": "entertain",
+      "comment": "mode: athletic / entertain",
+      "accesskey": "233",
+      "post_score": false,
+      "get_score": false
+    },
+    "tournament_mode": {
+      "enabled": true,
+      "deck_check": true,
+      "deck_path": "./decks/",
+      "replay_safe": true,
+      "replay_path": "./replays/",
+      "replay_archive_tool": "7z",
+      "block_replay_to_player": true,
+      "show_ip": true,
+      "show_info": true,
+      "log_save_path": "./config/",
+      "password": "Nanahira",
+      "port": 1264
+    },
+    "test_mode": {
+      "watch_public_hand": false,
+      "no_connect_count_limit": false,
+      "no_ban_player": false
+    },
+    "pre_util": {
+      "enabled": false,
+      "port": 7944,
+      "password": "123456",
+      "git_html_path": "../mercury233.github.io/",
+      "html_path": "../mercury233.github.io/ygosrv233/",
+      "html_filename": "pre.html",
+      "git_db_path": "../ygopro-pre-data/",
+      "db_path": "../ygopro-pre-data/unofficial/",
+      "html_img_rel_path": "pre/pics/",
+      "html_img_thumbnail": "thumbnail/",
+      "html_img_thumbnail_suffix": "!thumb",
+      "cdn": {
+        "enabled": false,
+        "exe": "upx",
+        "params": [
+          "sync"
+        ],
+        "local": "./ygosrv233",
+        "remote": "/ygosrv233",
+        "pics_remote": "/ygopro/"
+      },
+      "ygopro_path": "../ygopro-pre/",
+      "only_show_dbs": {
+        "news.cdb": true,
+        "pre-release.cdb": true
+      },
+      "html_gits": [
+        {
+          "name": "GitHub",
+          "push": [
+            "push",
+            "origin"
+          ]
+        },
+        {
+          "name": "Coding",
+          "push": [
+            "push",
+            "coding",
+            "master:master"
+          ]
+        }
+      ]
+    },
+    "webhook": {
+      "enabled": true,
+      "port": 7213,
+      "password": "Nanahira",
+      "hooks": {
+        "script": {
+          "path": "./ygopro/script/",
+          "remote": "origin",
+          "branch": "master",
+          "callback": {
+            "command": "git",
+            "args": [
+              "reset",
+              "--hard",
+              "FETCH_HEAD"
+            ],
+            "path": "./ygopro/script/"
+          }
+        },
+        "windbot": {
+          "path": "./windbot/",
+          "remote": "origin",
+          "branch": "master",
+          "callback": {
+            "command": "xbuild",
+            "args": [
+              "/property:Configuration=Release"
+            ],
+            "path": "./windbot/"
+          }
+        },
+        "ygopro": {
+          "path": "./ygopro/",
+          "remote": "origin",
+          "branch": "master",
+          "callback": {
+            "command": "bash",
+            "args": [
+              "-c",
+              "premake4 gmake ; cd build ; make config=release ; cd .. ; strip ygopro"
+            ],
+            "path": "./ygopro/"
+          }
+        },
+        "srvpro": {
+          "path": ".",
+          "remote": "origin",
+          "branch": "master",
+          "callback": {
+            "command": "npm",
+            "args": [
+              "install"
+            ],
+            "path": "."
+          }
+        }
+      }
+    },
+    "update_util": {
+      "enabled": false,
+      "port": 7955,
+      "password": "123456",
+      "git_html_path": "../ygo233-web/",
+      "html_path": "../ygo233-web/",
+      "cdb_path": "./ygopro/cards.cdb",
+      "script_path": "./ygopro/script",
+      "changelog_filename": "changelog.json",
+      "html_gits": [
+        {
+          "name": "GitHub",
+          "push": [
+            "push",
+            "origin"
+          ]
+        },
+        {
+          "name": "Coding",
+          "push": [
+            "push",
+            "coding",
+            "master:master"
+          ]
+        }
+      ]
+    },
+    "command": {
+      "enabled": true,
+      "identity": {
+        "username1": "password1",
+        "username1": "password2"
+      },
+      "command_list": {
+        "ygopro": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "./ygopro/"
+        },
+        "make": {
+          "command": "make",
+          "args": [
+            "config=release"
+          ],
+          "path": "./ygopro/build/"
+        },
+        "srvpro": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "."
+        },
+        "windbot": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "./windbot/"
+        },
+        "buildbot": {
+          "command": "xbuild",
+          "args": [
+            "/property:Configuration=Release"
+          ],
+          "path": "./windbot/"
+        },
+        "restartbot": {
+          "command": "pm2",
+          "args": [
+            "restart",
+            "windbot-server"
+          ],
+          "path": "."
+        },
+        "restart": {
+          "command": "pm2",
+          "args": [
+            "restart",
+            "ygopro-server"
+          ],
+          "path": "."
+        },
+        "script": {
+          "command": "git",
+          "args": [
+            "pull",
+            "origin",
+            "master"
+          ],
+          "path": "./ygopro/script/"
+        }
+      }
+    },
+    "http": {
+      "port": 1263,
+      "password": "Nanahira",
+      "websocket_roomlist": true,
+      "public_roomlist": true,
+      "show_ip": true,
+      "show_info": true,
+      "quick_death_rule": true,
+      "ssl": {
+        "enabled": false,
+        "port": 7923,
+        "cert": "ssl/fullchain.pem",
+        "key": "ssl/privkey.pem"
+      }
+    }
+  },
+  "ban": {
+    "banned_user": [],
+    "banned_ip": [],
+    "illegal_id": [
+      "^Lv\\.-*\\d+\\s*(.*)",
+      "^VIP\\.\\d+\\s*(.*)"
+    ],
+    "spam_word": [
+      "——"
+    ]
+  }
+}
