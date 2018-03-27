@@ -1,6 +1,6 @@
 {
   "file": "./config/config.json",
-  "port": 7911,
+  "port": 1262,
   "version": 4930,
   "hostinfo": {
     "lflist": 0,
@@ -16,10 +16,10 @@
     "time_limit": 180
   },
   "modules": {
-    "welcome": "MyCard YGOPro Server",
+    "welcome": "YGOPro Tourney",
     "update": "请更新游戏版本",
     "stop": false,
-    "side_timeout": false,
+    "side_timeout": 3,
     "i18n": {
       "auto_pick": false,
       "default": "zh-cn",
@@ -34,7 +34,7 @@
     },
     "tips": {
       "enabled": true,
-      "get": false
+      "get": "https://purerosefallen.github.io/ygopro-tips/tips.json"
     },
     "dialogues": {
       "enabled": true,
@@ -42,7 +42,7 @@
       "get": "http://mercury233.me/ygosrv233/dialogues.json"
     },
     "words": {
-      "enabled": true,
+      "enabled": false,
       "get": false
     },
     "music": {
@@ -55,7 +55,7 @@
       "hang_timeout": 90
     },
     "cloud_replay": {
-      "enabled": false,
+      "enabled": true,
       "redis_port": 6379,
       "enable_halfway_watch": true
     },
@@ -79,8 +79,8 @@
     "deck_log": {
       "enabled": false,
       "accesskey": "233",
-      "local": "./deck_log/",
-      "post": "https://api.mycard.moe/ygopro/analytics/deck/text",
+      "local": "./decks_save/",
+      "post": false,
       "arena": "233"
     },
     "big_brother": {
@@ -97,18 +97,18 @@
       "get_score": false
     },
     "tournament_mode": {
-      "enabled": false,
+      "enabled": true,
       "deck_check": true,
       "deck_path": "./decks/",
       "replay_safe": true,
       "replay_path": "./replays/",
       "replay_archive_tool": "7z",
       "block_replay_to_player": true,
-      "show_ip": false,
+      "show_ip": true,
       "show_info": true,
       "log_save_path": "./config/",
-      "password": "123456",
-      "port": 7933
+      "password": "Nanahira",
+      "port": 1264
     },
     "test_mode": {
       "watch_public_hand": false,
@@ -161,33 +161,40 @@
       ]
     },
     "webhook": {
-      "enabled": false,
-      "port": 7966,
-      "password": "123456",
+      "enabled": true,
+      "port": 7213,
+      "password": "Nanahira",
       "hooks": {
         "script": {
           "path": "./ygopro/script/",
           "remote": "origin",
           "branch": "master",
-          "callback": false
+          "callback": {
+            "command": "git",
+            "args": [
+              "reset",
+              "--hard",
+              "FETCH_HEAD"
+            ],
+            "path": "./ygopro/script/"
+          }
         },
-        "ocgcore": {
-          "path": "./ygopro/ocgcore/",
+        "windbot": {
+          "path": "./windbot/",
           "remote": "origin",
           "branch": "master",
           "callback": {
-            "command": "bash",
+            "command": "xbuild",
             "args": [
-              "-c",
-              "premake4 gmake ; cd build ; make config=release ; cd .. ; strip ygopro"
+              "/property:Configuration=Release"
             ],
-            "path": "./ygopro/"
+            "path": "./windbot/"
           }
         },
         "ygopro": {
           "path": "./ygopro/",
           "remote": "origin",
-          "branch": "server",
+          "branch": "master",
           "callback": {
             "command": "bash",
             "args": [
@@ -239,7 +246,7 @@
       ]
     },
     "command": {
-      "enabled": false,
+      "enabled": true,
       "identity": {
         "username1": "password1",
         "username1": "password2"
@@ -314,13 +321,13 @@
       }
     },
     "http": {
-      "port": 7922,
-      "password": "123456",
-      "websocket_roomlist": false,
-      "public_roomlist": false,
-      "show_ip": false,
+      "port": 1263,
+      "password": "Nanahira",
+      "websocket_roomlist": true,
+      "public_roomlist": true,
+      "show_ip": true,
       "show_info": true,
-      "quick_death_rule": false,
+      "quick_death_rule": true,
       "ssl": {
         "enabled": false,
         "port": 7923,
