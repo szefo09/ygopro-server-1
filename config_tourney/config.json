@@ -246,7 +246,7 @@
       ]
     },
     "command": {
-      "enabled": true,
+      "enabled": false,
       "identity": {
         "username1": "password1",
         "username1": "password2"
