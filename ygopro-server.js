@@ -1843,7 +1843,7 @@
             line = ref2[j];
             ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK);
           }
-        } else if (dialogues.dialogues_custom[card] && (ygopro.constants.MSG[msg] !== 'CHAINING' || (trigger_location & 0x8) && !(trigger_location & 0x200))) {
+        } else if (dialogues.dialogues_custom[card] && (ygopro.constants.MSG[msg] !== 'CHAINING' || (trigger_location & 0x8 !== 0 && trigger_location & 0x200 === 0))) {
           ref2 = _.lines(dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]);
           for (j = 0, len = ref2.length; j < len; j++) {
             line = ref2[j];
