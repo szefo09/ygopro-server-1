@@ -84,7 +84,7 @@ var makeChangelogs = function(dir, since) {
                 if (prc_git_diff.stdout) {
                     var lines = prc_git_diff.stdout.toString().split(/\n/g);
                     for (var j in lines) {
-                        var line = lines[j].match(/.*c(\d+)\.lua/);
+                        var line = lines[j].match(/.*c(\d+)\.lua.*/);
                         if (line) {
                             var name = cardNames[line[1]] || line[1];
                             addedCards.push(name);
@@ -102,7 +102,7 @@ var makeChangelogs = function(dir, since) {
                 if (prc_git_diff.stdout) {
                     var lines = prc_git_diff.stdout.toString().split(/\n/g);
                     for (var j in lines) {
-                        var line = lines[j].match(/.*c(\d+)\.lua/);
+                        var line = lines[j].match(/.*c(\d+)\.lua.*/);
                         if (line) {
                             var name = cardNames[line[1]] || line[1];
                             sendResponse("<span class='change'>" + date + " * " + name + "</span>");
