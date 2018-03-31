@@ -173,7 +173,7 @@ var updateChangelogs = function(message) {
 var pushHTMLs = function() {
     try {
         execSync('git add ' + config.changelog_filename, { cwd: config.git_html_path, env: process.env });
-        //execSync('git commit -m update-auto', { cwd: config.git_html_path, env: process.env });
+        execSync('git commit -m update-auto', { cwd: config.git_html_path, env: process.env });
     } catch (error) {
         sendResponse("git error: "+error.stdout);
     }
