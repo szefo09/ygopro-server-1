@@ -77,6 +77,7 @@ var makeChangelogs = function(dir, since) {
     if (prc_git_log.stdout) {
         var logs = prc_git_log.stdout.toString().split(/\n/g);
         for (var i in logs) {
+			console.log(logs[i])
             var log = logs[i].split(",");
             var date = log[1];
             if (date) {
@@ -84,7 +85,8 @@ var makeChangelogs = function(dir, since) {
                 if (prc_git_diff.stdout) {
                     var lines = prc_git_diff.stdout.toString().split(/\n/g);
                     for (var j in lines) {
-                        var line = lines[j].match(/c(\d+)\.lua/);
+						console.log(lines[j])
+                        var line = lines[j].match(/.*c(\d+)\.lua.*/);
                         if (line) {
                             var name = cardNames[line[1]] || line[1];
                             addedCards.push(name);
@@ -95,6 +97,7 @@ var makeChangelogs = function(dir, since) {
             }
         }
         for (var i in logs) {
+			console.log(logs[i])
             var log = logs[i].split(",");
             var date = log[1];
             if (date) {
@@ -102,7 +105,8 @@ var makeChangelogs = function(dir, since) {
                 if (prc_git_diff.stdout) {
                     var lines = prc_git_diff.stdout.toString().split(/\n/g);
                     for (var j in lines) {
-                        var line = lines[j].match(/c(\d+)\.lua/);
+						console.log(lines[j])
+                        var line = lines[j].match(/.*c(\d+)\.lua.*/);
                         if (line) {
                             var name = cardNames[line[1]] || line[1];
                             sendResponse("<span class='change'>" + date + " * " + name + "</span>");
@@ -173,7 +177,7 @@ var updateChangelogs = function(message) {
 var pushHTMLs = function() {
     try {
         execSync('git add ' + config.changelog_filename, { cwd: config.git_html_path, env: process.env });
-        //execSync('git commit -m update-auto', { cwd: config.git_html_path, env: process.env });
+        execSync('git commit -m update-auto', { cwd: config.git_html_path, env: process.env });
     } catch (error) {
         sendResponse("git error: "+error.stdout);
     }

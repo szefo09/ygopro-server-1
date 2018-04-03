@@ -170,6 +170,11 @@
     }
   });
 
+  if (settings.modules.http.quick_death_rule === true) {
+    settings.modules.http.quick_death_rule = 1;
+    setting_save(settings);
+  }
+
   default_data = loadJSON('./data/default_data.json');
 
   try {
@@ -1695,7 +1700,7 @@
   }  
 
   ygopro.stoc_follow('GAME_MSG', false, function(buffer, info, client, server) {
-    var card, j, len, line, msg, oppo_pos, playertype, pos, reason, ref, ref1, ref2, room, trigger_location, val;
+    var card, j, len, line, msg, playertype, pos, reason, ref, ref1, ref2, room, trigger_location, val, win_pos;
     room = ROOM_all[client.rid];
     if (!room) {
       return;
@@ -1726,10 +1731,10 @@
         room.turn = room.turn + 1;
         if (room.death) {
           if (room.turn >= room.death) {
-            oppo_pos = room.hostinfo.mode === 2 ? 2 : 1;
-            if (room.dueling_players[0].lp !== room.dueling_players[oppo_pos].lp && room.turn > 1) {
-              ygopro.stoc_send_chat_to_room(room, "${death_finish_part1}" + (room.dueling_players[0].lp > room.dueling_players[oppo_pos].lp ? room.dueling_players[0] : room.dueling_players[oppo_pos]).name + "${death_finish_part2}", ygopro.constants.COLORS.BABYBLUE);
-              ygopro.ctos_send((room.dueling_players[0].lp > room.dueling_players[oppo_pos].lp ? room.dueling_players[oppo_pos] : room.dueling_players[0]).server, 'SURRENDER');
+            if (room.dueling_players[0].lp !== room.dueling_players[1].lp && room.turn > 1) {
+              win_pos = room.dueling_players[0].lp > room.dueling_players[1].lp ? 0 : 1;
+              ygopro.stoc_send_chat_to_room(room, "${death_finish_part1}" + room.dueling_players[win_pos].name + "${death_finish_part2}", ygopro.constants.COLORS.BABYBLUE);
+              ygopro.ctos_send(room.dueling_players[1 - win_pos].server, 'SURRENDER');
             } else {
               room.death = -1;
               ygopro.stoc_send_chat_to_room(room, "${death_remain_final}", ygopro.constants.COLORS.BABYBLUE);
@@ -1760,7 +1765,7 @@
         room.scores[room.winner_name] = room.scores[room.winner_name] + 1;
       }
       if (room.death) {
-        if (settings.modules.http.quick_death_rule) {
+        if (settings.modules.http.quick_death_rule === 1) {
           room.death = -1;
         } else {
           room.death = 5;
@@ -2465,7 +2470,7 @@
   });
 
   ygopro.ctos_follow('UPDATE_DECK', true, function(buffer, info, client, server) {
-    var buff_main, buff_side, card, current_deck, deck, deck_array, deck_main, deck_side, deck_text, deckbuf, decks, found_deck, i, j, k, len, len1, line, room, struct;
+    var buff_main, buff_side, card, current_deck, deck, deck_array, deck_main, deck_side, deck_text, deckbuf, decks, found_deck, i, j, k, len, len1, line, room, struct, win_pos;
     room = ROOM_all[client.rid];
     if (!room) {
       return false;
@@ -2492,6 +2497,12 @@
       clearInterval(client.side_interval);
       client.side_interval = null;
       client.side_tcount = null;
+    }
+    if (settings.modules.http.quick_death_rule === 2 && room.started && room.death && room.scores[room.dueling_players[0].name] !== room.scores[room.dueling_players[1].name]) {
+      win_pos = room.scores[room.dueling_players[0].name] > room.scores[room.dueling_players[1].name] ? 0 : 1;
+      ygopro.stoc_send_chat_to_room(room, "${death2_finish_part1}" + room.dueling_players[win_pos].name + "${death2_finish_part2}", ygopro.constants.COLORS.BABYBLUE);
+      room.dueling_players[1 - win_pos].destroy();
+      return true;
     }
     if (room.random_type || room.arena) {
       if (client.pos === 0) {
@@ -2829,7 +2840,7 @@
       return callback + "( " + text + " );";
     };
     requestListener = function(request, response) {
-      var archive_args, archive_name, archive_process, check, death_room_found, duellog, error, filename, getpath, j, k, l, len, len1, len2, len3, m, parseQueryString, pass_validated, player, ref, replay, room, roomsjson, u;
+      var archive_args, archive_name, archive_process, check, death_room_found, duellog, error, filename, getpath, j, k, l, len, len1, len2, len3, m, parseQueryString, pass_validated, player, ref, replay, room, roomsjson, u, win_pos;
       parseQueryString = true;
       u = url.parse(request.url, parseQueryString);
       pass_validated = u.query.pass === settings.modules.http.password;
@@ -3072,12 +3083,24 @@
               room.death = (room.turn ? room.turn + 4 : 5);
               ygopro.stoc_send_chat_to_room(room, "${death_start}", ygopro.constants.COLORS.BABYBLUE);
             } else {
-              if (settings.modules.http.quick_death_rule) {
-                room.death = -1;
-                ygopro.stoc_send_chat_to_room(room, "${death_start_quick}", ygopro.constants.COLORS.BABYBLUE);
-              } else {
-                room.death = 5;
-                ygopro.stoc_send_chat_to_room(room, "${death_start_siding}", ygopro.constants.COLORS.BABYBLUE);
+              switch (settings.modules.http.quick_death_rule) {
+                case 2:
+                  if (room.scores[room.dueling_players[0].name] === room.scores[room.dueling_players[1].name]) {
+                    room.death = 5;
+                    ygopro.stoc_send_chat_to_room(room, "${death_start_siding}", ygopro.constants.COLORS.BABYBLUE);
+                  } else {
+                    win_pos = room.scores[room.dueling_players[0].name] > room.scores[room.dueling_players[1].name] ? 0 : 1;
+                    ygopro.stoc_send_chat_to_room(room, "${death2_finish_part1}" + room.dueling_players[win_pos].name + "${death2_finish_part2}", ygopro.constants.COLORS.BABYBLUE);
+                    room.dueling_players[1 - win_pos].destroy();
+                  }
+                  break;
+                case 1:
+                  room.death = -1;
+                  ygopro.stoc_send_chat_to_room(room, "${death_start_quick}", ygopro.constants.COLORS.BABYBLUE);
+                  break;
+                default:
+                  room.death = 5;
+                  ygopro.stoc_send_chat_to_room(room, "${death_start_siding}", ygopro.constants.COLORS.BABYBLUE);
               }
             }
           }
