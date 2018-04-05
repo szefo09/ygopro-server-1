@@ -26,6 +26,10 @@
 
 ### 使用方法
 * 可参考[wiki](https://github.com/mercury233/ygopro-server/wiki)安装
+* 一键安装：
+  * CentOS 7 `curl https://purerosefallen.github.io/ygopro-server/install_centos.sh | sudo bash -`
+  * Ubnutu 16 `curl https://purerosefallen.github.io/ygopro-server/install_ubnutu.sh | sudo bash -`
+  * 更新数据 `curl https://purerosefallen.github.io/ygopro-server/update.sh | sudo bash -`
 * 手动安装：
   * `git clone https://github.com/moecube/srvpro.git`
   * `cd srvpro`
