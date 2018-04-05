@@ -15,13 +15,13 @@ cd ~
 mkdir lib
 cd lib
 
-wget https://nchc.dl.sourceforge.net/project/p7zip/p7zip/16.02/p7zip_16.02_src_all.tar.bz2
+wget https://nchc.dl.sourceforge.net/project/p7zip/p7zip/16.02/p7zip_16.02_src_all.tar.bz2 --no-check-certificate
 tar jxvf p7zip_16.02_src_all.tar.bz2
 cd p7zip_16.02
 sudo make all3 install
 cd ..
 
-wget http://download.redis.io/releases/redis-4.0.8.tar.gz 
+wget http://download.redis.io/releases/redis-4.0.8.tar.gz --no-check-certificate
 tar xzfv redis-4.0.8.tar.gz
 cd redis-4.0.8
 make
@@ -30,13 +30,13 @@ cp -rf src/redis-server ..
 cd ..
 pm2 start redis-server
 
-wget 'http://www.lua.org/ftp/lua-5.3.4.tar.gz'
+wget 'http://www.lua.org/ftp/lua-5.3.4.tar.gz' --no-check-certificate
 tar zxf lua-5.3.4.tar.gz
 cd lua-5.3.4
 sudo make linux test install
 cd ..
 
-wget 'http://downloads.sourceforge.net/project/premake/Premake/4.4/premake-4.4-beta5-src.zip?r=&ts=1457170593&use_mirror=nchc' -O premake-4.4-beta5-src.zip
+wget 'http://downloads.sourceforge.net/project/premake/Premake/4.4/premake-4.4-beta5-src.zip?r=&ts=1457170593&use_mirror=nchc' -O premake-4.4-beta5-src.zip --no-check-certificate
 7z x -y premake-4.4-beta5-src.zip
 cd premake-4.4-beta5/build/gmake.unix/
 make
@@ -44,7 +44,7 @@ cd ../../bin/release/
 sudo cp premake4 /usr/bin/
 cd ../../../
 
-wget 'https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz' -O libevent-2.0.22-stable.tar.gz
+wget 'https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz' -O libevent-2.0.22-stable.tar.gz --no-check-certificate
 tar xf libevent-2.0.22-stable.tar.gz
 cd libevent-2.0.22-stable/
 ./configure
