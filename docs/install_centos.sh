@@ -64,16 +64,19 @@ npm install
 cp -rf config_build config
 mkdir decks decks_save replays
 
-git clone --depth=1 https://github.com/purerosefallen/ygopro-7210srv ygopro
-cd ygopro
+git clone https://github.com/purerosefallen/ygopro --branch=server --recursive
+cd ygopro/
 premake4 gmake
-cd build
+cd ocgcore/
+git checkout master
+cd ../script/
+git checkout master
+cd ../build/
 make config=release
 cd ..
-ln -s bin/release/ygopro .
+ln -s bin/release/ygopro ./
 strip ygopro
 mkdir replay
-git clone --depth=1 https://github.com/Smile-DK/ygopro-scripts script
 cd ..
 
 git clone --depth=1 https://github.com/purerosefallen/windbot
