@@ -58,7 +58,7 @@ cd ..
 
 cd ..
 
-git clone --depth=1 https://github.com/purerosefallen/ygopro-server ygopro-server
+git clone https://github.com/purerosefallen/ygopro-server ygopro-server
 cd ygopro-server
 npm install
 cp -rf config_build config
