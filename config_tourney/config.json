@@ -165,20 +165,6 @@
       "port": 7213,
       "password": "Nanahira",
       "hooks": {
-        "script": {
-          "path": "./ygopro/script/",
-          "remote": "origin",
-          "branch": "master",
-          "callback": {
-            "command": "git",
-            "args": [
-              "reset",
-              "--hard",
-              "FETCH_HEAD"
-            ],
-            "path": "./ygopro/script/"
-          }
-        },
         "windbot": {
           "path": "./windbot/",
           "remote": "origin",
@@ -194,12 +180,12 @@
         "ygopro": {
           "path": "./ygopro/",
           "remote": "origin",
-          "branch": "master",
+          "branch": "server",
           "callback": {
             "command": "bash",
             "args": [
               "-c",
-              "premake4 gmake ; cd build ; make config=release ; cd .. ; strip ygopro"
+              "git reset --hard FETCH_HEAD ; cd ocgcore ; git pull origin master ; git reset --hard FETCH_HEAD ; cd ../script ; git pull origin master ; git reset --hard FETCH_HEAD ; cd .. ; premake4 gmake ; cd build ; make config=release ; cd .. ; strip ygopro"
             ],
             "path": "./ygopro/"
           }
