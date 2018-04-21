@@ -2,15 +2,15 @@
 
 # install script for CentOS 7
 
-sudo systemctl stop firewalld
+sudo -E systemctl stop firewalld
 
-sudo yum update -y
-sudo yum install epel-release yum-utils -y
-sudo rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
-sudo yum-config-manager --add-repo http://download.mono-project.com/repo/centos7/
-curl --silent --location https://rpm.nodesource.com/setup_4.x | sudo bash -
-sudo yum install nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete -y
-sudo npm install pm2 -g
+sudo -E yum update -y
+sudo -E yum install epel-release yum-utils -y
+sudo -E rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
+sudo -E yum-config-manager --add-repo http://download.mono-project.com/repo/centos7/
+curl --silent --location https://rpm.nodesource.com/setup_4.x | sudo -E bash -
+sudo -E yum install nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete -y
+sudo -E npm install pm2 -g
 
 cd ~
 
@@ -20,14 +20,14 @@ cd lib
 wget https://nchc.dl.sourceforge.net/project/p7zip/p7zip/16.02/p7zip_16.02_src_all.tar.bz2 --no-check-certificate
 tar jxvf p7zip_16.02_src_all.tar.bz2
 cd p7zip_16.02
-sudo make all3 install
+sudo -E make all3 install
 cd ..
 
 wget http://download.redis.io/releases/redis-4.0.8.tar.gz --no-check-certificate
 tar xzfv redis-4.0.8.tar.gz
 cd redis-4.0.8
 make
-sudo make install
+sudo -E make install
 cp -rf src/redis-server ..
 cd ..
 pm2 start redis-server
@@ -35,7 +35,7 @@ pm2 start redis-server
 wget 'http://www.lua.org/ftp/lua-5.3.4.tar.gz' --no-check-certificate
 tar zxf lua-5.3.4.tar.gz
 cd lua-5.3.4
-sudo make linux test install
+sudo -E make linux test install
 cd ..
 
 wget 'http://downloads.sourceforge.net/project/premake/Premake/4.4/premake-4.4-beta5-src.zip?r=&ts=1457170593&use_mirror=nchc' -O premake-4.4-beta5-src.zip --no-check-certificate
@@ -43,7 +43,7 @@ wget 'http://downloads.sourceforge.net/project/premake/Premake/4.4/premake-4.4-b
 cd premake-4.4-beta5/build/gmake.unix/
 make
 cd ../../bin/release/
-sudo cp premake4 /usr/bin/
+sudo -E cp premake4 /usr/bin/
 cd ../../../
 
 wget 'https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz' -O libevent-2.0.22-stable.tar.gz --no-check-certificate
@@ -51,11 +51,11 @@ tar xf libevent-2.0.22-stable.tar.gz
 cd libevent-2.0.22-stable/
 ./configure
 make
-sudo make install
-sudo ln -s /usr/local/lib/libevent-2.0.so.5 /usr/lib/libevent-2.0.so.5
-sudo ln -s /usr/local/lib/libevent-2.0.so.5 /usr/lib64/libevent-2.0.so.5
-sudo ln -s /usr/local/lib/libevent_pthreads-2.0.so.5 /usr/lib/libevent_pthreads-2.0.so.5
-sudo ln -s /usr/local/lib/libevent_pthreads-2.0.so.5 /usr/lib64/libevent_pthreads-2.0.so.5
+sudo -E make install
+sudo -E ln -s /usr/local/lib/libevent-2.0.so.5 /usr/lib/libevent-2.0.so.5
+sudo -E ln -s /usr/local/lib/libevent-2.0.so.5 /usr/lib64/libevent-2.0.so.5
+sudo -E ln -s /usr/local/lib/libevent_pthreads-2.0.so.5 /usr/lib/libevent_pthreads-2.0.so.5
+sudo -E ln -s /usr/local/lib/libevent_pthreads-2.0.so.5 /usr/lib64/libevent_pthreads-2.0.so.5
 cd ..
 
 cd ..
