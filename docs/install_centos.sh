@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# install script for CentOS 7
+
 sudo systemctl stop firewalld
 
 sudo yum update -y
