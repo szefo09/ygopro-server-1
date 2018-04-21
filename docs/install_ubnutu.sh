@@ -7,7 +7,7 @@ echo "deb http://download.mono-project.com/repo/ubuntu xenial main" | sudo -E te
 echo y | sudo -E apt-get update -y
 echo y | sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete
 
-curl -sL https://deb.nodesource.com/setup_4.x | sudo -E -E bash -
+curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 echo y | sudo -E apt-get install -y nodejs 
 sudo -E npm install pm2 -g
 
