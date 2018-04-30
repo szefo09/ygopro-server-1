@@ -8,7 +8,7 @@ sudo -E yum update -y
 sudo -E yum install epel-release yum-utils -y
 sudo -E rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
 sudo -E yum-config-manager --add-repo http://download.mono-project.com/repo/centos7/
-curl --silent --location https://rpm.nodesource.com/setup_4.x | sudo -E bash -
+curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo -E bash -
 sudo -E yum install nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete -y
 sudo -E npm install pm2 -g
 

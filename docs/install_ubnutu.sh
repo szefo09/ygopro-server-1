@@ -5,10 +5,8 @@
 sudo -E apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 echo "deb http://download.mono-project.com/repo/ubuntu xenial main" | sudo -E tee /etc/apt/sources.list.d/mono-official.list
 echo y | sudo -E apt-get update -y
-echo y | sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete
-
-curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-echo y | sudo -E apt-get install -y nodejs 
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+echo y | sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete nodejs
 sudo -E npm install pm2 -g
 
 cd ~
