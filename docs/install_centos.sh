@@ -66,12 +66,9 @@ mkdir decks decks_save replays
 
 git clone https://github.com/purerosefallen/ygopro --branch=server --recursive
 cd ygopro/
+git submodule foreach git checkout master
 premake4 gmake
-cd ocgcore/
-git checkout master
-cd ../script/
-git checkout master
-cd ../build/
+cd build/
 make config=release
 cd ..
 ln -s bin/release/ygopro ./

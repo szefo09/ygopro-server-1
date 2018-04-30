@@ -9,8 +9,6 @@ curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
 echo y | sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete nodejs
 sudo -E npm install pm2 -g
 
-cd ~
-
 mkdir lib
 cd lib
 
@@ -65,12 +63,9 @@ mkdir decks decks_save replays
 
 git clone https://github.com/purerosefallen/ygopro --branch=server --recursive
 cd ygopro/
+git submodule foreach git checkout master
 premake4 gmake
-cd ocgcore/
-git checkout master
-cd ../script/
-git checkout master
-cd ../build/
+cd build/
 make config=release
 cd ..
 ln -s bin/release/ygopro ./

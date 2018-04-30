@@ -1,18 +1,22 @@
 #!/bin/bash
-cd ~/ygopro-server
-git pull origin master
-cd windbot
-git pull origin master
-echo y | xbuild /property:Configuration=Release
-cd ../ygopro
-git pull origin master
-cd script
+
+# update script
+
+cd ygopro-server
 git pull origin master
 git reset --hard FETCH_HEAD
-cd ..
+cd windbot
+git pull origin master
+git reset --hard FETCH_HEAD
+echo y | xbuild /property:Configuration=Release
+cd ../ygopro
+git pull origin server
+git reset --hard FETCH_HEAD
+git submodule foreach git pull origin master
+git submodule foreach git reset --hard FETCH_HEAD
 premake4 gmake
 cd build
 make config=release
-cd ..
+cd ../
 strip ygopro
-cd ~
+cd ../../
