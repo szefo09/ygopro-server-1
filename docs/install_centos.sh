@@ -12,8 +12,6 @@ curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo -E bash -
 sudo -E yum install nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete -y
 sudo -E npm install pm2 -g
 
-cd ~
-
 mkdir lib
 cd lib
 
