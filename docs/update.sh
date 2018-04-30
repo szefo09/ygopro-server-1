@@ -2,7 +2,6 @@
 
 # update script
 
-cd ygopro-server
 git pull origin master
 git reset --hard FETCH_HEAD
 cd windbot
@@ -19,4 +18,4 @@ cd build
 make config=release
 cd ../
 strip ygopro
-cd ../../
+cd ../
