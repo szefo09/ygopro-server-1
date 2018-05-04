@@ -112,8 +112,8 @@
     },
     "test_mode": {
       "watch_public_hand": false,
-      "no_connect_count_limit": false,
-      "no_ban_player": false
+      "no_connect_count_limit": true,
+      "no_ban_player": true
     },
     "pre_util": {
       "enabled": false,
