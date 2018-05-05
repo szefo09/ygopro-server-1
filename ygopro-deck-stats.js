@@ -123,6 +123,7 @@ function load_database(callback) {
             if (result.type & constants.TYPES.TYPE_TOON) {cardTypes.push("卡通");}
             if (result.type & constants.TYPES.TYPE_XYZ) {cardTypes.push("超量");}
             if (result.type & constants.TYPES.TYPE_PENDULUM) {cardTypes.push("灵摆");}
+            if (result.type & constants.TYPES.TYPE_LINK) {cardTypes.push("连接");}
             card.fulltype=cardTypes.join('|');
             
             if (result.type & constants.TYPES.TYPE_MONSTER) {
