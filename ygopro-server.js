@@ -1702,13 +1702,13 @@
   }  
 
   ygopro.stoc_follow('GAME_MSG', false, function(buffer, info, client, server) {
-    var card, l, len2, line, msg, playertype, pos, reason, ref2, ref3, ref4, room, trigger_location, val, win_pos;
+    var card, count, l, len2, line, loc, msg, playertype, pos, reason, ref2, ref3, ref4, room, trigger_location, val, win_pos;
     room = ROOM_all[client.rid];
     if (!room) {
       return;
     }
     msg = buffer.readInt8(0);
-    if (msg >= 10 && msg < 30) {
+    if ((msg >= 10 && msg < 30) || msg === 132 || (msg >= 140 && msg < 144)) {
       room.waiting_for_player = client;
       room.last_active_time = moment();
     }
@@ -1716,6 +1716,9 @@
       playertype = buffer.readUInt8(1);
       client.is_first = !(playertype & 0xf);
       client.lp = room.hostinfo.start_lp;
+      if (room.hostinfo.mode !== 2) {
+        client.card_count = 0;
+      }
       if (client.pos === 0) {
         room.turn = 0;
         room.duel_count = room.duel_count + 1;
@@ -1828,6 +1831,34 @@
       }
       if ((0 < (ref3 = room.dueling_players[pos].lp) && ref3 <= 100)) {
         ygopro.stoc_send_chat_to_room(room, "${lp_low_self}", ygopro.constants.COLORS.PINK);
+      }
+    }
+    if (ygopro.constants.MSG[msg] === 'MOVE' && client.pos === 0 && room.hostinfo.mode !== 2) {
+      pos = buffer.readUInt8(5);
+      if (!client.is_first) {
+        pos = 1 - pos;
+      }
+      loc = buffer.readUInt8(6);
+      if (loc & 0xe) {
+        room.dueling_players[pos].card_count--;
+      }
+      pos = buffer.readUInt8(9);
+      if (!client.is_first) {
+        pos = 1 - pos;
+      }
+      loc = buffer.readUInt8(10);
+      if (loc & 0xe) {
+        room.dueling_players[pos].card_count++;
+      }
+    }
+    if (ygopro.constants.MSG[msg] === 'DRAW' && room.hostinfo.mode !== 2) {
+      pos = buffer.readUInt8(1);
+      if (!client.is_first) {
+        pos = 1 - pos;
+      }
+      if (pos === 0) {
+        count = buffer.readInt8(2);
+        client.card_count += count;
       }
     }
     if (settings.modules.music.enabled) {
@@ -2738,7 +2769,7 @@
             for (n = 0, len4 = ref4.length; n < len4; n++) {
               player = ref4[n];
               results.push({
-                name: player.name + (settings.modules.tournament_mode.show_ip && !player.is_local ? " (IP: " + player.ip.slice(7) + ")" : "") + (settings.modules.tournament_mode.show_info && !(room.hostinfo.mode === 2 && player.pos % 2 > 0) ? " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + ")" : ""),
+                name: player.name + (settings.modules.tournament_mode.show_ip && !player.is_local ? " (IP: " + player.ip.slice(7) + ")" : "") + (settings.modules.tournament_mode.show_info && !(room.hostinfo.mode === 2 && player.pos % 2 > 0) ? " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + (room.hostinfo.mode !== 2 ? " Cards:" + (player.card_count != null ? player.card_count : room.hostinfo.start_hand) : "") + ")" : ""),
                 winner: player.pos === room.winner
               });
             }
@@ -2874,7 +2905,7 @@
                         if (player.pos != null) {
                           results1.push({
                             id: (-1).toString(),
-                            name: player.name + (settings.modules.http.show_ip && pass_validated && !player.is_local ? " (IP: " + player.ip.slice(7) + ")" : "") + (settings.modules.http.show_info && room.started && player.pos !== 7 && !(room.hostinfo.mode === 2 && player.pos % 2 > 0) ? " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + ")" : ""),
+                            name: player.name + (settings.modules.http.show_ip && pass_validated && !player.is_local ? " (IP: " + player.ip.slice(7) + ")" : "") + (settings.modules.http.show_info && room.started && player.pos !== 7 && !(room.hostinfo.mode === 2 && player.pos % 2 > 0) ? " (Score:" + room.scores[player.name] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + (room.hostinfo.mode !== 2 ? " Cards:" + (player.card_count != null ? player.card_count : room.hostinfo.start_hand) : "") + ")" : ""),
                             pos: player.pos
                           });
                         }
