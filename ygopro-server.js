@@ -1777,6 +1777,7 @@
               if (room.hostinfo.mode === 2) {
                 ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END');
                 ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END');
+                room.scores[room.dueling_players[oppo_pos - win_pos].name] = 0;
                 room.dueling_players[oppo_pos - win_pos].destroy();
                 room.dueling_players[oppo_pos - win_pos + 1].destroy();
               } else {
@@ -1805,6 +1806,7 @@
         if (room.hostinfo.mode === 2) {
           ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END');
           ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END');
+          room.scores[room.dueling_players[oppo_pos - win_pos].name] = 0;
           room.dueling_players[oppo_pos - win_pos].destroy();
           room.dueling_players[oppo_pos - win_pos + 1].destroy();
         } else {
@@ -2598,6 +2600,7 @@
       if (room.hostinfo.mode === 2) {
         ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END');
       }
+      room.scores[room.dueling_players[oppo_pos - win_pos].name] = 0;
       room.dueling_players[oppo_pos - win_pos].destroy();
       if (room.hostinfo.mode === 2) {
         room.dueling_players[oppo_pos - win_pos + 1].destroy();
@@ -3209,6 +3212,7 @@
                     if (room.hostinfo.mode === 2) {
                       ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END');
                     }
+                    room.scores[room.dueling_players[oppo_pos - win_pos].name] = 0;
                     room.dueling_players[oppo_pos - win_pos].destroy();
                     if (room.hostinfo.mode === 2) {
                       room.dueling_players[oppo_pos - win_pos + 1].destroy();
