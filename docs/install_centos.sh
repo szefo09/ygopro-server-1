@@ -26,7 +26,7 @@ tar xzfv redis-4.0.9.tar.gz
 cd redis-4.0.9
 make
 sudo -E make install
-cp -rf src/redis-server ..
+sudo -E cp -rf src/redis-server /usr/bin/
 cd ..
 pm2 start redis-server
 
