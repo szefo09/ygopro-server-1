@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# install script for CentOS 7
+# install script for Ubnutu 16
 
-sudo -E systemctl stop firewalld
-
-sudo -E yum update -y
-sudo -E yum install epel-release yum-utils -y
-sudo -E rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
-sudo -E yum-config-manager --add-repo http://download.mono-project.com/repo/centos7/
-curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo -E bash -
-sudo -E yum install nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete -y
+sudo -E apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+echo "deb http://download.mono-project.com/repo/ubuntu stable-xenial main" | sudo -E tee /etc/apt/sources.list.d/mono-official-stable.list
+echo y | sudo -E apt-get update -y
+echo y | sudo -E apt-get upgrade -y
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+echo y | sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete nodejs
 sudo -E npm install pm2 -g
 
 mkdir lib
@@ -76,7 +74,7 @@ strip ygopro
 mkdir replay
 cd ..
 
-git clone --depth=1 https://github.com/purerosefallen/windbot
+git clone https://github.com/purerosefallen/windbot
 cd windbot
 echo y | xbuild /property:Configuration=Release
 ln -s bin/Release/WindBot.exe .
