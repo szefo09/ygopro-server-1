@@ -76,7 +76,7 @@ strip ygopro
 mkdir replay
 cd ..
 
-git clone --depth=1 https://github.com/purerosefallen/windbot
+git clone https://github.com/purerosefallen/windbot
 cd windbot
 yes | xbuild /property:Configuration=Release
 ln -s bin/Release/WindBot.exe .
