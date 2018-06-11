@@ -5,10 +5,10 @@
 sudo -E apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 sudo apt-get install -y apt-transport-https
 echo "deb http://download.mono-project.com/repo/ubuntu stable-trusty main" | sudo -E tee /etc/apt/sources.list.d/mono-official-stable.list
-echo y | sudo -E apt-get update -y
-echo y | sudo -E apt-get upgrade -y
+yes | sudo -E apt-get update -y
+yes | sudo -E apt-get upgrade -y
 curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
-echo y | sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete nodejs
+yes | sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete nodejs
 sudo -E npm install pm2 -g
 
 mkdir lib
@@ -77,7 +77,7 @@ cd ..
 
 git clone https://github.com/purerosefallen/windbot
 cd windbot
-echo y | xbuild /property:Configuration=Release
+yes | xbuild /property:Configuration=Release
 ln -s bin/Release/WindBot.exe .
 ln -s ../ygopro/cards.cdb .
 pm2 start pm2.json
