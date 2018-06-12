@@ -59,10 +59,10 @@ try
     fs.writeFileSync(oldtips.file, JSON.stringify(oldtips, null, 2))
     delete oldconfig.tips
   if oldconfig.words
-    oldtips = {}
-    oldtips.file = './config/words.json'
-    oldtips.words = oldconfig.words
-    fs.writeFileSync(oldtips.file, JSON.stringify(oldtips, null, 2))
+    oldwords = {}
+    oldwords.file = './config/words.json'
+    oldwords.words = oldconfig.words
+    fs.writeFileSync(oldwords.file, JSON.stringify(oldwords, null, 2))
     delete oldconfig.words
   if oldconfig.dialogues
     olddialogues = {}
