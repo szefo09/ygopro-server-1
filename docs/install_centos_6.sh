@@ -36,13 +36,8 @@ cd lua-5.3.4
 sudo -E make linux test install
 cd ..
 
-wget 'http://downloads.sourceforge.net/project/premake/Premake/4.4/premake-4.4-beta5-src.zip?r=&ts=1457170593&use_mirror=nchc' -O premake-4.4-beta5-src.zip --no-check-certificate
-7z x -y premake-4.4-beta5-src.zip
-cd premake-4.4-beta5/build/gmake.unix/
-make
-cd ../../bin/release/
-sudo -E cp premake4 /usr/bin/
-cd ../../../
+wget -O - https://github.com/premake/premake-core/releases/download/v5.0.0-alpha12/premake-5.0.0-alpha12-linux.tar.gz | tar zfx -
+sudo -E cp -rf premake5 /usr/bin/
 
 wget 'https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz' -O libevent-2.0.22-stable.tar.gz --no-check-certificate
 tar xf libevent-2.0.22-stable.tar.gz
@@ -67,7 +62,7 @@ mkdir decks decks_save replays
 git clone https://github.com/purerosefallen/ygopro --branch=server --recursive
 cd ygopro/
 git submodule foreach git checkout master
-premake4 gmake
+premake5 gmake
 cd build/
 make config=release
 cd ..

@@ -13,7 +13,7 @@ git pull origin server
 git reset --hard FETCH_HEAD
 git submodule foreach git pull origin master
 git submodule foreach git reset --hard FETCH_HEAD
-premake4 gmake
+premake5 gmake
 cd build
 make config=release
 cd ../

@@ -206,7 +206,7 @@
             "command": "bash",
             "args": [
               "-c",
-              "git reset --hard FETCH_HEAD ; cd ocgcore ; git pull origin master ; git reset --hard FETCH_HEAD ; cd ../script ; git pull origin master ; git reset --hard FETCH_HEAD ; cd .. ; premake4 gmake ; cd build ; make config=release ; cd .. ; strip ygopro"
+              "git reset --hard FETCH_HEAD ; cd ocgcore ; git pull origin master ; git reset --hard FETCH_HEAD ; cd ../script ; git pull origin master ; git reset --hard FETCH_HEAD ; cd .. ; premake5 gmake ; cd build ; make config=release ; cd .. ; strip ygopro"
             ],
             "path": "./ygopro/"
           }
