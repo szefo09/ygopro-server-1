@@ -222,74 +222,7 @@
       }
     }
   };
-  
-  this.stoc_send_hint_music = function(client, music, music_type) {
-    if (!client) {
-      console.log("err stoc_send_hint_music");
-      return;
-    }
-    this.stoc_send(client, 'GAME_MSG', {
-      curmsg: 2,
-      type: music_type,
-      player: 0,
-      data: music
-    });
-  };
 
-  this.stoc_send_hint_music_to_room = function(room, music, music_type) {
-    var client, j, k, len1, len2, ref, ref1;
-    if (!room) {
-      console.log("err stoc_send_hint_music_to_room");
-      return;
-    }
-    ref = room.players;
-    for (j = 0, len1 = ref.length; j < len1; j++) {
-      client = ref[j];
-      if (client) {
-        this.stoc_send_hint_music(client, music, music_type);
-      }
-    }
-    ref1 = room.watchers;
-    for (k = 0, len2 = ref1.length; k < len2; k++) {
-      client = ref1[k];
-      if (client) {
-        this.stoc_send_hint_music(client, music, music_type);
-      }
-    }
-  };  
-
-  this.stoc_send_hint_music_to_room = function(room, music) {
-    var client, j, k, len1, len2, ref, ref1;
-    if (!room) {
-      console.log("err stoc_send_hint_card_to_room");
-      return;
-    }
-    ref = room.players;
-    for (j = 0, len1 = ref.length; j < len1; j++) {
-      client = ref[j];
-      if (client) {
-        this.stoc_send(client, 'GAME_MSG', {
-          curmsg: 2,
-          type: 11,
-          player: 0,
-          data: music
-        });
-      }
-    }
-    ref1 = room.watchers;
-    for (k = 0, len2 = ref1.length; k < len2; k++) {
-      client = ref1[k];
-      if (client) {
-        this.stoc_send(client, 'GAME_MSG', {
-          curmsg: 2,
-          type: 11,
-          player: 0,
-          data: music
-        });
-      }
-    }
-  }; 
-  
   this.stoc_send_hint_card_to_room = function(room, card) {
     var client, j, k, len1, len2, ref, ref1;
     if (!room) {
