@@ -190,6 +190,7 @@
           "path": "./windbot/",
           "remote": "origin",
           "branch": "master",
+          "forced": true,
           "callback": {
             "command": "xbuild",
             "args": [
@@ -202,11 +203,12 @@
           "path": "./ygopro/",
           "remote": "origin",
           "branch": "server",
+          "forced": true,
           "callback": {
             "command": "bash",
             "args": [
               "-c",
-              "git reset --hard FETCH_HEAD ; cd ocgcore ; git pull origin master ; git reset --hard FETCH_HEAD ; cd ../script ; git pull origin master ; git reset --hard FETCH_HEAD ; cd .. ; premake5 gmake ; cd build ; make config=release ; cd .. ; strip ygopro"
+              "cd ocgcore ; git pull origin master ; git reset --hard FETCH_HEAD ; cd ../script ; git pull origin master ; git reset --hard FETCH_HEAD ; cd .. ; premake5 gmake ; cd build ; make config=release ; cd .. ; strip ygopro"
             ],
             "path": "./ygopro/"
           }
@@ -215,6 +217,7 @@
           "path": ".",
           "remote": "origin",
           "branch": "master",
+          "forced": true,
           "callback": {
             "command": "npm",
             "args": [
