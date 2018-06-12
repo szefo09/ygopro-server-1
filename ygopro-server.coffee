@@ -58,10 +58,17 @@ try
     oldtips.tips = oldconfig.tips
     fs.writeFileSync(oldtips.file, JSON.stringify(oldtips, null, 2))
     delete oldconfig.tips
+  if oldconfig.words
+    oldtips = {}
+    oldtips.file = './config/words.json'
+    oldtips.words = oldconfig.words
+    fs.writeFileSync(oldtips.file, JSON.stringify(oldtips, null, 2))
+    delete oldconfig.words
   if oldconfig.dialogues
     olddialogues = {}
     olddialogues.file = './config/dialogues.json'
     olddialogues.dialogues = oldconfig.dialogues
+    olddialogues.dialogues_custom = {}
     fs.writeFileSync(olddialogues.file, JSON.stringify(olddialogues, null, 2))
     delete oldconfig.dialogues
   if oldconfig.modules
@@ -137,7 +144,15 @@ catch
   tips = default_data.tips
   setting_save(tips)
 try
+  words = loadJSON('./config/words.json')
+catch
+  words = default_data.words
+  setting_save(words)
+try
   dialogues = loadJSON('./config/dialogues.json')
+  if !dialogues.dialogues_custom
+    dialogues.dialogues_custom = {}
+    setting_save(dialogues);
 catch
   dialogues = default_data.dialogues
   setting_save(dialogues)
@@ -442,6 +457,8 @@ class Room
     else if name[0...3] == 'AI#'
       @hostinfo.rule = 2
       @hostinfo.lflist = -1
+      @hostinfo.time_limit = 0
+      @hostinfo.no_check_deck = true
 
     else if (param = name.match /^(\d)(\d)(T|F)(T|F)(T|F)(\d+),(\d+),(\d+)/i)
       @hostinfo.rule = parseInt(param[1])
@@ -1266,6 +1283,9 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server)->
   #欢迎信息
   room=ROOM_all[client.rid]
   return unless room
+  if settings.modules.words.enabled and words.words[client.name]
+    for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
+      ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
   if settings.modules.welcome
     ygopro.stoc_send_chat(client, settings.modules.welcome, ygopro.constants.COLORS.GREEN)
   if room.welcome
@@ -1333,6 +1353,24 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server)->
   return
 
 # 登场台词
+load_words = () ->
+  request
+    url: settings.modules.words.get
+    json: true
+  , (error, response, body)->
+    if _.isString body
+      log.warn "words bad json", body
+    else if error or !body
+      log.warn 'words error', error, response
+    else
+      setting_change(words, "words", body)
+      log.info "words loaded", _.size words.words
+    return
+  return
+
+if settings.modules.words.get
+  load_words()
+
 load_dialogues = () ->
   request
     url: settings.modules.dialogues.get
@@ -1348,8 +1386,26 @@ load_dialogues = () ->
     return
   return
 
+load_dialogues_custom = () ->
+  request
+    url: settings.modules.dialogues.get_custom
+    json: true
+  , (error, response, body)->
+    if _.isString body
+      log.warn "custom dialogues bad json", body
+    else if error or !body
+      log.warn 'custom dialogues error', error, response
+    else
+      setting_change(dialogues, "dialogues_custom", body)
+      log.info "custom dialogues loaded", _.size dialogues.dialogues_custom
+    return
+  return
+
 if settings.modules.dialogues.get
   load_dialogues()
+
+if settings.modules.dialogues.get_custom
+  load_dialogues_custom()
 
 ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
@@ -1525,9 +1581,13 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
     if ygopro.constants.MSG[msg] == 'SUMMONING' or ygopro.constants.MSG[msg] == 'SPSUMMONING' or ygopro.constants.MSG[msg] == 'CHAINING'
       card = buffer.readUInt32LE(1)
       trigger_location = buffer.readUInt8(6)
-      if dialogues.dialogues[card] and (ygopro.constants.MSG[msg] != 'CHAINING' or (trigger_location & 0x8) and !(trigger_location & 0x200))
-        for line in _.lines dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]
-          ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
+      if ygopro.constants.MSG[msg] != 'CHAINING' or (trigger_location & 0x8) and !(trigger_location & 0x200)
+        if dialogues.dialogues[card]
+          for line in _.lines dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]
+            ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
+        else if dialogues.dialogues_custom[card]
+          for line in _.lines dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]
+            ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
   return false
 
 #房间管理
@@ -1670,6 +1730,7 @@ load_tips = ()->
 
 if settings.modules.tips.get
   load_tips()
+if settings.modules.tips.enabled
   setInterval ()->
     for room in ROOM_all when room and room.established
       ygopro.stoc_send_random_tip_to_room(room) if !room.started or room.changing_side
@@ -1941,7 +2002,7 @@ ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server)->
     if client.pos == 0
       room.waiting_for_player = room.waiting_for_player2
     room.last_active_time = moment()
-  else if !room.started and room.hostinfo.mode == 1 and settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.deck_check and fs.readdirSync(settings.modules.tournament_mode.deck_path).length
+  else if !room.started and settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.deck_check and fs.readdirSync(settings.modules.tournament_mode.deck_path).length
     struct = ygopro.structs["deck"]
     struct._setBuff(buffer)
     struct.set("mainc", 1)
@@ -2329,8 +2390,15 @@ if settings.modules.http
 
       else if u.query.loaddialogues
         load_dialogues()
+        if settings.modules.dialogues.get_custom
+          load_dialogues_custom()
         response.writeHead(200)
-        response.end(addCallback(u.query.callback, "['loading dialogues', '" + settings.modules.dialogues.get + "']"))
+        response.end(addCallback(u.query.callback, "['loading dialogues', '" + settings.modules.dialogues.get + (if settings.modules.dialogues.get_custom then " and " + settings.modules.dialogues.get_custom else "") + "']"))
+
+      else if u.query.loadwords
+        load_words()
+        response.writeHead(200)
+        response.end(addCallback(u.query.callback, "['loading words', '" + settings.modules.words.get + "']"))
 
       else if u.query.ban
         ban_user(u.query.ban)

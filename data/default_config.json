@@ -66,10 +66,6 @@
       "enabled": true,
       "get": false
     },
-    "music": {
-      "enabled": false,
-      "dbpath": "expansions/222DIY.cdb"
-    },
     "random_duel": {
       "enabled": false,
       "no_rematch_check": false,
@@ -243,81 +239,6 @@
           ]
         }
       ]
-    },
-    "command": {
-      "enabled": false,
-      "identity": {
-        "username1": "password1",
-        "username1": "password2"
-      },
-      "command_list": {
-        "ygopro": {
-          "command": "git",
-          "args": [
-            "pull",
-            "origin",
-            "master"
-          ],
-          "path": "./ygopro/"
-        },
-        "make": {
-          "command": "make",
-          "args": [
-            "config=release"
-          ],
-          "path": "./ygopro/build/"
-        },
-        "srvpro": {
-          "command": "git",
-          "args": [
-            "pull",
-            "origin",
-            "master"
-          ],
-          "path": "."
-        },
-        "windbot": {
-          "command": "git",
-          "args": [
-            "pull",
-            "origin",
-            "master"
-          ],
-          "path": "./windbot/"
-        },
-        "buildbot": {
-          "command": "xbuild",
-          "args": [
-            "/property:Configuration=Release"
-          ],
-          "path": "./windbot/"
-        },
-        "restartbot": {
-          "command": "pm2",
-          "args": [
-            "restart",
-            "windbot-server"
-          ],
-          "path": "."
-        },
-        "restart": {
-          "command": "pm2",
-          "args": [
-            "restart",
-            "ygopro-server"
-          ],
-          "path": "."
-        },
-        "script": {
-          "command": "git",
-          "args": [
-            "pull",
-            "origin",
-            "master"
-          ],
-          "path": "./ygopro/script/"
-        }
-      }
     },
     "http": {
       "port": 7922,
