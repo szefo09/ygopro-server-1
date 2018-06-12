@@ -1285,7 +1285,7 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server)->
   return unless room
   if settings.modules.words.enabled and words.words[client.name]
     for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
-      ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
+      ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
   if settings.modules.welcome
     ygopro.stoc_send_chat(client, settings.modules.welcome, ygopro.constants.COLORS.GREEN)
   if room.welcome
