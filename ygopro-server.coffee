@@ -729,6 +729,7 @@ net.createServer (client) ->
   # server stand for the connection to ygopro server process
   server = new net.Socket()
   client.server = server
+  server.client = client
 
   client.setTimeout(2000) #连接前超时2秒
 
@@ -744,7 +745,7 @@ net.createServer (client) ->
     unless client.closed
       client.closed = true
       room.disconnect(client) if room
-    server.destroy()
+    client.server.destroy()
     return
 
   client.on 'error', (error)->
@@ -758,33 +759,33 @@ net.createServer (client) ->
     unless client.closed
       client.closed = error
       room.disconnect(client, error) if room
-    server.destroy()
+    client.server.destroy()
     return
 
   client.on 'timeout', ()->
-    server.destroy()
+    client.server.destroy()
     return
 
   server.on 'close', (had_error) ->
-    #log.info "server closed", client.name, had_error
-    room=ROOM_all[client.rid]
-    #log.info "server close", client.ip, ROOM_connected_ip[client.ip]
+    #log.info "server closed", server.client.name, had_error
+    room=ROOM_all[server.client.rid]
+    #log.info "server close", server.client.ip, ROOM_connected_ip[server.client.ip]
     room.disconnector = 'server' if room
     server.closed = true unless server.closed
-    unless client.closed
-      ygopro.stoc_send_chat(client, "${server_closed}", ygopro.constants.COLORS.RED)
-      client.destroy()
+    unless server.client.closed
+      ygopro.stoc_send_chat(server.client, "${server_closed}", ygopro.constants.COLORS.RED)
+      server.client.destroy()
     return
 
   server.on 'error', (error)->
     #log.info "server error", client.name, error
-    room=ROOM_all[client.rid]
+    room=ROOM_all[server.client.rid]
     #log.info "server err close", client.ip, ROOM_connected_ip[client.ip]
     room.disconnector = 'server' if room
     server.closed = error
-    unless client.closed
-      ygopro.stoc_send_chat(client, "${server_error}: #{error}", ygopro.constants.COLORS.RED)
-      client.destroy()
+    unless server.client.closed
+      ygopro.stoc_send_chat(server.client, "${server_error}: #{error}", ygopro.constants.COLORS.RED)
+      server.client.destroy()
     return
   
   if ROOM_bad_ip[client.ip] > 5 or ROOM_connected_ip[client.ip] > 10
@@ -855,9 +856,9 @@ net.createServer (client) ->
                 struct._setBuff(b)
                 info = _.clone(struct.fields)
               if ygopro.ctos_follows[ctos_proto].synchronous
-                cancel = ygopro.ctos_follows[ctos_proto].callback b, info, client, server
+                cancel = ygopro.ctos_follows[ctos_proto].callback b, info, client, client.server
               else
-                ygopro.ctos_follows[ctos_proto].callback b, info, client, server
+                ygopro.ctos_follows[ctos_proto].callback b, info, client, client.server
             datas.push ctos_buffer.slice(0, 2 + ctos_message_length) unless cancel
             ctos_buffer = ctos_buffer.slice(2 + ctos_message_length)
             ctos_message_length = 0
@@ -879,7 +880,7 @@ net.createServer (client) ->
           break
 
       if client.established
-        server.write buffer for buffer in datas
+        client.server.write buffer for buffer in datas
       else
         client.pre_establish_buffers.push buffer for buffer in datas
 
@@ -893,7 +894,7 @@ net.createServer (client) ->
     #stoc_buffer = Buffer.concat([stoc_buffer, data], stoc_buffer.length + data.length) #buffer的错误使用方式，好孩子不要学
 
     #unless ygopro.stoc_follows[stoc_proto] and ygopro.stoc_follows[stoc_proto].synchronous
-    #client.write data
+    #server.client.write data
     datas = []
 
     looplimit = 0
@@ -903,13 +904,13 @@ net.createServer (client) ->
         if stoc_buffer.length >= 2
           stoc_message_length = stoc_buffer.readUInt16LE(0)
         else
-          log.warn("bad stoc_buffer length", client.ip) unless stoc_buffer.length == 0
+          log.warn("bad stoc_buffer length", server.client.ip) unless stoc_buffer.length == 0
           break
       else if stoc_proto == 0
         if stoc_buffer.length >= 3
           stoc_proto = stoc_buffer.readUInt8(2)
         else
-          log.warn("bad stoc_proto length", client.ip)
+          log.warn("bad stoc_proto length", server.client.ip)
           break
       else
         if stoc_buffer.length >= 2 + stoc_message_length
@@ -923,24 +924,24 @@ net.createServer (client) ->
               struct._setBuff(b)
               info = _.clone(struct.fields)
             if ygopro.stoc_follows[stoc_proto].synchronous
-              cancel = ygopro.stoc_follows[stoc_proto].callback b, info, client, server
+              cancel = ygopro.stoc_follows[stoc_proto].callback b, info, server.client, server
             else
-              ygopro.stoc_follows[stoc_proto].callback b, info, client, server
+              ygopro.stoc_follows[stoc_proto].callback b, info, server.client, server
           datas.push stoc_buffer.slice(0, 2 + stoc_message_length) unless cancel
           stoc_buffer = stoc_buffer.slice(2 + stoc_message_length)
           stoc_message_length = 0
           stoc_proto = 0
         else
-          log.warn("bad stoc_message length", client.ip)
+          log.warn("bad stoc_message length", server.client.ip)
           break
 
       looplimit++
       #log.info(looplimit)
       if looplimit > 800
-        log.info("error stoc", client.name)
+        log.info("error stoc", server.client.name)
         server.destroy()
         break
-    client.write buffer for buffer in datas
+    server.client.write buffer for buffer in datas
 
     return
   return
