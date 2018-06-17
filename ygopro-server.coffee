@@ -254,7 +254,7 @@ ROOM_players_oppentlist = {}
 ROOM_players_banned = []
 ROOM_connected_ip = {}
 ROOM_bad_ip = {}
-
+  
 # ban a user manually and permanently
 ban_user = (name) ->
   settings.ban.banned_user.push(name)
@@ -409,6 +409,67 @@ ROOM_unwelcome = (room, bad_player, reason)->
 CLIENT_kick = (client) ->
   client.system_kicked = true
   CLIENT_kick(client)
+
+release_disconnect = (dinfo) ->
+  if dinfo.old_client
+    dinfo.old_client.destroy()
+    dinfo.old_client.delete()
+  if dinfo.old_server
+    dinfo.old_server.destroy()
+    dinfo.old_server.delete()
+  clearTimeout(dinfo.timeout)
+
+CLIENT_reconnect_unregister = (client) ->
+  if !settings.modules.reconnect.enabled
+    return false
+  if disconnect_list[client.ip]
+    release_disconnect(disconnect_list[client.ip])
+    disconnect_list[client.ip] = null
+    return true
+  return false
+
+CLIENT_reconnect_register = (client, room, error) ->
+  if !settings.modules.reconnect.enabled or client.system_kicked
+    return false
+  old_dinfo = disconnect_list[client.ip]
+  if old_dinfo
+    old_dinfo.room.disconnect(old_dinfo.old_client)
+  dinfo = {
+    room: room,
+    old_client: client,
+    old_server: client.server
+  }
+  tmot = setTimeout(() ->
+    room.disconnect(client)
+  , settings.modules.reconnect.wait_time)
+  dinfo.timeout = tmot
+  disconnect_list[client.ip] = dinfo
+  return true
+
+SERVER_clear_disconnect = (server) ->
+  return unless settings.modules.reconnect.enabled
+  for k,v of disconnect_list
+    if v and server == v.old_server
+      release_disconnect(v)
+      disconnect_list[k] == null
+
+CLIENT_is_able_to_reconnect = (client) ->
+  unless settings.modules.reconnect.enabled
+    return false
+  if client.system_kicked
+    return false
+  current_room=ROOM_all[client.rid]
+  unless current_room and current_room.started
+    return false
+  disconnect_info = disconnect_list[client.ip]
+  unless disconnect_info
+    return false
+  if disconnect_info.old_server.closed
+    return false	
+  return true
+
+if settings.modules.reconnect.enabled
+  disconnect_list = {} # {old_client, old_server, room, timeout}
 
 class Room
   constructor: (name, @hostinfo) ->
@@ -695,6 +756,7 @@ class Room
       index = _.indexOf(@watchers, client)
       @watchers.splice(index, 1) unless index == -1
       #client.room = null
+      client.server.destroy()
     else
       #log.info(client.name, @started, @disconnector, @random_type, @players.length)
       if @arena == "athletic" and !@started and @players.length == 2
@@ -716,6 +778,8 @@ class Room
         @process.kill()
         #client.room = null
         this.delete()
+      unless CLIENT_reconnect_unregister(client)
+        client.server.destroy()
     return
 
 
@@ -748,8 +812,11 @@ net.createServer (client) ->
     #log.info "disconnect", client.ip, ROOM_connected_ip[client.ip]
     unless client.closed
       client.closed = true
-      room.disconnect(client) if room
-    client.server.destroy()
+      if room
+        unless CLIENT_reconnect_register(client, room)
+          room.disconnect(client)
+      else
+        client.server.destroy()
     return
 
   client.on 'error', (error)->
@@ -762,8 +829,11 @@ net.createServer (client) ->
     #log.info "err disconnect", client.ip, ROOM_connected_ip[client.ip]
     unless client.closed
       client.closed = error
-      room.disconnect(client, error) if room
-    client.server.destroy()
+      if room
+        unless CLIENT_reconnect_register(client, room, error)
+          room.disconnect(client, error)
+      else
+        client.server.destroy()
     return
 
   client.on 'timeout', ()->
@@ -779,6 +849,7 @@ net.createServer (client) ->
     unless server.client.closed
       ygopro.stoc_send_chat(server.client, "${server_closed}", ygopro.constants.COLORS.RED)
       CLIENT_kick(server.client)
+      SERVER_clear_disconnect(server)
     return
 
   server.on 'error', (error)->
@@ -790,6 +861,7 @@ net.createServer (client) ->
     unless server.client.closed
       ygopro.stoc_send_chat(server.client, "${server_error}: #{error}", ygopro.constants.COLORS.RED)
       CLIENT_kick(server.client)
+      SERVER_clear_disconnect(server)
     return
   
   if ROOM_bad_ip[client.ip] > 5 or ROOM_connected_ip[client.ip] > 10
@@ -945,7 +1017,8 @@ net.createServer (client) ->
         log.info("error stoc", server.client.name)
         server.destroy()
         break
-    server.client.write buffer for buffer in datas
+    if !server.client.closed
+      server.client.write buffer for buffer in datas
 
     return
   return
