@@ -267,7 +267,7 @@ ban_user = (name) ->
         ROOM_bad_ip[bad_ip]=99
         settings.ban.banned_ip.push(player.ip)
         ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-        player.destroy()
+        CLIENT_kick(player)
         continue
   return
 
@@ -405,6 +405,10 @@ ROOM_unwelcome = (room, bad_player, reason)->
       player.flee_free=true
       ygopro.stoc_send_chat(player, "${unwelcome_tip_part1}#{reason}${unwelcome_tip_part2}", ygopro.constants.COLORS.BABYBLUE)
   return
+
+CLIENT_kick = (client) ->
+  client.system_kicked = true
+  CLIENT_kick(client)
 
 class Room
   constructor: (name, @hostinfo) ->
@@ -774,7 +778,7 @@ net.createServer (client) ->
     server.closed = true unless server.closed
     unless server.client.closed
       ygopro.stoc_send_chat(server.client, "${server_closed}", ygopro.constants.COLORS.RED)
-      server.client.destroy()
+      CLIENT_kick(server.client)
     return
 
   server.on 'error', (error)->
@@ -785,12 +789,12 @@ net.createServer (client) ->
     server.closed = error
     unless server.client.closed
       ygopro.stoc_send_chat(server.client, "${server_error}: #{error}", ygopro.constants.COLORS.RED)
-      server.client.destroy()
+      CLIENT_kick(server.client)
     return
   
   if ROOM_bad_ip[client.ip] > 5 or ROOM_connected_ip[client.ip] > 10
     log.info 'BAD IP', client.ip
-    client.destroy()
+    CLIENT_kick(client)
     return
 
   if settings.modules.cloud_replay.enabled
@@ -804,11 +808,11 @@ net.createServer (client) ->
         if err
           log.info "cloud replay unzip error: " + err
           ygopro.stoc_send_chat(client, "${cloud_replay_error}", ygopro.constants.COLORS.RED)
-          client.destroy()
+          CLIENT_kick(client)
           return
         ygopro.stoc_send_chat(client, "${cloud_replay_playing} R##{replay.replay_id} #{replay.player_names} #{replay.date_time}", ygopro.constants.COLORS.BABYBLUE)
         client.write replay_buffer, ()->
-          client.destroy()
+          CLIENT_kick(client)
           return
         return
       return
@@ -876,7 +880,7 @@ net.createServer (client) ->
             ROOM_bad_ip[client.ip] = bad_ip_count + 1
           else
             ROOM_bad_ip[client.ip] = 1
-          client.destroy()
+          CLIENT_kick(client)
           break
 
       if client.established
@@ -1013,7 +1017,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
         msg: 1
         code: 9
       }
-      client.destroy()
+      CLIENT_kick(client)
       return), 500
       
   else if info.pass[0...2].toUpperCase()=="R#" and settings.modules.cloud_replay.enabled
@@ -1041,7 +1045,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
       msg: 4
       code: settings.version
     }
-    client.destroy()
+    CLIENT_kick(client)
 
   else if !info.pass.length and !settings.modules.random_duel.enabled and !settings.modules.windbot.enabled
     ygopro.stoc_die(client, "${blank_room_name}")
@@ -1366,7 +1370,7 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
       if settings.modules.retry_handle.max_retry_count and client.retry_count >= settings.modules.retry_handle.max_retry_count
         ygopro.stoc_send_chat_to_room(room, client.name + "${retry_too_much_room_part1}" + settings.modules.retry_handle.max_retry_count + "${retry_too_much_room_part2}", ygopro.constants.COLORS.BABYBLUE)
         ygopro.stoc_send_chat(client, "${retry_too_much_part1}" + settings.modules.retry_handle.max_retry_count + "${retry_too_much_part2}", ygopro.constants.COLORS.RED)
-        client.destroy()
+        CLIENT_kick(client)
         return true
       if client.last_game_msg
         if settings.modules.retry_handle.max_retry_count
@@ -1416,8 +1420,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
               ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END')
               ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END')
               room.scores[room.dueling_players[oppo_pos - win_pos].name] = -1
-              room.dueling_players[oppo_pos - win_pos].destroy()
-              room.dueling_players[oppo_pos - win_pos + 1].destroy()
+              CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
+              CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1])
             else
               ygopro.ctos_send(room.dueling_players[oppo_pos - win_pos].server, 'SURRENDER')
           else
@@ -1440,8 +1444,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
           ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END')
           ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END')
           room.scores[room.dueling_players[oppo_pos - win_pos].name] = -1
-          room.dueling_players[oppo_pos - win_pos].destroy()
-          room.dueling_players[oppo_pos - win_pos + 1].destroy()
+          CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
+          CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1])
         else
           ygopro.ctos_send(room.dueling_players[oppo_pos - win_pos].server, 'SURRENDER')
       else
@@ -1550,13 +1554,13 @@ ygopro.ctos_follow 'HS_KICK', true, (buffer, info, client, server)->
     if player and player.pos == info.pos and player != client
       if room.arena == "athletic"
         ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-        client.destroy()
+        CLIENT_kick(client)
         return true
       client.kick_count = if client.kick_count then client.kick_count+1 else 1
       if client.kick_count>=5 and room.random_type
         ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
         ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
-        client.destroy()
+        CLIENT_kick(client)
         return true
       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_player}", ygopro.constants.COLORS.RED)
   return false
@@ -1627,7 +1631,7 @@ wait_room_start = (room, time)->
         if player and player.is_host
           ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
           ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-          player.destroy()
+          CLIENT_kick(player)
   return
 
 wait_room_start_arena = (room)->
@@ -1638,7 +1642,7 @@ wait_room_start_arena = (room)->
         ygopro.stoc_send_chat_to_room(room, "#{if room.waiting_for_player_time <= 9 then ' ' else ''}#{room.waiting_for_player_time}${kick_count_down_arena_part1} #{room.waiting_for_player.name} ${kick_count_down_arena_part2}", if room.waiting_for_player_time <= 9 then ygopro.constants.COLORS.RED else ygopro.constants.COLORS.LIGHTBLUE)
     else
       ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-      room.waiting_for_player.destroy()
+      CLIENT_kick(room.waiting_for_player)
       if room.waiting_for_player_interval
         clearInterval room.waiting_for_player_interval
         room.waiting_for_player_interval = null
@@ -1861,7 +1865,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
       ygopro.stoc_send_chat(client, "${banned_duel_tip}", ygopro.constants.COLORS.RED)
       ROOM_ban_player(client.name, client.ip, "${random_ban_reason_abuse}")
       ROOM_ban_player(client.name, client.ip, "${random_ban_reason_abuse}", 3)
-      client.destroy()
+      CLIENT_kick(client)
       return true
     else
       client.abuse_count=client.abuse_count+4
@@ -1935,8 +1939,8 @@ ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server)->
     ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END')
     ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END') if room.hostinfo.mode == 2
     room.scores[room.dueling_players[oppo_pos - win_pos].name] = -1
-    room.dueling_players[oppo_pos - win_pos].destroy()
-    room.dueling_players[oppo_pos - win_pos + 1].destroy() if room.hostinfo.mode == 2
+    CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
+    CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1]) if room.hostinfo.mode == 2
     return true
   if room.random_type or room.arena
     if client.pos == 0
@@ -2063,7 +2067,7 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server)->
         ygopro.stoc_send_chat_to_room(room, client.name + "${side_overtime_room}", ygopro.constants.COLORS.BABYBLUE)
         ygopro.stoc_send_chat(client, "${side_overtime}", ygopro.constants.COLORS.RED)
         room.scores[client.name] = -9
-        client.destroy()
+        CLIENT_kick(client)
         clearInterval sinterval        
       else
         client.side_tcount = client.side_tcount - 1
@@ -2367,8 +2371,8 @@ if settings.modules.http
                   ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END')
                   ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END') if room.hostinfo.mode == 2
                   room.scores[room.dueling_players[oppo_pos - win_pos].name] = -1
-                  room.dueling_players[oppo_pos - win_pos].destroy()
-                  room.dueling_players[oppo_pos - win_pos + 1].destroy() if room.hostinfo.mode == 2
+                  CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
+                  CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1]) if room.hostinfo.mode == 2
               when 1
                 room.death = -1
                 ygopro.stoc_send_chat_to_room(room, "${death_start_quick}", ygopro.constants.COLORS.BABYBLUE)

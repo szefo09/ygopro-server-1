@@ -164,5 +164,7 @@ for name, declaration of structs_declaration
     msg: 1
     code: 9
   } if client
-  client.destroy() if client
+  if client
+    client.system_kicked = true
+    client.destroy()
   return
