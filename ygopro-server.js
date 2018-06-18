@@ -2373,7 +2373,7 @@
     if (client.last_game_msg && client.last_game_msg_title !== 'WAITING') {
       setTimeout(function() {
         ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg);
-      }, 1000);
+      }, 200);
     }
     return true;
   });
