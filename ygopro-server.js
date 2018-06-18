@@ -621,7 +621,7 @@
     if (client.had_new_reconnection) {
       return false;
     }
-    if (!settings.modules.reconnect.enabled || client.system_kicked || client.is_post_watcher || !CLIENT_is_player(client, room) || !room.started || (room.windbot && client.is_local)) {
+    if (!settings.modules.reconnect.enabled || client.system_kicked || client.is_post_watcher || !CLIENT_is_player(client, room) || !room.started || (room.windbot && client.is_local) || (settings.modules.reconnect.auto_surrender_after_disconnect && room.hostinfo.mode !== 1)) {
       return false;
     }
     old_dinfo = disconnect_list[CLIENT_get_authorize_key(client)];
@@ -640,6 +640,9 @@
     }, settings.modules.reconnect.wait_time);
     dinfo.timeout = tmot;
     disconnect_list[CLIENT_get_authorize_key(client)] = dinfo;
+    if (settings.modules.reconnect.auto_surrender_after_disconnect && room.turn && room.turn > 0) {
+      ygopro.ctos_send(client.server, 'SURRENDER');
+    }
     return true;
   };
 
@@ -685,7 +688,6 @@
     client.last_game_msg = old_client.last_game_msg;
     client.last_game_msg_title = old_client.last_game_msg_title;
     client.start_deckbuf = old_client.start_deckbuf;
-    client.join_game_buffer = old_client.join_game_buffer;
     old_client.had_new_reconnection = true;
   };
 
@@ -736,7 +738,7 @@
   CLIENT_send_pre_reconnect_info = function(client, room, old_client) {
     var len2, m, player, ref2, req_pos, results;
     ygopro.stoc_send_chat(client, "${pre_reconnecting_to_room}", ygopro.constants.COLORS.BABYBLUE);
-    ygopro.stoc_send(client, 'JOIN_GAME', old_client.join_game_buffer);
+    ygopro.stoc_send(client, 'JOIN_GAME', room.join_game_buffer);
     req_pos = old_client.pos;
     if (old_client.is_host) {
       req_pos += 0x10;
@@ -1847,7 +1849,9 @@
     if (!(room && !client.reconnecting)) {
       return;
     }
-    client.join_game_buffer = buffer;
+    if (!room.join_game_buffer) {
+      room.join_game_buffer = buffer;
+    }
     if (settings.modules.words.enabled && words.words[client.name]) {
       ref2 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
       for (m = 0, len2 = ref2.length; m < len2; m++) {
