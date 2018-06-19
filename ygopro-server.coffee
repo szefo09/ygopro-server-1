@@ -1629,9 +1629,11 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
     else
       client.last_game_msg = buffer
       client.last_game_msg_title = ygopro.constants.MSG[msg]
+      # log.info(client.name, client.last_game_msg_title)
   else if ygopro.constants.MSG[msg] != 'RETRY'
     client.last_game_msg = buffer
     client.last_game_msg_title = ygopro.constants.MSG[msg]
+    # log.info(client.name, client.last_game_msg_title)
 
   if (msg >= 10 and msg < 30) or msg == 132 or (msg >= 140 and msg < 144) #SELECT和ANNOUNCE开头的消息
     room.waiting_for_player = client
@@ -1882,23 +1884,6 @@ ygopro.stoc_follow 'FIELD_FINISH', true, (buffer, info, client, server)->
   client.reconnecting = false
   if !client.last_game_msg
     return true
-  if client.last_game_msg_title == 'SELECT_CHAIN'
-    count1 = client.last_game_msg.readInt8(2)
-    count2 = client.last_game_msg.readInt8(3)
-    forced = client.last_game_msg.readInt8(4)
-    # log.info(client.pos, count1, count2, forced)
-    if count1 == 0 or count2 == 0
-      rbuf = new Buffer(4)
-      if forced == 0
-        rbuf.writeInt32LE(-1, 0)
-      else
-        rbuf.writeInt32LE(0, 0)
-      if room.random_type or room.arena
-        room.last_active_time = moment()
-      setTimeout( () ->
-        ygopro.ctos_send(server, 'RESPONSE', rbuf)
-      , 50)
-      return true
   if client.last_game_msg_title != 'WAITING'
     setTimeout( () ->
       if client.last_hint_msg

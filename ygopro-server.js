@@ -2328,7 +2328,7 @@
   });
 
   ygopro.stoc_follow('FIELD_FINISH', true, function(buffer, info, client, server) {
-    var count1, count2, rbuf, room;
+    var room;
     room = ROOM_all[client.rid];
     if (!room) {
       return;
@@ -2336,22 +2336,6 @@
     client.reconnecting = false;
     if (!client.last_game_msg) {
       return true;
-    }
-    if (client.last_game_msg_title === 'SELECT_CHAIN') {
-      count1 = client.last_game_msg.readInt8(1);
-      count2 = client.last_game_msg.readInt8(2);
-      log.info(client.pos, count1, count2);
-      if (count1 === 0 || count2 === 0) {
-        rbuf = new Buffer(4);
-        rbuf.writeInt32LE(-1, 0);
-        if (room.random_type || room.arena) {
-          room.last_active_time = moment();
-        }
-        setTimeout(function() {
-          return ygopro.ctos_send(server, 'RESPONSE', rbuf);
-        }, 50);
-        return true;
-      }
     }
     if (client.last_game_msg_title !== 'WAITING') {
       setTimeout(function() {
