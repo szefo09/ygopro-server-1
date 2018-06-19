@@ -442,9 +442,9 @@ CLIENT_reconnect_register = (client, room_id, error) ->
     return false
   if !settings.modules.reconnect.enabled or !room or client.system_kicked or disconnect_list[CLIENT_get_authorize_key(client)] or client.is_post_watcher or !CLIENT_is_player(client, room) or !room.started or (room.windbot and client.is_local) or (settings.modules.reconnect.auto_surrender_after_disconnect and room.hostinfo.mode != 1)
     return false
-  for player in room.players
-    if player != client and CLIENT_get_authorize_key(player) == CLIENT_get_authorize_key(client)
-      return false # some issues may occur in this case, so return false
+  # for player in room.players
+  #   if player != client and CLIENT_get_authorize_key(player) == CLIENT_get_authorize_key(client)
+  #     return false # some issues may occur in this case, so return false
   dinfo = {
     room_id: room_id,
     old_client: client,
@@ -497,6 +497,7 @@ CLIENT_import_data = (client, old_client, room) ->
   client.selected_preduel = old_client.selected_preduel
   client.last_game_msg = old_client.last_game_msg
   client.last_game_msg_title = old_client.last_game_msg_title
+  client.last_hint_msg = old_client.last_hint_msg
   client.start_deckbuf = old_client.start_deckbuf
   old_client.had_new_reconnection = true
   return
@@ -1621,6 +1622,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
           ygopro.stoc_send_chat(client, "${retry_part1}" + client.retry_count + "${retry_part2}" + settings.modules.retry_handle.max_retry_count + "${retry_part3}", ygopro.constants.COLORS.RED)
         else
           ygopro.stoc_send_chat(client, "${retry_not_counted}", ygopro.constants.COLORS.BABYBLUE)
+        if client.last_hint_msg
+          ygopro.stoc_send(client, 'GAME_MSG', client.last_hint_msg)
         ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg)
         return true
     else
@@ -1655,6 +1658,11 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
       client.last_game_msg = null
 
   #ygopro.stoc_send_chat_to_room(room, "LP跟踪调试信息: #{client.name} 初始LP #{client.lp}")
+  
+  if ygopro.constants.MSG[msg] == 'HINT'
+    hint_type = buffer.readUInt8(1)
+    if hint_type = 3
+      client.last_hint_msg = buffer
 
   if ygopro.constants.MSG[msg] == 'NEW_TURN'
     if client.pos == 0
@@ -1872,11 +1880,32 @@ ygopro.stoc_follow 'FIELD_FINISH', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
   return unless room
   client.reconnecting = false
-  if client.last_game_msg and client.last_game_msg_title != 'WAITING'
+  if !client.last_game_msg
+    return true
+  if client.last_game_msg_title == 'SELECT_CHAIN'
+    count1 = client.last_game_msg.readInt8(2)
+    count2 = client.last_game_msg.readInt8(3)
+    forced = client.last_game_msg.readInt8(4)
+    # log.info(client.pos, count1, count2, forced)
+    if count1 == 0 or count2 == 0
+      rbuf = new Buffer(4)
+      if forced == 0
+        rbuf.writeInt32LE(-1, 0)
+      else
+        rbuf.writeInt32LE(0, 0)
+      if room.random_type or room.arena
+        room.last_active_time = moment()
+      setTimeout( () ->
+        ygopro.ctos_send(server, 'RESPONSE', rbuf)
+      , 50)
+      return true
+  if client.last_game_msg_title != 'WAITING'
     setTimeout( () ->
+      if client.last_hint_msg
+        ygopro.stoc_send(client, 'GAME_MSG', client.last_hint_msg)
       ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg)
       return
-    , 200)
+    , 50)
   return true
 
 wait_room_start = (room, time)->
