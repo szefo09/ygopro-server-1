@@ -1087,7 +1087,7 @@
           })(this));
         }
       }
-      if (settings.modules.challonge.enabled && this.started && !this.kicked && this.disconnector !== 'server') {
+      if (settings.modules.challonge.enabled && this.started && !this.kicked) {
         challonge.matches.update({
           id: settings.modules.challonge.tournament_id,
           matchId: this.challonge_info.id,
