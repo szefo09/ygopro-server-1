@@ -22,6 +22,7 @@
     "underscore.string": "latest",
     "sqlite3": "latest",
     "geoip-country-lite": "latest",
+    "challonge": "latest",
     "ws": "latest"
   },
   "license": "AGPL-3.0",
