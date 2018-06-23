@@ -2866,6 +2866,7 @@ if settings.modules.http
           if room.started
             room.scores[room.dueling_players[0].name] = 0
             room.scores[room.dueling_players[1].name] = 0
+          room.kicked = true
           room.process.kill()
           room.delete()
         response.writeHead(200)
