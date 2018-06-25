@@ -162,12 +162,16 @@ var fetchDatas = function() {
     });
 }
 
-var updateChangelogs = function(message) {
+var updateChangelogs = function(dir, message) {
     message = message.split("！换行符！").join("\n");
     change_log = {};
     change_log.title = "服务器更新";
     change_log.date = moment().format("YYYY-MM-DD");
     change_log.text = message;
+    var prc_git_rev = spawnSync("git", [ "rev-parse", "HEAD" ], { "cwd" : dir });
+    if (prc_git_rev.stdout) {
+        change_log.commit = prc_git_rev.stdout.toString().split(/\n/)[0];
+    }
     changelog.unshift(change_log);
     fileContent = JSON.stringify({ changelog: changelog }, null, 2);
     fs.writeFileSync(config.html_path + config.changelog_filename, fileContent);
@@ -246,7 +250,8 @@ http.createServer(function (req, res) {
         res.writeHead(200);
         var date = moment(changelog[0].date).add(1,'days').format("YYYY-MM-DD");
         res.end(u.query.callback+'({"message":"开始生成'+ date +'以来的更新记录："});');
-        makeChangelogs(config.script_path, "--since="+date);
+        var since = changelog[0].commit ? (changelog[0].commit + "..") : ("--since=" + date);
+        makeChangelogs(config.script_path, since);
     }
     else if (u.pathname === '/api/make_more_changelog') {
         res.writeHead(200);
@@ -256,7 +261,7 @@ http.createServer(function (req, res) {
     else if (u.pathname === '/api/update_changelog') {
         res.writeHead(200);
         res.end(u.query.callback+'({"message":"开始写入更新记录。"});');
-        updateChangelogs(u.query.message);
+        updateChangelogs(config.script_path, u.query.message);
     }
     else if (u.pathname === '/api/push_datas') {
         res.writeHead(200);
