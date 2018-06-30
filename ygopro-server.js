@@ -1333,6 +1333,9 @@
       ROOM_connected_ip[client.ip] = connect_count;
       if (!client.closed) {
         client.closed = true;
+        if (settings.modules.heartbeat_detection.enabled) {
+          CLIENT_heartbeat_unregister(client);
+        }
         if (room) {
           if (!CLIENT_reconnect_register(client, client.rid)) {
             room.disconnect(client);
