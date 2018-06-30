@@ -20,9 +20,9 @@ cd p7zip_16.02
 sudo -E make all3 install
 cd ..
 
-wget http://download.redis.io/releases/redis-4.0.9.tar.gz --no-check-certificate
-tar xzfv redis-4.0.9.tar.gz
-cd redis-4.0.9
+wget http://download.redis.io/releases/redis-stable.tar.gz --no-check-certificate
+tar xzfv redis-stable.tar.gz
+cd redis-stable
 make
 sudo -E make install
 sudo -E cp -rf src/redis-server /usr/bin/
