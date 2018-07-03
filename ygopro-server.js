@@ -1013,6 +1013,9 @@
         if (rule.match(/(^|，|,)(IGPRIORITY|PR)(，|,|$)/)) {
           this.hostinfo.enable_priority = true;
         }
+        if (rule.match(/(^|，|,)(NOWATCH|NW)(，|,|$)/)) {
+          this.no_watch = true;
+        }
       }
       param = [0, this.hostinfo.lflist, this.hostinfo.rule, this.hostinfo.mode, (this.hostinfo.enable_priority ? 'T' : 'F'), (this.hostinfo.no_check_deck ? 'T' : 'F'), (this.hostinfo.no_shuffle_deck ? 'T' : 'F'), this.hostinfo.start_lp, this.hostinfo.start_hand, this.hostinfo.draw_count, this.hostinfo.time_limit, this.hostinfo.replay_mode];
       try {
@@ -1790,7 +1793,7 @@
         } else if (room.error) {
           ygopro.stoc_die(client, room.error);
         } else if (room.started) {
-          if (settings.modules.cloud_replay.enable_halfway_watch) {
+          if (settings.modules.cloud_replay.enable_halfway_watch && !room.no_watch) {
             client.setTimeout(300000);
             client.rid = _.indexOf(ROOM_all, room);
             client.is_post_watcher = true;
@@ -1855,7 +1858,7 @@
       });
     } else if (settings.modules.challonge.enabled) {
       pre_room = ROOM_find_by_name(info.pass);
-      if (pre_room && pre_room.started && settings.modules.cloud_replay.enable_halfway_watch) {
+      if (pre_room && pre_room.started && settings.modules.cloud_replay.enable_halfway_watch && !pre_room.no_watch) {
         room = pre_room;
         client.setTimeout(300000);
         client.rid = _.indexOf(ROOM_all, room);
@@ -1930,7 +1933,7 @@
                 } else if (room.error) {
                   ygopro.stoc_die(client, room.error);
                 } else if (room.started) {
-                  if (settings.modules.cloud_replay.enable_halfway_watch) {
+                  if (settings.modules.cloud_replay.enable_halfway_watch && !room.no_watch) {
                     client.setTimeout(300000);
                     client.rid = _.indexOf(ROOM_all, room);
                     client.is_post_watcher = true;
@@ -2007,7 +2010,7 @@
       } else if (room.error) {
         ygopro.stoc_die(client, room.error);
       } else if (room.started) {
-        if (settings.modules.cloud_replay.enable_halfway_watch) {
+        if (settings.modules.cloud_replay.enable_halfway_watch && !room.no_watch) {
           client.setTimeout(300000);
           client.rid = _.indexOf(ROOM_all, room);
           client.is_post_watcher = true;
@@ -2022,6 +2025,8 @@
         } else {
           ygopro.stoc_die(client, "${watch_denied}");
         }
+      } else if (room.no_watch && room.players.length === (room.hostinfo.mode === 2 ? 4 : 2)) {
+        ygopro.stoc_die(client, "${watch_denied_room}");
       } else {
         client.setTimeout(300000);
         client.rid = _.indexOf(ROOM_all, room);
@@ -2088,7 +2093,7 @@
       });
       recorder.on('error', function(error) {});
     }
-    if (settings.modules.cloud_replay.enable_halfway_watch && !room.watcher) {
+    if (settings.modules.cloud_replay.enable_halfway_watch && !room.watcher && !room.no_watch) {
       room.watcher = watcher = settings.modules.test_mode.watch_public_hand ? room.recorder : net.connect(room.port, function() {
         ygopro.ctos_send(watcher, 'PLAYER_INFO', {
           name: "the Big Brother"
@@ -2510,6 +2515,10 @@
     if (!room) {
       return;
     }
+    if (room.no_watch) {
+      ygopro.stoc_send_chat(client, "${watch_denied_room}", ygopro.constants.COLORS.RED);
+      return true;
+    }
     if ((!room.arena && !settings.modules.challonge.enabled) || client.is_local) {
       return false;
     }
@@ -2552,12 +2561,13 @@
     return false;
   });
 
-  ygopro.stoc_follow('TYPE_CHANGE', false, function(buffer, info, client, server) {
+  ygopro.stoc_follow('TYPE_CHANGE', true, function(buffer, info, client, server) {
     var is_host, selftype;
     selftype = info.type & 0xf;
     is_host = ((info.type >> 4) & 0xf) !== 0;
     client.is_host = is_host;
     client.pos = selftype;
+    return false;
   });
 
   ygopro.stoc_follow('HS_PLAYER_CHANGE', false, function(buffer, info, client, server) {
