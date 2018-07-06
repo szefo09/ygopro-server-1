@@ -97,9 +97,9 @@
       "wait_time": 180000
     },
     "heartbeat_detection": {
-      "enabled": false,
-      "interval": 20000,
-      "wait_time": 10000
+      "enabled": true,
+      "interval": 30000,
+      "wait_time": 15000
     },
     "mycard": {
       "enabled": false,
