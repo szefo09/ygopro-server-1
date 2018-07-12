@@ -128,6 +128,20 @@
       "post_score": false,
       "get_score": false
     },
+    "trade": {
+      "enabled": false,
+      "dp_victory": 3,
+      "dp_tie": 2,
+      "dp_defeat": 1,
+      "card_victory": 3,
+      "card_tie": 1,
+      "card_defeat": 1,
+      "card_price_main": 5,
+      "card_price_extra": 10,
+      "starter_deck": {
+        
+      }
+    },
     "tournament_mode": {
       "enabled": false,
       "deck_check": true,
