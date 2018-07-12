@@ -136,11 +136,10 @@
       "card_victory": 3,
       "card_tie": 1,
       "card_defeat": 1,
-      "card_price_main": 5,
-      "card_price_extra": 10,
-      "starter_deck": {
-        
-      }
+      "card_price_main": 10,
+      "card_price_extra": 20,
+      "card_value_main": 3,
+      "card_value_extra": 8
     },
     "tournament_mode": {
       "enabled": false,

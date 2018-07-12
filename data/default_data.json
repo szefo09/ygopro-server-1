@@ -28,6 +28,11 @@
     "file": "./config/duel_log.json",
     "duel_log": []
   },
+  "trade": {
+    "file": "./config/trade.json",
+    "starter_deck": {},
+    "player_list": {}
+  },
   "chat_color": {
     "file": "./config/chat_color.json",
     "save_list": {}
