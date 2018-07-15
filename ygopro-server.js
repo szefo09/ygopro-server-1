@@ -411,7 +411,7 @@
     if (settings.modules.windbot.enabled && (uname.slice(0, 2) === 'AI' || (!settings.modules.random_duel.enabled && uname === ''))) {
       return ROOM_find_or_create_ai(name);
     }
-    if (settings.modules.random_duel.enabled && (uname === '' || uname === 'S' || uname === 'M' || uname === 'T')) {
+    if (settings.modules.random_duel.enabled && (uname === '' || uname === 'S' || uname === 'M' || uname === 'T' || uname === 'TOR' || uname === 'TR' || uname === 'OOR' || uname === 'OR')) {
       return ROOM_find_or_create_random(uname, player_ip);
     }
     if (room = ROOM_find_by_name(name)) {
@@ -920,6 +920,26 @@
         if (rule.match(/(^|，|,)(T|TAG)(，|,|$)/)) {
           this.hostinfo.mode = 2;
           this.hostinfo.start_lp = 16000;
+        }
+        if (rule.match(/(^|，|,)(OOR|OCGONLYRANDOM)(，|,|$)/)) {
+          this.hostinfo.lflist = 0;
+          this.hostinfo.rule = 2;
+		  this.hostinfo.mode = 0;
+        }
+        if (rule.match(/(^|，|,)(OR|OCGRANDOM)(，|,|$)/)) {
+          this.hostinfo.lflist = 0;
+          this.hostinfo.rule = 0;
+		  this.hostinfo.mode = 0;
+        }
+        if (rule.match(/(^|，|,)(TOR|TCGONLYRANDOM)(，|,|$)/)) {
+          this.hostinfo.lflist = 1;
+          this.hostinfo.rule = 2;
+		  this.hostinfo.mode = 0;
+        }
+        if (rule.match(/(^|，|,)(TR|TCGRANDOM)(，|,|$)/)) {
+          this.hostinfo.lflist = 1;
+          this.hostinfo.rule = 1;
+		  this.hostinfo.mode = 0;
         }
         if (rule.match(/(^|，|,)(TCGONLY|TO)(，|,|$)/)) {
           this.hostinfo.rule = 1;
