@@ -1895,7 +1895,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
       client.last_hint_msg = buffer
 
   if ygopro.constants.MSG[msg] == 'NEW_TURN'
-    if client.pos == 0
+    r_player = buffer.readUInt8(1)
+    if client.pos == 0 and (r_player & 0x2) == 0
       room.turn = room.turn + 1
       if room.death and room.death != -2
         if room.turn >= room.death

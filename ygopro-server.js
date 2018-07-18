@@ -2208,7 +2208,7 @@
   }
 
   ygopro.stoc_follow('GAME_MSG', true, function(buffer, info, client, server) {
-    var card, check, count, cpos, deck_found, hint_type, i, len2, len3, len4, limbo_found, line, loc, m, max_loop, msg, n, o, oppo_pos, p, phase, player, playertype, pos, ppos, reason, ref2, ref3, ref4, ref5, ref6, ref7, room, trigger_location, val, win_pos;
+    var card, check, count, cpos, deck_found, hint_type, i, len2, len3, len4, limbo_found, line, loc, m, max_loop, msg, n, o, oppo_pos, p, phase, player, playertype, pos, ppos, r_player, reason, ref2, ref3, ref4, ref5, ref6, ref7, room, trigger_location, val, win_pos;
     room = ROOM_all[client.rid];
     if (!(room && !client.reconnecting)) {
       return;
@@ -2285,7 +2285,8 @@
       }
     }
     if (ygopro.constants.MSG[msg] === 'NEW_TURN') {
-      if (client.pos === 0) {
+      r_player = buffer.readUInt8(1);
+      if (client.pos === 0 && (r_player & 0x2) === 0) {
         room.turn = room.turn + 1;
         if (room.death && room.death !== -2) {
           if (room.turn >= room.death) {
