@@ -235,6 +235,9 @@ if settings.modules.cloud_replay.enabled
 if settings.modules.windbot.enabled
   windbots = loadJSON(settings.modules.windbot.botlist).windbots
 
+if settings.modules.heartbeat_detection.enabled
+  long_resolve_cards = loadJSON('./data/long_resolve_cards.json')
+
 # 组件
 ygopro = require './ygopro.js'
 roomlist = require './roomlist.js' if settings.modules.http.websocket_roomlist
@@ -671,7 +674,7 @@ CLIENT_heartbeat_unregister = (client) ->
   return true
 
 CLIENT_heartbeat_register = (client, send) ->
-  if !settings.modules.heartbeat_detection.enabled or client.closed or client.is_post_watcher or client.pre_reconnecting or client.reconnecting or client.pos > 3 or client.confirming_cards
+  if !settings.modules.heartbeat_detection.enabled or client.closed or client.is_post_watcher or client.pre_reconnecting or client.reconnecting or client.pos > 3 or client.heartbeat_protected
     return false
   if client.heartbeat_timeout
     CLIENT_heartbeat_unregister(client)
@@ -1953,7 +1956,9 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
     room.turn = 0
     if settings.modules.heartbeat_detection.enabled
       for player in room.players
-        player.confirming_cards = false
+        player.heartbeat_protected = false
+      delete room.long_resolve_card
+      delete room.long_resolve_chain
     if room and !room.finished and room.dueling_players[pos]
       room.winner_name = room.dueling_players[pos].name
       #log.info room.dueling_players, pos
@@ -2058,7 +2063,42 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
         break
     if check
       #console.log("Confirming cards:" + client.name)
-      client.confirming_cards = true
+      client.heartbeat_protected = true
+
+  # chain detection
+  if settings.modules.heartbeat_detection.enabled and client.pos == 0
+    if ygopro.constants.MSG[msg] == 'CHAINING'
+      card = buffer.readUInt32LE(1)
+      found = false
+      for id in long_resolve_cards when id == card
+        found = true
+        break
+      if found
+        room.long_resolve_card = card
+        # console.log(0,card)
+      else
+        delete room.long_resolve_card
+    else if ygopro.constants.MSG[msg] == 'CHAINED' and room.long_resolve_card
+      chain = buffer.readInt8(1)
+      if !room.long_resolve_chain
+        room.long_resolve_chain = []
+      room.long_resolve_chain[chain] = true
+      # console.log(1,chain)
+      delete room.long_resolve_card
+    else if ygopro.constants.MSG[msg] == 'CHAIN_SOLVING' and room.long_resolve_chain
+      chain = buffer.readInt8(1)
+      # console.log(2,chain)
+      if room.long_resolve_chain[chain]
+        for player in room.get_playing_player()
+          player.heartbeat_protected = true
+    else if (ygopro.constants.MSG[msg] == 'CHAIN_NEGATED' or ygopro.constants.MSG[msg] == 'CHAIN_DISABLED') and room.long_resolve_chain
+      chain = buffer.readInt8(1)
+      # console.log(3,chain)
+      delete room.long_resolve_chain[chain]
+    else if ygopro.constants.MSG[msg] == 'CHAIN_END'
+      # console.log(4,chain)
+      delete room.long_resolve_card
+      delete room.long_resolve_chain
 
   #登场台词
   if settings.modules.dialogues.enabled
@@ -2171,10 +2211,15 @@ ygopro.stoc_follow 'HS_PLAYER_CHANGE', false, (buffer, info, client, server)->
         setTimeout (()-> wait_room_start(ROOM_all[client.rid], 20);return), 1000
   return
 
+ygopro.ctos_follow 'REQUEST_FIELD', true, (buffer, info, client, server)->
+  return true
+
 ygopro.stoc_follow 'FIELD_FINISH', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
   return unless room
   client.reconnecting = false
+  if settings.modules.heartbeat_detection.enabled
+    client.heartbeat_protected = true
   if !client.last_game_msg
     return true
   if client.last_game_msg_title != 'WAITING'
@@ -2621,7 +2666,7 @@ ygopro.ctos_follow 'TIME_CONFIRM', false, (buffer, info, client, server)->
   if settings.modules.reconnect.enabled
     client.time_confirm_required = false
   return unless settings.modules.heartbeat_detection.enabled
-  client.confirming_cards = false
+  client.heartbeat_protected = false
   client.heartbeat_responsed = true
   CLIENT_heartbeat_unregister(client)
   return
