@@ -214,6 +214,20 @@ CLIENT_send_vip_status = (client, display) ->
   else
     ygopro.stoc_send_chat(client, "${vip_expired_part1}" + vip_info.players[client.name].expire_date + "${vip_expired_part2}", ygopro.constants.COLORS.RED)
 
+concat_name = (name, num) ->
+  if !name[num]
+    return null
+  res = name[num]
+  temp = null
+  count = num + 1
+  while true
+    temp = name[count]
+    if !temp
+      break
+    res = res + " " + temp
+    count++
+  return res
+
 # 读取配置
 default_config = loadJSON('./data/default_config.json')
 try
@@ -2586,21 +2600,24 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
             when 'status'
               CLIENT_send_vip_status(client, true)
             when 'buy'
-              key = cmd[2]
-              buy_result = CLIENT_use_cdkey(client, key)
-              switch buy_result
-                when 0
-                  ygopro.stoc_send_chat(client, "${vip_key_not_found}", ygopro.constants.COLORS.RED)
-                when 1
-                  ygopro.stoc_send_chat(client, "${vip_success_new_part1}" + client.name + "$" + client.vpass + "${vip_success_new_part2}", ygopro.constants.COLORS.BABYBLUE)
-                when 2
-                  ygopro.stoc_send_chat(client, "${vip_success_renew}", ygopro.constants.COLORS.BABYBLUE)
+              if vip_info.players[client.name] and vip_info.players[client.name].password != client.vpass
+                ygopro.stoc_send_chat(client, "${vip_account_existed}", ygopro.constants.COLORS.RED)
+              else
+                key = cmd[2]
+                buy_result = CLIENT_use_cdkey(client, key)
+                switch buy_result
+                  when 0
+                    ygopro.stoc_send_chat(client, "${vip_key_not_found}", ygopro.constants.COLORS.RED)
+                  when 1
+                    ygopro.stoc_send_chat(client, "${vip_success_new_part1}" + client.name + "$" + client.vpass + "${vip_success_new_part2}", ygopro.constants.COLORS.BABYBLUE)
+                  when 2
+                    ygopro.stoc_send_chat(client, "${vip_success_renew}", ygopro.constants.COLORS.BABYBLUE)
             when 'dialogues'
               if !client.vip
                 CLIENT_send_vip_status(client)
               else
                 code = cmd[2]
-                word = cmd[3]
+                word = concat_name(cmd, 3)
                 if !code or !parseInt(code)
                   ygopro.stoc_send_chat(client, "${vip_invalid_card_code}", ygopro.constants.COLORS.RED)
                 else if !word
@@ -2615,7 +2632,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
               if !client.vip
                 CLIENT_send_vip_status(client)
               else
-                word = cmd[2]
+                word = concat_name(cmd, 2)
                 if !word
                   delete vip_info.players[client.name].words
                   setting_save(vip_info)
@@ -2628,7 +2645,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
               if !client.vip
                 CLIENT_send_vip_status(client)
               else
-                word = cmd[2]
+                word = concat_name(cmd, 2)
                 if !word
                   delete vip_info.players[client.name].victory
                   setting_save(vip_info)
