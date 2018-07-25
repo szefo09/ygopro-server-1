@@ -42,6 +42,8 @@ moment.locale('zh-cn', {
 
 import_datas = [
   "abuse_count",
+  "vip",
+  "vpass",
   "rag",
   "rid",
   "is_post_watcher",
@@ -151,6 +153,67 @@ setting_change = (settings, path, val) ->
   setting_save(settings)
   return
 
+VIP_generate_cdkeys = (key_type, count) ->
+  return false unless settings.modules.vip.enabled and vip_info.cdkeys[key_type]
+  for i in [1...count]
+    key = Math.floor(Math.random() * 10000000000000000).toString()
+    vip_info.cdkeys[key_type].push(key)
+  setting_save(vip_info)
+  return true
+
+CLIENT_use_cdkey = (client, pkey) ->
+  return 0 unless settings.modules.vip.enabled and pkey
+  found_type = null
+  for type,keys of vip_info.cdkeys
+    for key in keys when pkey == key
+      found_type = parseInt(type)
+      index = _.indexOf(keys, key)
+      keys.splice(index, 1) unless index == -1
+      break
+    if found_type
+      break
+  if !found_type
+    return 0
+  if !vip_info.cdkeys[found_type].length
+    VIP_generate_cdkeys(found_type, settings.modules.vip.generate_count)
+  client.vip = true
+  new_vip = false
+  if vip_info.players[client.name]
+    vip_info.players[client.name].expire_date = moment().add(found_type, 'd').format('YYYY-MM-DD HH:mm:ss')
+  else
+    if !client.vpass
+      client.vpass = Math.floor(Math.random() * 100000).toString()
+    vip_info.players[client.name] = {
+      password: client.vpass,
+      expire_date: moment().add(found_type, 'd').format('YYYY-MM-DD HH:mm:ss'),
+      dialogues: {}
+    }
+    new_vip = true
+  setting_save(vip_info)
+  return (if new_vip then 1 else 2)
+
+CLIENT_check_vip = (client) ->
+  if !settings.modules.vip.enabled
+    return false
+  if !vip_info.players[client.name]
+    return false
+   if vip_info.players[client.name].password != client.vpass
+    return false
+  return moment().isSameOrBefore(vip_info.players[client.name].expire_date)
+
+CLIENT_send_vip_status = (client, display) ->
+  if !settings.modules.vip.enabled
+    return false
+  if client.vip
+    if display
+      ygopro.stoc_send_chat(client, "${vip_remain_part1}" + vip_info.players[client.name].expire_date + "${vip_remain_part2}", ygopro.constants.COLORS.BABYBLUE)
+    else
+      ygopro.stoc_send_chat(client,"${vip_remain}" , ygopro.constants.COLORS.BABYBLUE)
+  else if !vip_info.players[client.name] or vip_info.players[client.name].password != client.vpass
+    ygopro.stoc_send_chat(client,"${vip_not_bought}" , ygopro.constants.COLORS.RED)
+  else
+    ygopro.stoc_send_chat(client, "${vip_expired_part1}" + vip_info.players[client.name].expire_date + "${vip_expired_part2}", ygopro.constants.COLORS.RED)
+
 # 读取配置
 default_config = loadJSON('./data/default_config.json')
 try
@@ -199,6 +262,13 @@ try
 catch
   chat_color = default_data.chat_color
   setting_save(chat_color)
+try
+  vip_info = loadJSON('./config/vip_info.json')
+catch
+  vip_info = default_data.vip_info
+  for k,v of vip_info.cdkeys
+    VIP_generate_cdkeys(k, settings.modules.vip.generate_count)
+  setting_save(vip_info)
 
 try
   cppversion = parseInt(fs.readFileSync('ygopro/gframe/game.cpp', 'utf8').match(/PRO_VERSION = ([x\dABCDEF]+)/)[1], '16')
@@ -474,6 +544,8 @@ release_disconnect = (dinfo, reconnected) ->
   return
 
 CLIENT_get_authorize_key = (client) ->
+  if settings.modules.vip.enabled and client.vip
+    return client.name + "$" + client.vpass
   if settings.modules.mycard.enabled or settings.modules.tournament_mode.enabled or settings.modules.challonge.enabled or client.is_local
     return client.name
   else
@@ -1310,7 +1382,9 @@ if settings.modules.stop
 ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server)->
   # checkmate use username$password, but here don't
   # so remove the password
-  name = info.name.split("$")[0]
+  name_full =info.name.split("$")
+  name = name_full[0]
+  vpass = name_full[1]
   if (_.any(settings.ban.illegal_id, (badid) ->
     regexp = new RegExp(badid, 'i')
     matchs = name.match(regexp)
@@ -1325,6 +1399,9 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server)->
   struct.set("name", name)
   buffer = struct.buffer
   client.name = name
+  client.vpass = vpass
+  if settings.modules.vip.enabled and CLIENT_check_vip(client)
+    client.vip = true
 
   if not settings.modules.i18n.auto_pick or client.is_local
     client.lang=settings.modules.i18n.default
@@ -1723,6 +1800,9 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server)->
   if settings.modules.words.enabled and words.words[client.name]
     for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
       ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
+  else if settings.modules.vip.enabled and client.vip and vip_info.players[client.name].words
+    for line in _.lines vip_info.players[client.name].words
+      ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
   if settings.modules.welcome
     ygopro.stoc_send_chat(client, settings.modules.welcome, ygopro.constants.COLORS.GREEN)
   if room.welcome
@@ -1972,6 +2052,12 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
       room.winner_name = room.dueling_players[pos].name
       #log.info room.dueling_players, pos
       room.scores[room.winner_name] = room.scores[room.winner_name] + 1
+      if settings.modules.vip.enabled and room.dueling_players[pos].vip and vip_info.players[room.dueling_players[pos].name].victory
+        for line in _.lines vip_info.players[room.dueling_players[pos].name].victory
+          ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
+      else if room.hostinfo.mode == 2 and settings.modules.vip.enabled and room.dueling_players[pos + 1].vip and vip_info.players[room.dueling_players[pos + 1].name].victory
+        for line in _.lines vip_info.players[room.dueling_players[pos + 1].name].victory
+          ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
     if settings.modules.challonge.enabled and !room.kicked
       if room.scores[room.dueling_players[0].name] > room.scores[room.dueling_players[1].name]
         room.challonge_duel_log.winnerId = room.dueling_players[0].challonge_info.id
@@ -2110,15 +2196,26 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
       delete room.long_resolve_chain
 
   #登场台词
-  if settings.modules.dialogues.enabled
+  if settings.modules.dialogues.enabled or settings.modules.vip.enabled
     if ygopro.constants.MSG[msg] == 'SUMMONING' or ygopro.constants.MSG[msg] == 'SPSUMMONING' or ygopro.constants.MSG[msg] == 'CHAINING'
       card = buffer.readUInt32LE(1)
       trigger_location = buffer.readUInt8(6)
+      act_pos = buffer.readUInt8(if ygopro.constants.MSG[msg] == 'CHAINING' then 9 else 5)
+      if !room.dueling_players[0].is_first
+        act_pos = 1 - act_pos
+      if room.hostinfo.mode == 2
+        act_pos = act_pos * 2
       if ygopro.constants.MSG[msg] != 'CHAINING' or (trigger_location & 0x8) and client.ready_trap
-        if dialogues.dialogues[card]
+        if settings.modules.vip.enabled and room.dueling_players[act_pos].vip and vip_info.players[room.dueling_players[act_pos].name].dialogues[card]
+          for line in _.lines vip_info.players[room.dueling_players[act_pos].name].dialogues[card]
+            ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
+        else if settings.modules.vip.enabled and room.hostinfo.mode == 2 and room.dueling_players[act_pos + 1].vip and vip_info.players[room.dueling_players[act_pos + 1].name].dialogues[card]
+          for line in _.lines vip_info.players[room.dueling_players[act_pos + 1].name].dialogues[card]
+            ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
+        else if settings.modules.dialogues.enabled and dialogues.dialogues[card]
           for line in _.lines dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]
             ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
-        else if dialogues.dialogues_custom[card]
+        else if settings.modules.dialogues.enabled and dialogues.dialogues_custom[card]
           for line in _.lines dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]
             ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
     if ygopro.constants.MSG[msg] == 'POS_CHANGE'
@@ -2416,8 +2513,9 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
       ygopro.stoc_send_chat(client, "${chat_order_roomname}") if !settings.modules.mycard.enabled
       ygopro.stoc_send_chat(client, "${chat_order_windbot}") if settings.modules.windbot.enabled
       ygopro.stoc_send_chat(client, "${chat_order_tip}") if settings.modules.tips.enabled
-      ygopro.stoc_send_chat(client, "${chat_order_chatcolor_1}") if settings.modules.chat_color.enabled
-      ygopro.stoc_send_chat(client, "${chat_order_chatcolor_2}") if settings.modules.chat_color.enabled
+      ygopro.stoc_send_chat(client, "${chat_order_chatcolor_1}") if settings.modules.chat_color.enabled and (!(settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip) or client.vip)
+      ygopro.stoc_send_chat(client, "${chat_order_chatcolor_2}") if settings.modules.chat_color.enabled and (!(settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip) or client.vip)
+      ygopro.stoc_send_chat(client, "${chat_order_vip}") if settings.modules.vip.enabled
 
     when '/tip'
       ygopro.stoc_send_random_tip(client) if settings.modules.tips.enabled
@@ -2440,28 +2538,117 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
     when '/color'
       if settings.modules.chat_color.enabled
         cip = CLIENT_get_authorize_key(client)
-        if cmsg = cmd[1]
+        if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip and !client.vip
+          CLIENT_send_vip_status(client)
+        else if cmsg = cmd[1]
           if cmsg.toLowerCase() == "help"
             ygopro.stoc_send_chat(client, "${show_color_list}", ygopro.constants.COLORS.BABYBLUE)
             for cname,cvalue of ygopro.constants.COLORS when cvalue > 10
               ygopro.stoc_send_chat(client, cname, cvalue)
           else if cmsg.toLowerCase() == "default"
-            chat_color.save_list[cip] = false
+            if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip
+              delete vip_info.players[client.name].chat_color
+              setting_save(vip_info)
+            else
+              delete chat_color.save_list[cip]
             setting_save(chat_color)
             ygopro.stoc_send_chat(client, "${set_chat_color_default}", ygopro.constants.COLORS.BABYBLUE)
           else
             ccolor = cmsg.toUpperCase()
             if ygopro.constants.COLORS[ccolor] and ygopro.constants.COLORS[ccolor] > 10 and ygopro.constants.COLORS[ccolor] < 20
-              chat_color.save_list[cip] = ccolor
+              if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip
+                vip_info.players[client.name].chat_color = ccolor
+                setting_save(vip_info)
+              else
+                chat_color.save_list[cip] = ccolor
               setting_save(chat_color)
               ygopro.stoc_send_chat(client, "${set_chat_color_part1}" + ccolor + "${set_chat_color_part2}", ygopro.constants.COLORS.BABYBLUE)
             else
               ygopro.stoc_send_chat(client, "${color_not_found_part1}" + ccolor + "${color_not_found_part2}", ygopro.constants.COLORS.RED)
         else
-          if color = chat_color.save_list[cip]
+          if color = (if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip then vip_info.players[client.name].chat_color else chat_color.save_list[cip])
             ygopro.stoc_send_chat(client, "${get_chat_color_part1}" + color + "${get_chat_color_part2}", ygopro.constants.COLORS.BABYBLUE)
           else
             ygopro.stoc_send_chat(client, "${get_chat_color_default}", ygopro.constants.COLORS.BABYBLUE)
+    when '/vip'
+      if settings.modules.vip.enabled
+        if name = cmd[1]
+          uname = name.toLowerCase()
+          switch uname
+            when 'help'
+              ygopro.stoc_send_chat(client, "${chat_order_vip_help}")
+              ygopro.stoc_send_chat(client, "${chat_order_vip_status}")
+              ygopro.stoc_send_chat(client, "${chat_order_vip_buy}")
+              ygopro.stoc_send_chat(client, "${chat_order_vip_password}")
+              ygopro.stoc_send_chat(client, "${chat_order_vip_dialogues}")
+              ygopro.stoc_send_chat(client, "${chat_order_vip_words}")
+              ygopro.stoc_send_chat(client, "${chat_order_vip_victory}")
+            when 'status'
+              CLIENT_send_vip_status(client, true)
+            when 'buy'
+              key = cmd[2]
+              buy_result = CLIENT_use_cdkey(client, key)
+              switch buy_result
+                when 0
+                  ygopro.stoc_send_chat(client, "${vip_key_not_found}", ygopro.constants.COLORS.RED)
+                when 1
+                  ygopro.stoc_send_chat(client, "${vip_success_new_part1}" + client.name + "$" + client.vpass + "${vip_success_new_part2}", ygopro.constants.COLORS.BABYBLUE)
+                when 2
+                  ygopro.stoc_send_chat(client, "${vip_success_renew}", ygopro.constants.COLORS.BABYBLUE)
+            when 'dialogues'
+              if !client.vip
+                CLIENT_send_vip_status(client)
+              else
+                code = cmd[2]
+                word = cmd[3]
+                if !code or !parseInt(code)
+                  ygopro.stoc_send_chat(client, "${vip_invalid_card_code}", ygopro.constants.COLORS.RED)
+                else if !word
+                  delete vip_info.players[client.name].dialogues[code]
+                  setting_save(vip_info)
+                  ygopro.stoc_send_chat(client, "${vip_cleared_dialogues_part1}" + code + "${vip_cleared_dialogues_part2}", ygopro.constants.COLORS.BABYBLUE)
+                else
+                  vip_info.players[client.name].dialogues[code] = word
+                  setting_save(vip_info)
+                  ygopro.stoc_send_chat(client, "${vip_set_dialogues_part1}" + code + "${vip_set_dialogues_part2}", ygopro.constants.COLORS.BABYBLUE)
+            when 'words'
+              if !client.vip
+                CLIENT_send_vip_status(client)
+              else
+                word = cmd[2]
+                if !word
+                  delete vip_info.players[client.name].words
+                  setting_save(vip_info)
+                  ygopro.stoc_send_chat(client, "${vip_cleared_words}", ygopro.constants.COLORS.BABYBLUE)
+                else
+                  vip_info.players[client.name].words = word
+                  setting_save(vip_info)
+                  ygopro.stoc_send_chat(client, "${vip_set_words}", ygopro.constants.COLORS.BABYBLUE)
+            when 'victory'
+              if !client.vip
+                CLIENT_send_vip_status(client)
+              else
+                word = cmd[2]
+                if !word
+                  delete vip_info.players[client.name].victory
+                  setting_save(vip_info)
+                  ygopro.stoc_send_chat(client, "${vip_cleared_victory}", ygopro.constants.COLORS.BABYBLUE)
+                else
+                  vip_info.players[client.name].victory = word
+                  setting_save(vip_info)
+                  ygopro.stoc_send_chat(client, "${vip_set_victory}", ygopro.constants.COLORS.BABYBLUE)
+            when 'password'
+              if !client.vip
+                CLIENT_send_vip_status(client)
+              else
+                word = cmd[2]
+                if word
+                  vip_info.players[client.name].password = word
+                  client.vpass = word
+                  setting_save(vip_info)
+                  ygopro.stoc_send_chat(client, "${vip_password_changed}", ygopro.constants.COLORS.BABYBLUE)
+        else
+          CLIENT_send_vip_status(client)
 
     #when '/test'
     #  ygopro.stoc_send_hint_card_to_room(room, 2333365)
@@ -2715,8 +2902,8 @@ ygopro.stoc_follow 'CHAT', true, (buffer, info, client, server)->
       pid = 1 - pid
   for player in room.players when player and player.pos == pid
     tplayer = player
-  return unless tplayer
-  tcolor = chat_color.save_list[CLIENT_get_authorize_key(tplayer)]
+  return unless tplayer and (!(settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip) or tplayer.vip)
+  tcolor = if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip then vip_info.players[tplayer.name].chat_color else chat_color.save_list[CLIENT_get_authorize_key(tplayer)]
   if tcolor
     ygopro.stoc_send client, 'CHAT', {
         player: ygopro.constants.COLORS[tcolor]
@@ -2945,6 +3132,22 @@ if settings.modules.http
         duellog = JSON.stringify duel_log.duel_log, null, 2
         response.end(addCallback(u.query.callback, duellog))
 
+    else if u.pathname == '/api/getkeys' and settings.modules.vip.enabled
+      if !(u.query.pass == settings.modules.tournament_mode.password)
+        response.writeHead(200)
+        response.end(addCallback(u.query.callback, "Unauthorized."))
+        return
+      else if !u.query.keytype or !vip_info.cdkeys[u.query.keytype]
+        response.writeHead(200)
+        response.end(addCallback(u.query.callback, "Key type not found."))
+        return
+      else
+        response.writeHead(200)
+        ret_keys = ""
+        for key in vip_info.cdkeys[u.query.keytype]
+          ret_keys = ret_keys + key + "\n"
+        response.end(addCallback(u.query.callback, ret_keys))
+
     else if u.pathname == '/api/archive.zip' and settings.modules.tournament_mode.enabled
       if !(u.query.pass == settings.modules.tournament_mode.password)
         response.writeHead(403)
@@ -3142,6 +3345,11 @@ if settings.modules.http
           response.end(addCallback(u.query.callback, "['death cancel ok', '" + u.query.deathcancel + "']"))
         else
           response.end(addCallback(u.query.callback, "['room not found', '" + u.query.deathcancel + "']"))
+
+      else if u.query.generatekey and settings.modules.vip.enabled
+        VIP_generate_cdkeys(u.query.generatekey, settings.modules.vip.generate_count)
+        response.writeHead(200)
+        response.end(addCallback(u.query.callback, "['Keys generated', '" + u.query.generatekey + "']"))
 
       else
         response.writeHead(400)
