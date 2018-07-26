@@ -3165,7 +3165,7 @@ if settings.modules.http
         response.writeHead(200)
         ret_keys = ""
         for key in vip_info.cdkeys[u.query.keytype]
-          ret_keys = ret_keys + key + "\n"
+          ret_keys = ret_keys + u.query.keytype + "," + key + "\n"
         response.end(addCallback(u.query.callback, ret_keys))
 
     else if u.pathname == '/api/archive.zip' and settings.modules.tournament_mode.enabled

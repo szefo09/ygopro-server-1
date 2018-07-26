@@ -4060,7 +4060,7 @@
           ref3 = vip_info.cdkeys[u.query.keytype];
           for (m = 0, len2 = ref3.length; m < len2; m++) {
             key = ref3[m];
-            ret_keys = ret_keys + key + "\n";
+            ret_keys = ret_keys + u.query.keytype + "," + key + "\n";
           }
           response.end(addCallback(u.query.callback, ret_keys));
         }
