@@ -2232,14 +2232,14 @@
     if (!room.join_game_buffer) {
       room.join_game_buffer = buffer;
     }
-    if (settings.modules.words.enabled && words.words[client.name]) {
-      ref3 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
+    if (settings.modules.vip.enabled && client.vip && vip_info.players[client.name].words) {
+      ref3 = _.lines(vip_info.players[client.name].words);
       for (m = 0, len2 = ref3.length; m < len2; m++) {
         line = ref3[m];
         ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
       }
-    } else if (settings.modules.vip.enabled && client.vip && vip_info.players[client.name].words) {
-      ref4 = _.lines(vip_info.players[client.name].words);
+    } else if (settings.modules.words.enabled && words.words[client.name]) {
+      ref4 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
       for (n = 0, len3 = ref4.length; n < len3; n++) {
         line = ref4[n];
         ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);

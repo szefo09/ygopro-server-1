@@ -1814,11 +1814,11 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server)->
   return unless room and !client.reconnecting
   if !room.join_game_buffer
     room.join_game_buffer = buffer
-  if settings.modules.words.enabled and words.words[client.name]
-    for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
-      ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
-  else if settings.modules.vip.enabled and client.vip and vip_info.players[client.name].words
+  if settings.modules.vip.enabled and client.vip and vip_info.players[client.name].words
     for line in _.lines vip_info.players[client.name].words
+      ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
+  else if settings.modules.words.enabled and words.words[client.name]
+    for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
       ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
   if settings.modules.welcome
     ygopro.stoc_send_chat(client, settings.modules.welcome, ygopro.constants.COLORS.GREEN)
