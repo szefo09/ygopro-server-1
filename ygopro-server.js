@@ -165,11 +165,12 @@
     if (!(settings.modules.vip.enabled && vip_info.cdkeys[key_type])) {
       return false;
     }
-    for (i = j = 1, ref = count; 1 <= ref ? j < ref : j > ref; i = 1 <= ref ? ++j : --j) {
+    for (i = j = 0, ref = count; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
       key = Math.floor(Math.random() * 10000000000000000).toString();
       vip_info.cdkeys[key_type].push(key);
     }
     setting_save(vip_info);
+    log.info("keys generated", key_type, count, vip_info.cdkeys[key_type].length);
     return true;
   };
 
@@ -343,11 +344,6 @@
     vip_info = loadJSON('./config/vip_info.json');
   } catch (error1) {
     vip_info = default_data.vip_info;
-    ref = vip_info.cdkeys;
-    for (k in ref) {
-      v = ref[k];
-      VIP_generate_cdkeys(k, settings.modules.vip.generate_count);
-    }
     setting_save(vip_info);
   }
 
@@ -362,9 +358,9 @@
   lflists = [];
 
   try {
-    ref1 = fs.readFileSync('ygopro/expansions/lflist.conf', 'utf8').match(/!.*/g);
-    for (j = 0, len = ref1.length; j < len; j++) {
-      list = ref1[j];
+    ref = fs.readFileSync('ygopro/expansions/lflist.conf', 'utf8').match(/!.*/g);
+    for (j = 0, len = ref.length; j < len; j++) {
+      list = ref[j];
       date = list.match(/!([\d\.]+)/);
       if (!date) {
         continue;
@@ -379,9 +375,9 @@
   }
 
   try {
-    ref2 = fs.readFileSync('ygopro/lflist.conf', 'utf8').match(/!.*/g);
-    for (l = 0, len1 = ref2.length; l < len1; l++) {
-      list = ref2[l];
+    ref1 = fs.readFileSync('ygopro/lflist.conf', 'utf8').match(/!.*/g);
+    for (l = 0, len1 = ref1.length; l < len1; l++) {
+      list = ref1[l];
       date = list.match(/!([\d\.]+)/);
       if (!date) {
         continue;
@@ -452,6 +448,16 @@
     challonge = require('challonge').createClient({
       apiKey: settings.modules.challonge.api_key
     });
+  }
+
+  if (settings.modules.vip.enabled) {
+    ref2 = vip_info.cdkeys;
+    for (k in ref2) {
+      v = ref2[k];
+      if (v.length === 0) {
+        VIP_generate_cdkeys(k, settings.modules.vip.generate_count);
+      }
+    }
   }
 
   memory_usage = 0;

@@ -155,10 +155,11 @@ setting_change = (settings, path, val) ->
 
 VIP_generate_cdkeys = (key_type, count) ->
   return false unless settings.modules.vip.enabled and vip_info.cdkeys[key_type]
-  for i in [1...count]
+  for i in [0...count]
     key = Math.floor(Math.random() * 10000000000000000).toString()
     vip_info.cdkeys[key_type].push(key)
   setting_save(vip_info)
+  log.info("keys generated", key_type, count, vip_info.cdkeys[key_type].length)
   return true
 
 CLIENT_use_cdkey = (client, pkey) ->
@@ -280,8 +281,6 @@ try
   vip_info = loadJSON('./config/vip_info.json')
 catch
   vip_info = default_data.vip_info
-  for k,v of vip_info.cdkeys
-    VIP_generate_cdkeys(k, settings.modules.vip.generate_count)
   setting_save(vip_info)
 
 try
@@ -357,6 +356,10 @@ if settings.modules.challonge.enabled
   challonge = require('challonge').createClient({
     apiKey: settings.modules.challonge.api_key
   })
+
+if settings.modules.vip.enabled
+  for k,v of vip_info.cdkeys when v.length == 0
+    VIP_generate_cdkeys(k, settings.modules.vip.generate_count)
 
 # 获取可用内存
 memory_usage = 0
