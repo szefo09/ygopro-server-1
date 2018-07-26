@@ -3153,7 +3153,7 @@ if settings.modules.http
         response.end(addCallback(u.query.callback, duellog))
 
     else if u.pathname == '/api/getkeys' and settings.modules.vip.enabled
-      if !(u.query.pass == settings.modules.tournament_mode.password)
+      if !(u.query.pass == settings.modules.http.password)
         response.writeHead(200)
         response.end(addCallback(u.query.callback, "Unauthorized."))
         return
