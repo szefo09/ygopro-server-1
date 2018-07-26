@@ -68,7 +68,7 @@
     },
     "vip": {
       "enabled": false,
-      "generate_count": 100
+      "generate_count": 500
     },
     "random_duel": {
       "enabled": false,
