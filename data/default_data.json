@@ -50,5 +50,19 @@
   "chat_color": {
     "file": "./config/chat_color.json",
     "save_list": {}
+  },
+  "vip_info": {
+    "file": "./config/vip_info.json",
+    "cdkeys": {
+      "365": [],
+      "180": [],
+      "90": [],
+      "30": [],
+      "15": [],
+      "7": [],
+      "3": [],
+      "1": []
+    },
+    "players": {}
   }
 }

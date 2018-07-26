@@ -66,6 +66,10 @@
       "enabled": true,
       "get": false
     },
+    "vip": {
+      "enabled": false,
+      "generate_count": 500
+    },
     "random_duel": {
       "enabled": false,
       "no_rematch_check": false,
@@ -85,7 +89,8 @@
       "my_ip": "127.0.0.1"
     },
     "chat_color": {
-      "enabled": false
+      "enabled": false,
+      "restrict_to_vip": false
     },
     "retry_handle": {
       "enabled": true,
