@@ -3370,7 +3370,7 @@
                   CLIENT_send_vip_status(client);
                 } else {
                   word = cmd[2];
-                  if (word) {
+                  if (word && client.name.length + word.length <= 18) {
                     vip_info.players[client.name].password = word;
                     client.vpass = word;
                     setting_save(vip_info);
