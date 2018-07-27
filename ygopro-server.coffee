@@ -1420,7 +1420,7 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server)->
   buffer = struct.buffer
   client.name = name
   client.vpass = vpass
-  console.log client.name, client.vpass
+  #console.log client.name, client.vpass
   if settings.modules.vip.enabled and CLIENT_check_vip(client)
     client.vip = true
 
