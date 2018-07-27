@@ -2624,11 +2624,11 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
                 if !code or !parseInt(code)
                   ygopro.stoc_send_chat(client, "${vip_invalid_card_code}", ygopro.constants.COLORS.RED)
                 else if !word
-                  delete vip_info.players[client.name].dialogues[code]
+                  delete vip_info.players[client.name].dialogues[parseInt(code)]
                   setting_save(vip_info)
                   ygopro.stoc_send_chat(client, "${vip_cleared_dialogues_part1}" + code + "${vip_cleared_dialogues_part2}", ygopro.constants.COLORS.BABYBLUE)
                 else
-                  vip_info.players[client.name].dialogues[code] = word
+                  vip_info.players[client.name].dialogues[parseInt(code)] = word
                   setting_save(vip_info)
                   ygopro.stoc_send_chat(client, "${vip_set_dialogues_part1}" + code + "${vip_set_dialogues_part2}", ygopro.constants.COLORS.BABYBLUE)
             when 'words'
