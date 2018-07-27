@@ -175,7 +175,7 @@
   };
 
   CLIENT_use_cdkey = function(client, pkey) {
-    var found_type, index, j, key, keys, len, new_vip, ref, type;
+    var current_date, found_type, index, j, key, keys, len, new_vip, ref, type;
     if (!(settings.modules.vip.enabled && pkey)) {
       return 0;
     }
@@ -208,7 +208,11 @@
     client.vip = true;
     new_vip = false;
     if (vip_info.players[client.name]) {
-      vip_info.players[client.name].expire_date = moment().add(found_type, 'd').format('YYYY-MM-DD HH:mm:ss');
+      current_date = moment();
+      if (current_date.isSameOrBefore(vip_info.players[client.name].expire_date)) {
+        current_date = moment(vip_info.players[client.name].expire_date, 'YYYY-MM-DD HH:mm:ss');
+      }
+      vip_info.players[client.name].expire_date = current_date.add(found_type, 'd').format('YYYY-MM-DD HH:mm:ss');
     } else {
       if (!client.vpass) {
         client.vpass = Math.floor(Math.random() * 100000).toString();
@@ -1799,6 +1803,7 @@
     buffer = struct.buffer;
     client.name = name;
     client.vpass = vpass;
+    console.log(client.name, client.vpass);
     if (settings.modules.vip.enabled && CLIENT_check_vip(client)) {
       client.vip = true;
     }
@@ -3290,6 +3295,8 @@
               case 'buy':
                 if (vip_info.players[client.name] && vip_info.players[client.name].password !== client.vpass) {
                   ygopro.stoc_send_chat(client, "${vip_account_existed}", ygopro.constants.COLORS.RED);
+                } else if ((!client.vpass && client.name.length > 13) || (client.vpass && (client.name.length + client.vpass.length) > 18)) {
+                  ygopro.stoc_send_chat(client, "${vip_player_name_too_long}", ygopro.constants.COLORS.RED);
                 } else {
                   key = cmd[2];
                   buy_result = CLIENT_use_cdkey(client, key);
