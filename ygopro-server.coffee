@@ -1405,6 +1405,8 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server)->
   name_full =info.name.split("$")
   name = name_full[0]
   vpass = name_full[1]
+  if !vpass.length
+    vpass = null
   if (_.any(settings.ban.illegal_id, (badid) ->
     regexp = new RegExp(badid, 'i')
     matchs = name.match(regexp)

@@ -1785,6 +1785,9 @@
     name_full = info.name.split("$");
     name = name_full[0];
     vpass = name_full[1];
+    if (!vpass.length) {
+      vpass = null;
+    }
     if (_.any(settings.ban.illegal_id, function(badid) {
       var matchs, regexp;
       regexp = new RegExp(badid, 'i');
@@ -1803,7 +1806,6 @@
     buffer = struct.buffer;
     client.name = name;
     client.vpass = vpass;
-    console.log(client.name, client.vpass);
     if (settings.modules.vip.enabled && CLIENT_check_vip(client)) {
       client.vip = true;
     }
