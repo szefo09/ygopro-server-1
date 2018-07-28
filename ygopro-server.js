@@ -568,7 +568,7 @@
     if (settings.modules.windbot.enabled && (uname.slice(0, 2) === 'AI' || (!settings.modules.random_duel.enabled && uname === ''))) {
       return ROOM_find_or_create_ai(name);
     }
-    if (settings.modules.random_duel.enabled && (uname === '' || uname === 'S' || uname === 'M' || uname === 'T' || uname === 'TOR' || uname === 'TR' || uname === 'OOR' || uname === 'OR')) {
+    if (settings.modules.random_duel.enabled && (uname === '' || uname === 'S' || uname === 'M' || uname === 'T' || uname === 'TOR' || uname === 'TR' || uname === 'OOR' || uname === 'OR' || uname === 'TOMR' || uname === 'TMR' || uname === 'OOMR' || uname === 'OMR')) {
       return ROOM_find_or_create_random(uname, player_ip);
     }
     if (room = ROOM_find_by_name(name)) {
@@ -1109,6 +1109,30 @@
           this.hostinfo.lflist = _.findIndex(lflists, function(list) {
             return list.tcg;
           });
+        }
+        if (rule.match(/(^|，|,)(MOOR|OCGONLYMATCHRANDOM)(，|,|$)/)) {
+          this.hostinfo.rule = 0;
+          this.hostinfo.lflist = 0;
+          this.hostinfo.mode = 1;
+        }
+        if (rule.match(/(^|，|,)(MOR|OCGMATCHRANDOM)(，|,|$)/)) {
+          this.hostinfo.rule = 2;
+          this.hostinfo.lflist = 0;
+          this.hostinfo.mode = 1;
+        }
+        if (rule.match(/(^|，|,)(MTOR|TCGONLYMATCHRANDOM)(，|,|$)/)) {
+          this.hostinfo.rule = 1;
+          this.hostinfo.lflist = _.findIndex(lflists, function(list) {
+            return list.tcg;
+          });
+          this.hostinfo.mode = 1;
+        }
+        if (rule.match(/(^|，|,)(MTR|TCGMATCHRANDOM)(，|,|$)/)) {
+          this.hostinfo.rule = 2;
+          this.hostinfo.lflist = _.findIndex(lflists, function(list) {
+            return list.tcg;
+          });
+          this.hostinfo.mode = 1;
         }
         if (rule.match(/(^|，|,)(TCGONLY|TO)(，|,|$)/)) {
           this.hostinfo.rule = 1;
