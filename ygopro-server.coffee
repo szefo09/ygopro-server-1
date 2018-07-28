@@ -853,9 +853,11 @@ class Room
 
       if (rule.match /(^|，|,)(OOR|OCGONLYRANDOM)(，|,|$)/)
         @hostinfo.rule = 0
+        @hostinfo.lflist = 0
 
       if (rule.match /(^|，|,)(OR|OCGRANDOM)(，|,|$)/)
         @hostinfo.rule = 2
+        @hostinfo.lflist = 0
 
       if (rule.match /(^|，|,)(TOR|TCGONLYRANDOM)(，|,|$)/)
         @hostinfo.rule = 1
@@ -871,6 +873,7 @@ class Room
 
       if (rule.match /(^|，|,)(OCGONLY|OO)(，|,|$)/)
         @hostinfo.rule = 0
+        @hostinfo.lflist = 0
 
       if (rule.match /(^|，|,)(OT|TCG)(，|,|$)/)
         @hostinfo.rule = 2

@@ -1092,9 +1092,11 @@
         }
         if (rule.match(/(^|，|,)(OOR|OCGONLYRANDOM)(，|,|$)/)) {
           this.hostinfo.rule = 0;
+          this.hostinfo.lflist = 0;
         }
         if (rule.match(/(^|，|,)(OR|OCGRANDOM)(，|,|$)/)) {
           this.hostinfo.rule = 2;
+          this.hostinfo.lflist = 0;
         }
         if (rule.match(/(^|，|,)(TOR|TCGONLYRANDOM)(，|,|$)/)) {
           this.hostinfo.rule = 1;
@@ -1116,6 +1118,7 @@
         }
         if (rule.match(/(^|，|,)(OCGONLY|OO)(，|,|$)/)) {
           this.hostinfo.rule = 0;
+          this.hostinfo.lflist = 0;
         }
         if (rule.match(/(^|，|,)(OT|TCG)(，|,|$)/)) {
           this.hostinfo.rule = 2;
