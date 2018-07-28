@@ -434,7 +434,7 @@ ROOM_find_or_create_by_name = (name, player_ip)->
   uname=name.toUpperCase()
   if settings.modules.windbot.enabled and (uname[0...2] == 'AI' or (!settings.modules.random_duel.enabled and uname == ''))
     return ROOM_find_or_create_ai(name)
-  if settings.modules.random_duel.enabled and (uname == '' or uname == 'S' or uname == 'M' or uname == 'T' or uname == 'TOR' or uname == 'TR' or uname == 'OOR' or uname == 'OR')
+  if settings.modules.random_duel.enabled and (uname == '' or uname == 'S' or uname == 'M' or uname == 'T' or uname == 'TOR' or uname == 'TR' or uname == 'OOR' or uname == 'OR' or uname == 'TOMR' or uname == 'TMR' or uname == 'OOMR' or uname == 'OMR')
     return ROOM_find_or_create_random(uname, player_ip)
   if room = ROOM_find_by_name(name)
     return room
@@ -866,6 +866,26 @@ class Room
       if (rule.match /(^|，|,)(TR|TCGRANDOM)(，|,|$)/)
         @hostinfo.rule = 2
         @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+
+      if (rule.match /(^|，|,)(OOMR|OCGONLYMATCHRANDOM)(，|,|$)/)
+        @hostinfo.rule = 0
+        @hostinfo.lflist = 0
+        @hostinfo.mode = 1
+
+      if (rule.match /(^|，|,)(OMR|OCGMATCHRANDOM)(，|,|$)/)
+        @hostinfo.rule = 2
+        @hostinfo.lflist = 0
+        @hostinfo.mode = 1
+
+      if (rule.match /(^|，|,)(TOMR|TCGONLYMATCHRANDOM)(，|,|$)/)
+        @hostinfo.rule = 1
+        @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+        @hostinfo.mode = 1
+
+      if (rule.match /(^|，|,)(TMR|TCGMATCHRANDOM)(，|,|$)/)
+        @hostinfo.rule = 2
+        @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+        @hostinfo.mode = 1
 
       if (rule.match /(^|，|,)(TCGONLY|TO)(，|,|$)/)
         @hostinfo.rule = 1
