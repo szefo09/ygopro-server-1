@@ -867,22 +867,22 @@ class Room
         @hostinfo.rule = 2
         @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
 
-      if (rule.match /(^|，|,)(MOOR|OCGONLYMATCHRANDOM)(，|,|$)/)
+      if (rule.match /(^|，|,)(OOMR|OCGONLYMATCHRANDOM)(，|,|$)/)
         @hostinfo.rule = 0
         @hostinfo.lflist = 0
         @hostinfo.mode = 1
 
-      if (rule.match /(^|，|,)(MOR|OCGMATCHRANDOM)(，|,|$)/)
+      if (rule.match /(^|，|,)(OMR|OCGMATCHRANDOM)(，|,|$)/)
         @hostinfo.rule = 2
         @hostinfo.lflist = 0
         @hostinfo.mode = 1
 
-      if (rule.match /(^|，|,)(MTOR|TCGONLYMATCHRANDOM)(，|,|$)/)
+      if (rule.match /(^|，|,)(TOMR|TCGONLYMATCHRANDOM)(，|,|$)/)
         @hostinfo.rule = 1
         @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
         @hostinfo.mode = 1
 
-      if (rule.match /(^|，|,)(MTR|TCGMATCHRANDOM)(，|,|$)/)
+      if (rule.match /(^|，|,)(TMR|TCGMATCHRANDOM)(，|,|$)/)
         @hostinfo.rule = 2
         @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
         @hostinfo.mode = 1
