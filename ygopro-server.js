@@ -1785,7 +1785,7 @@
     name_full = info.name.split("$");
     name = name_full[0];
     vpass = name_full[1];
-    if (!vpass.length) {
+    if (vpass && !vpass.length) {
       vpass = null;
     }
     if (_.any(settings.ban.illegal_id, function(badid) {
