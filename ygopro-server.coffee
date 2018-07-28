@@ -852,25 +852,19 @@ class Room
         @hostinfo.start_lp = 16000
 
       if (rule.match /(^|，|,)(OOR|OCGONLYRANDOM)(，|,|$)/)
-		@hostinfo.lflist = 0
-		@hostinfo.rule = 2
-		@hostinfo.mode = 0
-		
+        @hostinfo.rule = 0
+
       if (rule.match /(^|，|,)(OR|OCGRANDOM)(，|,|$)/)
-		@hostinfo.lflist = 0
-		@hostinfo.rule = 0
-		@hostinfo.mode = 0
-		
+        @hostinfo.rule = 2
+
       if (rule.match /(^|，|,)(TOR|TCGONLYRANDOM)(，|,|$)/)
-		@hostinfo.lflist = 1
-		@hostinfo.rule = 2
-		@hostinfo.mode = 0
-		
+        @hostinfo.rule = 1
+        @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+
       if (rule.match /(^|，|,)(TR|TCGRANDOM)(，|,|$)/)
-		@hostinfo.lflist = 1
-		@hostinfo.rule = 1
-		@hostinfo.mode = 0
-		
+        @hostinfo.rule = 2
+        @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+
       if (rule.match /(^|，|,)(TCGONLY|TO)(，|,|$)/)
         @hostinfo.rule = 1
         @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg

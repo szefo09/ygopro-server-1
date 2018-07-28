@@ -1091,24 +1091,22 @@
           this.hostinfo.start_lp = 16000;
         }
         if (rule.match(/(^|，|,)(OOR|OCGONLYRANDOM)(，|,|$)/)) {
-          this.hostinfo.lflist = 0;
-          this.hostinfo.rule = 2;
-		  this.hostinfo.mode = 0;
+          this.hostinfo.rule = 0;
         }
         if (rule.match(/(^|，|,)(OR|OCGRANDOM)(，|,|$)/)) {
-          this.hostinfo.lflist = 0;
-          this.hostinfo.rule = 0;
-		  this.hostinfo.mode = 0;
+          this.hostinfo.rule = 2;
         }
         if (rule.match(/(^|，|,)(TOR|TCGONLYRANDOM)(，|,|$)/)) {
-          this.hostinfo.lflist = 1;
-          this.hostinfo.rule = 2;
-		  this.hostinfo.mode = 0;
+          this.hostinfo.rule = 1;
+          this.hostinfo.lflist = _.findIndex(lflists, function(list) {
+            return list.tcg;
+          });
         }
         if (rule.match(/(^|，|,)(TR|TCGRANDOM)(，|,|$)/)) {
-          this.hostinfo.lflist = 1;
-          this.hostinfo.rule = 1;
-		  this.hostinfo.mode = 0;
+          this.hostinfo.rule = 2;
+          this.hostinfo.lflist = _.findIndex(lflists, function(list) {
+            return list.tcg;
+          });
         }
         if (rule.match(/(^|，|,)(TCGONLY|TO)(，|,|$)/)) {
           this.hostinfo.rule = 1;
