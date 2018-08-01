@@ -98,6 +98,7 @@
     "reconnect": {
       "enabled": true,
       "auto_surrender_after_disconnect": false,
+      "allow_kick_reconnect": true,
       "wait_time": 300000
     },
     "heartbeat_detection": {
@@ -279,7 +280,7 @@
       "public_roomlist": true,
       "show_ip": true,
       "show_info": true,
-      "quick_death_rule": 1,
+      "quick_death_rule": 2,
       "ssl": {
         "enabled": false,
         "port": 7923,

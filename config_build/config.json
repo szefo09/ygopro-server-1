@@ -98,6 +98,7 @@
     "reconnect": {
       "enabled": true,
       "auto_surrender_after_disconnect": false,
+      "allow_kick_reconnect": true,
       "wait_time": 120000
     },
     "heartbeat_detection": {
