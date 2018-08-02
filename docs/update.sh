@@ -7,7 +7,7 @@ git reset --hard FETCH_HEAD
 cd windbot
 git pull origin master
 git reset --hard FETCH_HEAD
-echo y | xbuild /property:Configuration=Release
+echo y | xbuild /property:Configuration=Release /property:TargetFrameworkVersion="v4.5"
 cd ../ygopro
 git pull origin server
 git reset --hard FETCH_HEAD
