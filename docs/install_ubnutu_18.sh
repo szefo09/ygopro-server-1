@@ -70,7 +70,7 @@ cd ..
 
 git clone https://github.com/purerosefallen/windbot
 cd windbot
-xbuild /property:Configuration=Release
+xbuild /property:Configuration=Release /property:TargetFrameworkVersion="v4.5"
 ln -s bin/Release/WindBot.exe .
 ln -s ../ygopro/cards.cdb .
 pm2 start pm2.json

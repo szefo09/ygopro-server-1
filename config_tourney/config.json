@@ -214,7 +214,8 @@
           "callback": {
             "command": "xbuild",
             "args": [
-              "/property:Configuration=Release"
+              "/property:Configuration=Release",
+              "/property:TargetFrameworkVersion=\"v4.5\""
             ],
             "path": "./windbot/"
           }
