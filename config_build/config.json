@@ -77,7 +77,10 @@
     },
     "cloud_replay": {
       "enabled": true,
-      "redis_port": 6379,
+      "redis": {
+        "host": "127.0.0.1",
+        "port": 6379
+      },
       "enable_halfway_watch": true
     },
     "windbot": {
