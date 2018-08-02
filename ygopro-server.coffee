@@ -241,9 +241,19 @@ catch
   config = {}
 settings = global.settings = merge(default_config, config, { arrayMerge: (destination, source) -> source })
 
+#import old configs
+imported = false
 #reset http.quick_death_rule from true to 1
 if settings.modules.http.quick_death_rule == true
   settings.modules.http.quick_death_rule = 1
+  imported = true
+#import the old redis port
+if settings.modules.cloud_replay.redis_port
+  settings.modules.cloud_replay.redis.port = settings.modules.cloud_replay.redis_port
+  delete settings.modules.cloud_replay.redis_port
+  imported = true
+#finish
+if imported
   setting_save(settings)
 
 # 读取数据
@@ -314,7 +324,7 @@ catch
 if settings.modules.cloud_replay.enabled
   redis = require 'redis'
   zlib = require 'zlib'
-  redisdb = redis.createClient host: "127.0.0.1", port: settings.modules.cloud_replay.redis_port
+  redisdb = redis.createClient(settings.modules.cloud_replay.redis)
   redisdb.on 'error', (err)->
     log.warn err
     return
