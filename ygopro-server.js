@@ -185,7 +185,7 @@
       keys = ref[type];
       for (j = 0, len = keys.length; j < len; j++) {
         key = keys[j];
-        if (!(pkey === key)) {
+        if (!(pkey === key || pkey === (type + "D" + settings.port + ":" + key))) {
           continue;
         }
         found_type = parseInt(type);

@@ -167,7 +167,7 @@ CLIENT_use_cdkey = (client, pkey) ->
   return 0 unless settings.modules.vip.enabled and pkey
   found_type = null
   for type,keys of vip_info.cdkeys
-    for key in keys when pkey == key
+    for key in keys when pkey == key or pkey == (type + "D" + settings.port + ":" + key) # support web given format
       found_type = parseInt(type)
       index = _.indexOf(keys, key)
       keys.splice(index, 1) unless index == -1
