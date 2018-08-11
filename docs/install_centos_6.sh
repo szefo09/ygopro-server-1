@@ -10,6 +10,7 @@ sudo -E yum update -y
 sudo -E yum install -y nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete firewalld
 sudo -E npm install pm2 -g
 
+sudo -E systemctl start firewalld
 sudo -E firewall-cmd --zone=public --permanent --add-port=22/tcp
 sudo -E firewall-cmd --zone=public --permanent --add-port=7210-7219/tcp
 sudo -E firewall-cmd --reload

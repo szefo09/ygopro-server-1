@@ -10,6 +10,7 @@ sudo -E apt-get upgrade -y
 sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete nodejs firewalld
 sudo -E npm install pm2 -g
 
+sudo -E systemctl start firewalld
 sudo -E firewall-cmd --zone=public --permanent --add-port=22/tcp
 sudo -E firewall-cmd --zone=public --permanent --add-port=7210-7219/tcp
 sudo -E firewall-cmd --reload
