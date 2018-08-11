@@ -7,7 +7,7 @@ sudo -E rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA
 curl https://download.mono-project.com/repo/centos6-stable.repo | sudo -E tee /etc/yum.repos.d/mono-centos6-stable.repo
 curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo -E bash -
 sudo -E yum update -y
-sudo -E yum install nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete -y
+sudo -E yum install -y nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete firewalld
 sudo -E npm install pm2 -g
 
 sudo -E firewall-cmd --zone=public --permanent --add-port=22/tcp
