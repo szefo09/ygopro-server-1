@@ -33,9 +33,9 @@ sudo -E cp -rf src/redis-server /usr/bin/
 cd ..
 pm2 start redis-server
 
-wget 'http://www.lua.org/ftp/lua-5.3.4.tar.gz' --no-check-certificate
-tar zxf lua-5.3.4.tar.gz
-cd lua-5.3.4
+wget 'http://www.lua.org/ftp/lua-5.3.5.tar.gz' --no-check-certificate
+tar zxf lua-5.3.5.tar.gz
+cd lua-5.3.5
 sudo -E make linux test install
 cd ..
 
