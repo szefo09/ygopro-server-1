@@ -2,15 +2,18 @@
 
 # install script for CentOS 7
 
-sudo -E systemctl stop firewalld
-
 sudo -E yum install epel-release yum-utils -y
 sudo -E rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
 curl https://download.mono-project.com/repo/centos7-stable.repo | sudo -E tee /etc/yum.repos.d/mono-centos7-stable.repo
 curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo -E bash -
 sudo -E yum update -y
-sudo -E yum install nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete -y
+sudo -E yum install -y nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel wget mono-complete firewalld
 sudo -E npm install pm2 -g
+
+sudo -E systemctl start firewalld
+sudo -E firewall-cmd --zone=public --permanent --add-port=22/tcp
+sudo -E firewall-cmd --zone=public --permanent --add-port=7210-7219/tcp
+sudo -E firewall-cmd --reload
 
 mkdir lib
 cd lib
@@ -30,9 +33,9 @@ sudo -E cp -rf src/redis-server /usr/bin/
 cd ..
 pm2 start redis-server
 
-wget 'http://www.lua.org/ftp/lua-5.3.4.tar.gz' --no-check-certificate
-tar zxf lua-5.3.4.tar.gz
-cd lua-5.3.4
+wget 'http://www.lua.org/ftp/lua-5.3.5.tar.gz' --no-check-certificate
+tar zxf lua-5.3.5.tar.gz
+cd lua-5.3.5
 sudo -E make linux test install
 cd ..
 
