@@ -83,6 +83,7 @@ cd ..
 
 pm2 start ygopro-server.js
 pm2 start ygopro-webhook.js
+pm2 start restart.js
 
 pm2 save
-sudo -E pm2 startup
+pm2 startup

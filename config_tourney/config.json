@@ -218,7 +218,7 @@
             "command": "xbuild",
             "args": [
               "/property:Configuration=Release",
-              "/property:TargetFrameworkVersion=\"v4.5\""
+              "/property:TargetFrameworkVersion=v4.5"
             ],
             "path": "./windbot/"
           }
