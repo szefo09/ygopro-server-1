@@ -844,6 +844,24 @@ CLIENT_heartbeat_register = (client, send) ->
 CLIENT_is_banned_by_mc = (client) ->
   return client.ban_mc and client.ban_mc.banned and moment().isBefore(client.ban_mc.until)
 
+CLIENT_get_absolute_pos = (client) ->
+  room = ROOM_all[client.rid]
+  if room.hostinfo.mode != 2 or client.pos > 3
+    return client.pos
+  else if client.pos < 2
+    return 0
+  else
+    return 1
+
+CLIENT_get_partner = (client) ->
+  room = ROOM_all[client.rid]
+  if room.hostinfo.mode != 2 or client.pos > 3
+    return client
+  if client.pos < 2
+    return room.dueling_players[1 - client.pos]
+  else
+    return room.dueling_players[5 - client.pos]
+
 class Room
   constructor: (name, @hostinfo) ->
     @name = name
@@ -2097,15 +2115,7 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
           if room.dueling_players[0].lp != room.dueling_players[oppo_pos].lp and room.turn > 1
             win_pos = if room.dueling_players[0].lp > room.dueling_players[oppo_pos].lp then 0 else oppo_pos
             ygopro.stoc_send_chat_to_room(room, "${death_finish_part1}" + room.dueling_players[win_pos].name + "${death_finish_part2}", ygopro.constants.COLORS.BABYBLUE)
-            if room.hostinfo.mode == 2
-              room.finished_by_death = true
-              ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END')
-              ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END')
-              room.scores[room.dueling_players[oppo_pos - win_pos].name] = -1
-              CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
-              CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1])
-            else
-              ygopro.ctos_send(room.dueling_players[oppo_pos - win_pos].server, 'SURRENDER')
+            ygopro.ctos_send(room.dueling_players[oppo_pos - win_pos].server, 'SURRENDER')
           else
             room.death = -1
             ygopro.stoc_send_chat_to_room(room, "${death_remain_final}", ygopro.constants.COLORS.BABYBLUE)
@@ -2122,15 +2132,7 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
       if room.dueling_players[0].lp != room.dueling_players[oppo_pos].lp
         win_pos = if room.dueling_players[0].lp > room.dueling_players[oppo_pos].lp then 0 else oppo_pos
         ygopro.stoc_send_chat_to_room(room, "${death_finish_part1}" + room.dueling_players[win_pos].name + "${death_finish_part2}", ygopro.constants.COLORS.BABYBLUE)
-        if room.hostinfo.mode == 2
-          room.finished_by_death = true
-          ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos], 'DUEL_END')
-          ygopro.stoc_send(room.dueling_players[oppo_pos - win_pos + 1], 'DUEL_END')
-          room.scores[room.dueling_players[oppo_pos - win_pos].name] = -1
-          CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
-          CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1])
-        else
-          ygopro.ctos_send(room.dueling_players[oppo_pos - win_pos].server, 'SURRENDER')
+        ygopro.ctos_send(room.dueling_players[oppo_pos - win_pos].server, 'SURRENDER')
       else
         room.death = -1
         ygopro.stoc_send_chat_to_room(room, "${death_remain_final}", ygopro.constants.COLORS.BABYBLUE)
@@ -2555,11 +2557,20 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server)->
 ygopro.ctos_follow 'SURRENDER', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
   return unless room
-  if !room.started or room.hostinfo.mode==2
+  if !room.started
     return true
   if room.random_type and room.turn < 3 and not client.flee_free
     ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
     return true
+  if room.hostinfo.mode == 2
+    if !settings.modules.tag_duel_surrender
+      return true
+    else if !client.surrend_confirm and !CLIENT_get_partner(client).closed
+      sur_player = CLIENT_get_partner(client)
+      ygopro.stoc_send_chat(sur_player, "${surrender_confirm_tag}", ygopro.constants.COLORS.BABYBLUE)
+      ygopro.stoc_send_chat(client, "${surrender_confirm_sent}", ygopro.constants.COLORS.BABYBLUE)
+      sur_player.surrend_confirm = true
+      return true
   return false
 
 report_to_big_brother = (roomname, sender, ip, level, content, match) ->
@@ -2592,7 +2603,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
   cmd = msg.split(' ')
   switch cmd[0]
     when '/投降', '/surrender'
-      if !room.started or room.hostinfo.mode==2
+      if !room.started or (room.hostinfo.mode==2 and !settings.modules.tag_duel_surrender)
         return cancel
       if room.random_type and room.turn < 3
         ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
@@ -2600,8 +2611,15 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
       if client.surrend_confirm
         ygopro.ctos_send(client.server, 'SURRENDER')
       else
-        ygopro.stoc_send_chat(client, "${surrender_confirm}", ygopro.constants.COLORS.BABYBLUE)
-        client.surrend_confirm = true
+        sur_player = CLIENT_get_partner(client)
+        if sur_player.closed
+          sur_player = client
+        if room.hostinfo.mode==2 and sur_player != client
+          ygopro.stoc_send_chat(sur_player, "${surrender_confirm_tag}", ygopro.constants.COLORS.BABYBLUE)
+          ygopro.stoc_send_chat(client, "${surrender_confirm_sent}", ygopro.constants.COLORS.BABYBLUE)
+        else
+          ygopro.stoc_send_chat(client, "${surrender_confirm}", ygopro.constants.COLORS.BABYBLUE)
+        sur_player.surrend_confirm = true
 
     when '/help'
       ygopro.stoc_send_chat(client, "${chat_order_main}")
