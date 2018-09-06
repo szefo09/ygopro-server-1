@@ -756,11 +756,10 @@
   };
 
   CLIENT_get_authorize_key = function(client) {
-    if (settings.modules.vip.enabled && client.vip) {
-      return client.name + "$" + client.vpass;
-    }
     if (settings.modules.mycard.enabled || settings.modules.tournament_mode.enabled || settings.modules.challonge.enabled || client.is_local) {
       return client.name;
+    } else if (!settings.modules.mycard.enabled && client.vpass) {
+      return client.vpass + ":" + client.name;
     } else {
       return client.ip + ":" + client.name;
     }
@@ -915,7 +914,7 @@
         ref3 = room.get_playing_player();
         for (n = 0, len3 = ref3.length; n < len3; n++) {
           player = ref3[n];
-          if (!player.closed && player.name === client.name && player.pass === client.pass && (settings.modules.mycard.enabled || settings.modules.tournament_mode.enabled || player.ip === client.ip || (settings.modules.vip.enabled && player.vip && client.vpass === player.vpass)) && (!deckbuf || _.isEqual(player.start_deckbuf, deckbuf))) {
+          if (!player.closed && player.name === client.name && player.pass === client.pass && (settings.modules.mycard.enabled || settings.modules.tournament_mode.enabled || player.ip === client.ip || (client.vpass && client.vpass === player.vpass)) && (!deckbuf || _.isEqual(player.start_deckbuf, deckbuf))) {
             return player;
           }
         }
