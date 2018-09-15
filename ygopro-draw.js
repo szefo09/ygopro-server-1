@@ -51,7 +51,7 @@ function load_database(callback) {
 }
 
 function load_lflist() {
-    var raw = fs.readFileSync(config.lflist, 'utf8');
+    var raw = fs.readFileSync(config.lflist, 'utf8').split(/\n/g);
     var current_list = "unknown";
     for(var i in raw) {
         var line = raw[i];
@@ -68,6 +68,7 @@ function load_lflist() {
             LFLIST[current_list][parseInt(line.match(/(\d+) 2/)[1])] = 2;
         }
     }
+        console.log(LFLIST[config.list]);
     if (LFLIST[config.list]) {
         for(var code in LFLIST[config.list]) {
             count = LFLIST[config.list][code];
