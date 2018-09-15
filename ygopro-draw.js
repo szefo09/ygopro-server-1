@@ -68,7 +68,6 @@ function load_lflist() {
             LFLIST[current_list][parseInt(line.match(/(\d+) 2/)[1])] = 2;
         }
     }
-        console.log(LFLIST[config.list]);
     if (LFLIST[config.list]) {
         for(var code in LFLIST[config.list]) {
             count = LFLIST[config.list][code];
