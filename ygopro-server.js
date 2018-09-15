@@ -4082,10 +4082,10 @@
       for (m = 0, len2 = ROOM_all.length; m < len2; m++) {
         room = ROOM_all[m];
         if (room && room.started && (room.hostinfo.time_limit === 0 || !room.turn || room.turn <= 0) && !room.windbot) {
-          ref3 = room.players;
+          ref3 = room.get_playing_player();
           for (n = 0, len3 = ref3.length; n < len3; n++) {
             player = ref3[n];
-            if (!room.changing_side || player.selected_preduel) {
+            if (player && (!room.changing_side || player.selected_preduel)) {
               CLIENT_heartbeat_register(player, true);
             }
           }
