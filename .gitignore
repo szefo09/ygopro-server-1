@@ -40,5 +40,6 @@ $RECYCLE.BIN/
 .DS_Store
 
 *.csv
+/lflist.conf
 
 config.user.bak
