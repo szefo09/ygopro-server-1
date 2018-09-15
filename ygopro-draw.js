@@ -72,17 +72,9 @@ function load_lflist() {
         for(var code in LFLIST[config.list]) {
             count = LFLIST[config.list][code];
             if(ALL_MAIN_CARDS[code] === 3) {
-                if (count) {
-                    ALL_MAIN_CARDS[code] = count;
-                } else {
-                    delete ALL_MAIN_CARDS[code];
-                };
+                ALL_MAIN_CARDS[code] = count;
             } else if (ALL_EXTRA_CARDS[code] === 3) {
-                if (count) {
-                    ALL_EXTRA_CARDS[code] = count;
-                } else {
-                    delete ALL_EXTRA_CARDS[code];
-                };
+                ALL_EXTRA_CARDS[code] = count;
             }
         }
     }
