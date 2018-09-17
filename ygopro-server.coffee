@@ -3227,6 +3227,7 @@ spawn_windbot = () ->
   windbot_process.stderr.on 'data', (data)->
     log.warn 'WindBot Error:', data
     return
+  return
 
 if settings.modules.windbot.enabled and settings.modules.windbot.spawn
   spawn_windbot()
