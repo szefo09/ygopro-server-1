@@ -371,6 +371,59 @@ if settings.modules.challonge.enabled
   challonge = require('challonge').createClient({
     apiKey: settings.modules.challonge.api_key
   })
+  challonge_cache = []
+  challonge_queue_callbacks = [[], []]
+  is_requesting = [false, false]
+  get_callback = (challonge_type, _callback) ->
+    return ((err, data) ->
+      if !err and data
+        challonge_cache[challonge_type] = data
+      _callback(err, data)
+      while challonge_queue_callbacks[challonge_type].length
+        cur_callback = challonge_queue_callbacks[challonge_type][0]
+        challonge_queue_callbacks[challonge_type].splice(0, 1)
+        cur_callback(err, data)
+      is_requesting[challonge_type] = false
+      return
+    )
+  challonge.participants._index = (_data) ->
+    if challonge_cache[0]
+      _data.callback(null, challonge_cache[0])
+    else if is_requesting[0]
+      challonge_queue_callbacks[0].push(_data.callback)
+    else
+      _data.callback = get_callback(0, _data.callback)
+      is_requesting[0] = true
+      challonge.participants.index(_data)
+    return 
+  challonge.matches._index = (_data) ->
+    if challonge_cache[1]
+      _data.callback(null, challonge_cache[1])
+    else if is_requesting[1]
+      challonge_queue_callbacks[1].push(_data.callback)
+    else
+      _data.callback = get_callback(1, _data.callback)
+      is_requesting[1] = true
+      challonge.matches.index(_data)
+    return
+  refresh_challonge_cache = () ->
+    challonge_cache[0] = null
+    challonge_cache[1] = null
+    challonge.participants._index({
+      id: settings.modules.challonge.tournament_id,
+      callback: (() ->
+        challonge.matches._index({
+          id: settings.modules.challonge.tournament_id,
+          callback: (() ->
+            return
+          )
+        })
+        return
+      )
+    })
+    return
+  refresh_challonge_cache()
+  setInterval(refresh_challonge_cache, 30000)
 
 if settings.modules.vip.enabled
   for k,v of vip_info.cdkeys when v.length == 0
@@ -1107,6 +1160,8 @@ class Room
         callback: (err, data) ->
           if err
             log.warn("Errored pushing scores to Challonge.", err)
+          else
+            refresh_challonge_cache()
           return
       })
     if @player_datas.length and settings.modules.cloud_replay.enabled
@@ -1794,7 +1849,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
         client.write buffer
     else
       ygopro.stoc_send_chat(client, '${loading_user_info}', ygopro.constants.COLORS.BABYBLUE)
-      challonge.participants.index({
+      challonge.participants._index({
         id: settings.modules.challonge.tournament_id,
         callback: (err, data) ->
           if err or !data
@@ -1811,7 +1866,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
             ygopro.stoc_die(client, '${challonge_user_not_found}')
             return
           client.challonge_info = found
-          challonge.matches.index({
+          challonge.matches._index({
             id: settings.modules.challonge.tournament_id,
             callback: (err, data) ->
               if client.closed
@@ -3139,6 +3194,8 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server)->
       callback: (err, data) ->
         if err
           log.warn("Errored pushing scores to Challonge.", err)
+        else
+          refresh_challonge_cache()
         return
     })
   if room.random_type or room.arena
