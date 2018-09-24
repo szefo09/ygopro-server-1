@@ -11,7 +11,8 @@
     "tips": [
       "欢迎来到本服务器",
       "本服务器使用萌卡代码搭建"
-    ]
+    ],
+    "tips_zh": []
   },
   "words": {
     "file": "./config/words.json",
