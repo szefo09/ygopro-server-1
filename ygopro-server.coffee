@@ -88,6 +88,7 @@ try
     oldtips = {}
     oldtips.file = './config/tips.json'
     oldtips.tips = oldconfig.tips
+    oldtips.tips_zh = []
     fs.writeFileSync(oldtips.file, JSON.stringify(oldtips, null, 2))
     delete oldconfig.tips
   if oldconfig.words
@@ -261,6 +262,9 @@ if imported
 default_data = loadJSON('./data/default_data.json')
 try
   tips = loadJSON('./config/tips.json')
+  if !tips.tips_zh
+    tips.tips_zh = []
+    setting_save(tips);
 catch
   tips = default_data.tips
   setting_save(tips)
@@ -2520,12 +2524,18 @@ wait_room_start_arena = (room)->
 
 #tip
 ygopro.stoc_send_random_tip = (client)->
-  if settings.modules.tips.enabled && tips.tips.length
-    ygopro.stoc_send_chat(client, "Tip: " + tips.tips[Math.floor(Math.random() * tips.tips.length)])
+  tip_type = "tips"
+  if settings.modules.tips.split_zh and tips.tips_zh.length and client.lang == "zh-cn"
+    tip_type = "tips_zh"
+  if settings.modules.tips.enabled && tips.tips.length && !client.is_local && !client.closed
+    ygopro.stoc_send_chat(client, "Tip: " + tips[tip_type][Math.floor(Math.random() * tips[tip_type].length)])
   return
 ygopro.stoc_send_random_tip_to_room = (room)->
   if settings.modules.tips.enabled && tips.tips.length
-    ygopro.stoc_send_chat_to_room(room, "Tip: " + tips.tips[Math.floor(Math.random() * tips.tips.length)])
+    for player in room.players when player and !player.is_local and !player.closed
+      ygopro.stoc_send_random_tip(player)
+    for player in room.watchers when player and !player.is_local and !player.closed
+      ygopro.stoc_send_random_tip(player)
   return
 
 load_tips = ()->
@@ -2543,8 +2553,25 @@ load_tips = ()->
     return
   return
 
+load_tips_zh = ()->
+  request
+    url: settings.modules.tips.get_zh
+    json: true
+  , (error, response, body)->
+    if _.isString body
+      log.warn "zh tips bad json", body
+    else if error or !body
+      log.warn 'zh tips error', error, response
+    else
+      setting_change(tips, "tips_zh", body)
+      log.info "zh tips loaded", tips.tips_zh.length
+    return
+  return
+
 if settings.modules.tips.get
   load_tips()
+if settings.modules.tips.get_zh
+  load_tips_zh()
 if settings.modules.tips.enabled
   setInterval ()->
     for room in ROOM_all when room and room.established
