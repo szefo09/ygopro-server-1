@@ -3481,8 +3481,10 @@ if settings.modules.http
 
       else if u.query.loadtips
         load_tips()
+        if settings.modules.tips.get_zh
+          load_tips_zh()
         response.writeHead(200)
-        response.end(addCallback(u.query.callback, "['loading tip', '" + settings.modules.tips.get + "']"))
+        response.end(addCallback(u.query.callback, "['loading tip', '" + settings.modules.tips.get + (if settings.modules.tips.get_zh then " and " + settings.modules.tips.get_zh else "") + "']"))
 
       else if u.query.loaddialogues
         load_dialogues()

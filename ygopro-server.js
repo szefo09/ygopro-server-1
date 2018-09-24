@@ -4459,8 +4459,11 @@
           response.end(addCallback(u.query.callback, "['get ok', '" + settings.modules.welcome + "']"));
         } else if (u.query.loadtips) {
           load_tips();
+          if (settings.modules.tips.get_zh) {
+            load_tips_zh();
+          }
           response.writeHead(200);
-          response.end(addCallback(u.query.callback, "['loading tip', '" + settings.modules.tips.get + "']"));
+          response.end(addCallback(u.query.callback, "['loading tip', '" + settings.modules.tips.get + (settings.modules.tips.get_zh ? " and " + settings.modules.tips.get_zh : "") + "']"));
         } else if (u.query.loaddialogues) {
           load_dialogues();
           if (settings.modules.dialogues.get_custom) {
