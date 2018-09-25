@@ -6,7 +6,7 @@ sudo -E apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0
 echo "deb http://download.mono-project.com/repo/ubuntu stable-bionic main" | sudo -E tee /etc/apt/sources.list.d/mono-official-stable.list
 curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
 sudo -E apt-get upgrade -y
-sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-complete nodejs firewalld
+sudo -E apt-get install -y curl git build-essential libreadline-dev libsqlite3-dev mono-devel nodejs firewalld
 sudo -E npm install pm2 -g
 
 sudo -E systemctl start firewalld
