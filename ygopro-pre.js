@@ -259,10 +259,10 @@ var pushDatas = function() {
         uploadCDN(config.cdn.local, config.cdn.remote + "/" + dataver, function () {
             uploadCDN(config.db_path + "pics", config.cdn.pics_remote + "pics", function () {
                 sendResponse("CDN上传全部完成。");
-                pushHTMLs();
             });
         });
     }
+    pushHTMLs();
 }
 
 var pushHTMLs = function() {
