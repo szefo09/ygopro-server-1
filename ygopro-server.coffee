@@ -1852,6 +1852,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
         client.write buffer
     else
       ygopro.stoc_send_chat(client, '${loading_user_info}', ygopro.constants.COLORS.BABYBLUE)
+      client.setTimeout(300000) #连接后超时5分钟
       challonge.participants._index({
         id: settings.modules.challonge.tournament_id,
         callback: (err, data) ->
@@ -1903,7 +1904,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
                 ygopro.stoc_die(client, room.error)
               else if room.started
                 if settings.modules.cloud_replay.enable_halfway_watch and !room.no_watch
-                  client.setTimeout(300000) #连接后超时5分钟
+                  #client.setTimeout(300000) #连接后超时5分钟
                   client.rid = _.indexOf(ROOM_all, room)
                   client.is_post_watcher = true
                   ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
@@ -1920,7 +1921,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
                   ygopro.stoc_die(client, "${challonge_player_already_in}")
                   return
                 #client.room = room
-                client.setTimeout(300000) #连接后超时5分钟
+                #client.setTimeout(300000) #连接后超时5分钟
                 client.rid = _.indexOf(ROOM_all, room)
                 room.connect(client)
               return
