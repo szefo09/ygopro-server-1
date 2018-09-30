@@ -510,7 +510,7 @@
       challonge_cache[1] = null;
     };
     refresh_challonge_cache();
-    setInterval(refresh_challonge_cache, 30000);
+    setInterval(refresh_challonge_cache, 60000);
   }
 
   if (settings.modules.vip.enabled) {
