@@ -426,7 +426,7 @@ if settings.modules.challonge.enabled
   #     return
   #   )
   # })
-  setInterval(refresh_challonge_cache, 30000)
+  setInterval(refresh_challonge_cache, 60000)
 
 if settings.modules.vip.enabled
   for k,v of vip_info.cdkeys when v.length == 0
