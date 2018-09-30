@@ -414,18 +414,18 @@ if settings.modules.challonge.enabled
     challonge_cache[1] = null
     return
   refresh_challonge_cache()
-  challonge.participants._index({
-    id: settings.modules.challonge.tournament_id,
-    callback: (() ->
-      challonge.matches._index({
-        id: settings.modules.challonge.tournament_id,
-        callback: (() ->
-          return
-        )
-      })
-      return
-    )
-  })
+  # challonge.participants._index({
+  #   id: settings.modules.challonge.tournament_id,
+  #   callback: (() ->
+  #     challonge.matches._index({
+  #       id: settings.modules.challonge.tournament_id,
+  #       callback: (() ->
+  #         return
+  #       )
+  #     })
+  #     return
+  #   )
+  # })
   setInterval(refresh_challonge_cache, 30000)
 
 if settings.modules.vip.enabled
