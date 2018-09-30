@@ -2298,6 +2298,9 @@
           id: settings.modules.challonge.tournament_id,
           callback: function(err, data) {
             var found, user;
+            if (client.closed) {
+              return;
+            }
             if (err || !data) {
               if (err) {
                 log.warn("Failed loading Challonge user info", err);
@@ -2308,7 +2311,7 @@
             found = false;
             for (k in data) {
               user = data[k];
-              if (user.participant && user.participant.name === client.name) {
+              if (user.participant && user.participant.name && _.endsWith(user.participant.name, client.name)) {
                 found = user.participant;
                 break;
               }
@@ -2372,10 +2375,10 @@
                 } else if (room.no_watch && room.players.length >= (room.hostinfo.mode === 2 ? 4 : 2)) {
                   ygopro.stoc_die(client, "${watch_denied_room}");
                 } else {
-                  ref6 = room.players;
+                  ref6 = room.get_playing_player();
                   for (p = 0, len5 = ref6.length; p < len5; p++) {
                     player = ref6[p];
-                    if (!(player && player !== client && player.name === client.name)) {
+                    if (!(player && player !== client && player.challonge_info.id === client.challonge_info.id)) {
                       continue;
                     }
                     ygopro.stoc_die(client, "${challonge_player_already_in}");

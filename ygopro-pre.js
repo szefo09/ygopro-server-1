@@ -57,7 +57,7 @@ var loadDb = function(db_file) {
             
             var cardHTML="<tr>";
             
-            cardHTML+='<td><a href="'+ config.html_img_rel_path + result.id +'.jpg" target="_blank"><img src="'+config.html_img_rel_path+config.html_img_thumbnail+ result.id +'.jpg'+ config.html_img_thumbnail_suffix +'" alt="'+ result.name +'"></a></td>';
+            cardHTML+='<td><a href="'+ config.html_img_rel_path + result.id +'.jpg" target="_blank"><img data-original="'+config.html_img_rel_path+config.html_img_thumbnail+ result.id +'.jpg'+ config.html_img_thumbnail_suffix +'" alt="'+ result.name +'"></a></td>';
             cardHTML+='<td>'+ result.name +'</td>';
             
             var cardText="";
@@ -259,10 +259,10 @@ var pushDatas = function() {
         uploadCDN(config.cdn.local, config.cdn.remote + "/" + dataver, function () {
             uploadCDN(config.db_path + "pics", config.cdn.pics_remote + "pics", function () {
                 sendResponse("CDN上传全部完成。");
-                pushHTMLs();
             });
         });
     }
+    pushHTMLs();
 }
 
 var pushHTMLs = function() {
