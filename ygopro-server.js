@@ -466,13 +466,15 @@
     challonge = require('challonge').createClient({
       apiKey: settings.modules.challonge.api_key
     });
-    challonge_cache = [];
+    if (settings.modules.challonge.cache_ttl) {
+      challonge_cache = [];
+    }
     challonge_queue_callbacks = [[], []];
     is_requesting = [false, false];
     get_callback = function(challonge_type, _callback) {
       return (function(err, data) {
         var cur_callback;
-        if (!err && data) {
+        if (settings.modules.challonge.cache_ttl && !err && data) {
           challonge_cache[challonge_type] = data;
         }
         _callback(err, data);
@@ -484,7 +486,7 @@
       });
     };
     challonge.participants._index = function(_data) {
-      if (challonge_cache[0]) {
+      if (settings.modules.challonge.cache_ttl && challonge_cache[0]) {
         _data.callback(null, challonge_cache[0]);
       } else if (is_requesting[0]) {
         challonge_queue_callbacks[0].push(_data.callback);
@@ -495,7 +497,7 @@
       }
     };
     challonge.matches._index = function(_data) {
-      if (challonge_cache[1]) {
+      if (settings.modules.challonge.cache_ttl && challonge_cache[1]) {
         _data.callback(null, challonge_cache[1]);
       } else if (is_requesting[1]) {
         challonge_queue_callbacks[1].push(_data.callback);
@@ -506,11 +508,15 @@
       }
     };
     refresh_challonge_cache = function() {
-      challonge_cache[0] = null;
-      challonge_cache[1] = null;
+      if (settings.modules.challonge.cache_ttl) {
+        challonge_cache[0] = null;
+        challonge_cache[1] = null;
+      }
     };
     refresh_challonge_cache();
-    setInterval(refresh_challonge_cache, 60000);
+    if (settings.modules.challonge.cache_ttl) {
+      setInterval(refresh_challonge_cache, settings.modules.challonge.cache_ttl);
+    }
   }
 
   if (settings.modules.vip.enabled) {
@@ -4036,7 +4042,7 @@
       }, 60000);
       client.side_interval = sinterval;
     }
-    if (settings.modules.challonge.enabled && client.pos === 0) {
+    if (settings.modules.challonge.enabled && settings.modules.challonge.post_score_midduel && client.pos === 0) {
       temp_log = JSON.parse(JSON.stringify(room.challonge_duel_log));
       delete temp_log.winnerId;
       challonge.matches.update({
