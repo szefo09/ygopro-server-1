@@ -1754,6 +1754,12 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
           client.setTimeout(300000) #连接后超时5分钟
           client.rid = _.indexOf(ROOM_all, room)
           client.is_post_watcher = true
+          if settings.modules.vip.enabled and client.vip and vip_info.players[client.name].words
+            for line in _.lines vip_info.players[client.name].words
+              ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
+          else if settings.modules.words.enabled and words.words[client.name]
+            for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
+              ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
           ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
           room.watchers.push client
           ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
@@ -1874,6 +1880,12 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
                   #client.setTimeout(300000) #连接后超时5分钟
                   client.rid = _.indexOf(ROOM_all, room)
                   client.is_post_watcher = true
+                  if settings.modules.vip.enabled and client.vip and vip_info.players[client.name].words
+                    for line in _.lines vip_info.players[client.name].words
+                      ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
+                  else if settings.modules.words.enabled and words.words[client.name]
+                    for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
+                      ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
                   ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
                   room.watchers.push client
                   ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
@@ -1957,6 +1969,12 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
         client.setTimeout(300000) #连接后超时5分钟
         client.rid = _.indexOf(ROOM_all, room)
         client.is_post_watcher = true
+        if settings.modules.vip.enabled and client.vip and vip_info.players[client.name].words
+          for line in _.lines vip_info.players[client.name].words
+            ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
+        else if settings.modules.words.enabled and words.words[client.name]
+          for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
+            ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
         ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
         room.watchers.push client
         ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
