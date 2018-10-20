@@ -208,9 +208,11 @@ var writeToFile = function(message) {
     }
     fs.writeFileSync(config.html_path+config.html_filename, fileContent);
     sendResponse("列表更新完成。");
+    /*
     if (!config.cdn.enabled) {
         copyImages();
     }
+    */
 }
 
 //读取指定文件夹里所有数据库，异步
