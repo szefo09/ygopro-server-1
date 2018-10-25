@@ -2665,6 +2665,11 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server)->
       deck_arena = deck_arena + room.arena
     else if room.hostinfo.mode == 2
       deck_arena = deck_arena + 'tag'
+    else if room.random_type and _.endsWith(room.random_type, 'R')
+      if _.endsWith(room.random_type, 'MR')
+        deck_arena = deck_arena + 'athletic'
+      else
+        deck_arena = deck_arena + 'entertain'
     else if room.random_type == 'S'
       deck_arena = deck_arena + 'entertain'
     else if room.random_type == 'M'
