@@ -31,9 +31,9 @@
 * 一键安装：
   * CentOS 7 `curl -sL https://purerosefallen.github.io/ygopro-server/install_centos_7.sh | sudo -E bash -`
   * CentOS 6 `curl -sL https://purerosefallen.github.io/ygopro-server/install_centos_6.sh | sudo -E bash -`
-  * Ubnutu 18 `curl -sL https://purerosefallen.github.io/ygopro-server/install_ubnutu_18.sh | sudo -E bash  -`
-  * Ubnutu 16 `curl -sL https://purerosefallen.github.io/ygopro-server/install_ubnutu_16.sh | sudo -E bash  -`
-  * Ubnutu 14 `curl -sL https://purerosefallen.github.io/ygopro-server/install_ubnutu_14.sh | sudo -E bash  -`
+  * Ubnutu 18 `curl -sL https://purerosefallen.github.io/ygopro-server/install_ubuntu_18.sh | sudo -E bash  -`
+  * Ubnutu 16 `curl -sL https://purerosefallen.github.io/ygopro-server/install_ubuntu_16.sh | sudo -E bash  -`
+  * Ubnutu 14 `curl -sL https://purerosefallen.github.io/ygopro-server/install_ubuntu_14.sh | sudo -E bash  -`
   * 更新数据 `curl -sL https://purerosefallen.github.io/ygopro-server/update.sh | sudo -E bash -`
 * 手动安装：
   * `git clone https://github.com/moecube/srvpro.git`
