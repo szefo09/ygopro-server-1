@@ -1225,7 +1225,7 @@
       } else if (name.slice(0, 2) === 'T#') {
         this.hostinfo.mode = 2;
         this.hostinfo.start_lp = 16000;
-      } else if (name.slice(0, 3) === 'AI#') {
+      } else if (name.slice(0, 3) === 'AI#' || settings.modules.windbot.doom_bots) {
         this.hostinfo.rule = 2;
         this.hostinfo.lflist = -1;
         if (settings.modules.windbot.doom_bots) {

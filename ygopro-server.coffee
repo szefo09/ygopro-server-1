@@ -958,7 +958,7 @@ class Room
     else if name[0...2] == 'T#'
       @hostinfo.mode = 2
       @hostinfo.start_lp = 16000
-    else if name[0...3] == 'AI#'
+    else if name[0...3] == 'AI#' or settings.modules.windbot.doom_bots
       @hostinfo.rule = 2
       @hostinfo.lflist = -1
       if settings.modules.windbot.doom_bots
