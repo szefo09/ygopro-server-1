@@ -503,7 +503,7 @@ ROOM_ban_player = (name, ip, reason, countadd = 1)->
 
 ROOM_find_or_create_by_name = (name, player_ip)->
   uname=name.toUpperCase()
-  if settings.modules.windbot.enabled and (uname[0...2] == 'AI' or (!settings.modules.random_duel.enabled and uname == '') or (settings.modules.windbot.doom_bots and !client.is_local))
+  if settings.modules.windbot.enabled and (uname[0...2] == 'AI' or (!settings.modules.random_duel.enabled and uname == '') or settings.modules.windbot.doom_bots)
     return ROOM_find_or_create_ai(name)
   if settings.modules.random_duel.enabled and (uname == '' or uname == 'S' or uname == 'M' or uname == 'T')
     return ROOM_find_or_create_random(uname, player_ip)
