@@ -3025,7 +3025,7 @@
     for (m = 0, len2 = ref3.length; m < len2; m++) {
       player = ref3[m];
       if (player && player.pos === info.pos && player !== client) {
-        if (room.arena === "athletic" || settings.modules.challonge.enabled) {
+        if (room.arena === "athletic" || settings.modules.challonge.enabled || settings.modules.windbot.doom_bots) {
           ygopro.stoc_send_chat_to_room(room, client.name + " ${kicked_by_system}", ygopro.constants.COLORS.RED);
           CLIENT_kick(client);
           return true;

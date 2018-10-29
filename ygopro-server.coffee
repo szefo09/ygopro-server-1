@@ -2433,7 +2433,7 @@ ygopro.ctos_follow 'HS_KICK', true, (buffer, info, client, server)->
   return unless room
   for player in room.players
     if player and player.pos == info.pos and player != client
-      if room.arena == "athletic" or settings.modules.challonge.enabled
+      if room.arena == "athletic" or settings.modules.challonge.enabled or settings.modules.windbot.doom_bots
         ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
         CLIENT_kick(client)
         return true
