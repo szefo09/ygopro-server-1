@@ -91,6 +91,7 @@
       "botlist": "./windbot/bots.json",
       "spawn": false,
       "port": 2399,
+      "doom_bots": false,
       "server_ip": "127.0.0.1",
       "my_ip": "127.0.0.1"
     },

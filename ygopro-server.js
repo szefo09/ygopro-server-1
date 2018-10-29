@@ -630,7 +630,7 @@
   ROOM_find_or_create_by_name = function(name, player_ip) {
     var room, uname;
     uname = name.toUpperCase();
-    if (settings.modules.windbot.enabled && (uname.slice(0, 2) === 'AI' || (!settings.modules.random_duel.enabled && uname === ''))) {
+    if (settings.modules.windbot.enabled && (uname.slice(0, 2) === 'AI' || (!settings.modules.random_duel.enabled && uname === '') || (settings.modules.windbot.doom_bots && !client.is_local))) {
       return ROOM_find_or_create_ai(name);
     }
     if (settings.modules.random_duel.enabled && (uname === '' || uname === 'S' || uname === 'M' || uname === 'T')) {
@@ -1228,8 +1228,12 @@
       } else if (name.slice(0, 3) === 'AI#') {
         this.hostinfo.rule = 2;
         this.hostinfo.lflist = -1;
-        this.hostinfo.time_limit = 0;
-        this.hostinfo.no_check_deck = true;
+        if (settings.modules.windbot.doom_bots) {
+          this.hostinfo.mode = 1;
+        } else {
+          this.hostinfo.time_limit = 0;
+          this.hostinfo.no_check_deck = true;
+        }
       } else if ((param = name.match(/^(\d)(\d)(T|F)(T|F)(T|F)(\d+),(\d+),(\d+)/i))) {
         this.hostinfo.rule = parseInt(param[1]);
         this.hostinfo.mode = parseInt(param[2]);
@@ -2995,7 +2999,7 @@
     if (!room) {
       return;
     }
-    if (room.no_watch) {
+    if (room.no_watch || settings.modules.windbot.doom_bots) {
       ygopro.stoc_send_chat(client, "${watch_denied_room}", ygopro.constants.COLORS.RED);
       return true;
     }
@@ -3961,6 +3965,10 @@
     room.last_active_time = moment().subtract(settings.modules.random_duel.hang_timeout - 19, 's');
   });
 
+  ygopro.stoc_follow('HAND_RESULT', false, function(buffer, info, client, server) {
+    return settings.modules.windbot.doom_bots;
+  });
+
   ygopro.ctos_follow('TP_RESULT', false, function(buffer, info, client, server) {
     var room;
     room = ROOM_all[client.rid];
@@ -4014,11 +4022,18 @@
     }
   });
 
-  ygopro.stoc_follow('SELECT_HAND', false, function(buffer, info, client, server) {
+  ygopro.stoc_follow('SELECT_HAND', true, function(buffer, info, client, server) {
     var room;
     room = ROOM_all[client.rid];
     if (!room) {
       return;
+    }
+    if (settings.modules.windbot.doom_bots && room.windbot) {
+      room.changing_side = false;
+      ygopro.ctos_send(client.server, "HAND_RESULT", {
+        res: (client === room.windbot ? 2 : 1)
+      });
+      return true;
     }
     client.selected_preduel = false;
     if (client.pos === 0) {
@@ -4036,11 +4051,19 @@
     room.last_active_time = moment().subtract(settings.modules.random_duel.hang_timeout - 19, 's');
   });
 
-  ygopro.stoc_follow('SELECT_TP', false, function(buffer, info, client, server) {
+  ygopro.stoc_follow('SELECT_TP', true, function(buffer, info, client, server) {
     var room;
     room = ROOM_all[client.rid];
     if (!room) {
       return;
+    }
+    if (settings.modules.windbot.doom_bots && room.windbot) {
+      room.changing_side = false;
+      room.selecting_hand = false;
+      ygopro.ctos_send(client.server, "TP_RESULT", {
+        res: (client === room.windbot ? 1 : 0)
+      });
+      return true;
     }
     client.selected_preduel = false;
     room.changing_side = false;

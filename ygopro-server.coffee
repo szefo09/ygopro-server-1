@@ -503,7 +503,7 @@ ROOM_ban_player = (name, ip, reason, countadd = 1)->
 
 ROOM_find_or_create_by_name = (name, player_ip)->
   uname=name.toUpperCase()
-  if settings.modules.windbot.enabled and (uname[0...2] == 'AI' or (!settings.modules.random_duel.enabled and uname == ''))
+  if settings.modules.windbot.enabled and (uname[0...2] == 'AI' or (!settings.modules.random_duel.enabled and uname == '') or (settings.modules.windbot.doom_bots and !client.is_local))
     return ROOM_find_or_create_ai(name)
   if settings.modules.random_duel.enabled and (uname == '' or uname == 'S' or uname == 'M' or uname == 'T')
     return ROOM_find_or_create_random(uname, player_ip)
@@ -961,8 +961,11 @@ class Room
     else if name[0...3] == 'AI#'
       @hostinfo.rule = 2
       @hostinfo.lflist = -1
-      @hostinfo.time_limit = 0
-      @hostinfo.no_check_deck = true
+      if settings.modules.windbot.doom_bots
+        @hostinfo.mode = 1
+      else
+        @hostinfo.time_limit = 0
+        @hostinfo.no_check_deck = true
 
     else if (param = name.match /^(\d)(\d)(T|F)(T|F)(T|F)(\d+),(\d+),(\d+)/i)
       @hostinfo.rule = parseInt(param[1])
@@ -2416,7 +2419,7 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
 ygopro.ctos_follow 'HS_TOOBSERVER', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
   return unless room
-  if room.no_watch
+  if room.no_watch or settings.modules.windbot.doom_bots
     ygopro.stoc_send_chat(client, "${watch_denied_room}", ygopro.constants.COLORS.RED)
     return true
   if (!room.arena and !settings.modules.challonge.enabled) or client.is_local
@@ -3113,6 +3116,9 @@ ygopro.ctos_follow 'HAND_RESULT', false, (buffer, info, client, server)->
   room.last_active_time = moment().subtract(settings.modules.random_duel.hang_timeout - 19, 's')
   return
 
+ygopro.stoc_follow 'HAND_RESULT', true, (buffer, info, client, server)->
+  return settings.modules.windbot.doom_bots
+
 ygopro.ctos_follow 'TP_RESULT', false, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
   return unless room
@@ -3148,9 +3154,13 @@ ygopro.stoc_follow 'CHAT', true, (buffer, info, client, server)->
     return true
   return
 
-ygopro.stoc_follow 'SELECT_HAND', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'SELECT_HAND', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
   return unless room
+  if settings.modules.windbot.doom_bots
+    room.changing_side = false
+    ygopro.ctos_send(client.server, "HAND_RESULT", {res: (if client.is_local then 2 else 1)})
+    return true
   client.selected_preduel = false
   if client.pos == 0
     room.selecting_hand = true
@@ -3163,9 +3173,14 @@ ygopro.stoc_follow 'SELECT_HAND', false, (buffer, info, client, server)->
   room.last_active_time = moment().subtract(settings.modules.random_duel.hang_timeout - 19, 's')
   return
 
-ygopro.stoc_follow 'SELECT_TP', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'SELECT_TP', true, (buffer, info, client, server)->
   room=ROOM_all[client.rid]
   return unless room
+  if settings.modules.windbot.doom_bots
+    room.changing_side = false
+    room.selecting_hand = false
+    ygopro.ctos_send(client.server, "TP_RESULT", {res: (if client.is_local then 1 else 0)})
+    return true
   client.selected_preduel = false
   room.changing_side = false
   room.selecting_hand = false
