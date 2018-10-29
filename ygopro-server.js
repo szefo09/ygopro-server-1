@@ -1228,9 +1228,7 @@
       } else if (name.slice(0, 3) === 'AI#' || settings.modules.windbot.doom_bots) {
         this.hostinfo.rule = 2;
         this.hostinfo.lflist = -1;
-        if (settings.modules.windbot.doom_bots) {
-          this.hostinfo.mode = 1;
-        } else {
+        if (!settings.modules.windbot.doom_bots) {
           this.hostinfo.time_limit = 0;
           this.hostinfo.no_check_deck = true;
         }

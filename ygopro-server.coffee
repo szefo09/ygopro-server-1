@@ -961,9 +961,7 @@ class Room
     else if name[0...3] == 'AI#' or settings.modules.windbot.doom_bots
       @hostinfo.rule = 2
       @hostinfo.lflist = -1
-      if settings.modules.windbot.doom_bots
-        @hostinfo.mode = 1
-      else
+      if !settings.modules.windbot.doom_bots
         @hostinfo.time_limit = 0
         @hostinfo.no_check_deck = true
 
