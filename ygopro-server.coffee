@@ -621,7 +621,7 @@ ROOM_unwelcome = (room, bad_player, reason)->
 CLIENT_kick = (client) ->
   client.system_kicked = true
   if settings.modules.reconnect.enabled and client.closed
-    CLIENT_reconnect_unregister(client, false, true)
+    client.server.destroy()
   else
     client.destroy()
   return
@@ -2711,7 +2711,7 @@ ygopro.ctos_follow 'SURRENDER', true, (buffer, info, client, server)->
   if room.hostinfo.mode == 2
     if !settings.modules.tag_duel_surrender
       return true
-    else if !client.surrend_confirm and !CLIENT_get_partner(client).closed
+    else if !client.surrend_confirm and !CLIENT_get_partner(client).closed and !CLIENT_get_partner(client).is_local
       sur_player = CLIENT_get_partner(client)
       ygopro.stoc_send_chat(sur_player, "${surrender_confirm_tag}", ygopro.constants.COLORS.BABYBLUE)
       ygopro.stoc_send_chat(client, "${surrender_confirm_sent}", ygopro.constants.COLORS.BABYBLUE)
@@ -2751,14 +2751,14 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
     when '/投降', '/surrender'
       if !room.started or (room.hostinfo.mode==2 and !settings.modules.tag_duel_surrender)
         return cancel
-      if room.random_type and room.turn < 3
+      if room.random_type and room.turn < 3 and !client.flee_free
         ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
         return cancel
       if client.surrend_confirm
         ygopro.ctos_send(client.server, 'SURRENDER')
       else
         sur_player = CLIENT_get_partner(client)
-        if sur_player.closed
+        if sur_player.closed or sur_player.is_local
           sur_player = client
         if room.hostinfo.mode==2 and sur_player != client
           ygopro.stoc_send_chat(sur_player, "${surrender_confirm_tag}", ygopro.constants.COLORS.BABYBLUE)
@@ -3231,7 +3231,7 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server)->
       if client.side_tcount == 1
         ygopro.stoc_send_chat_to_room(room, client.name + "${side_overtime_room}", ygopro.constants.COLORS.BABYBLUE)
         ygopro.stoc_send_chat(client, "${side_overtime}", ygopro.constants.COLORS.RED)
-        room.scores[client.name] = -9
+        #room.scores[client.name] = -9
         CLIENT_kick(client)
         clearInterval sinterval
       else

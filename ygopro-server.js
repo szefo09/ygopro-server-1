@@ -795,7 +795,7 @@
   CLIENT_kick = function(client) {
     client.system_kicked = true;
     if (settings.modules.reconnect.enabled && client.closed) {
-      CLIENT_reconnect_unregister(client, false, true);
+      client.server.destroy();
     } else {
       client.destroy();
     }
@@ -3415,7 +3415,7 @@
     if (room.hostinfo.mode === 2) {
       if (!settings.modules.tag_duel_surrender) {
         return true;
-      } else if (!client.surrend_confirm && !CLIENT_get_partner(client).closed) {
+      } else if (!client.surrend_confirm && !CLIENT_get_partner(client).closed && !CLIENT_get_partner(client).is_local) {
         sur_player = CLIENT_get_partner(client);
         ygopro.stoc_send_chat(sur_player, "${surrender_confirm_tag}", ygopro.constants.COLORS.BABYBLUE);
         ygopro.stoc_send_chat(client, "${surrender_confirm_sent}", ygopro.constants.COLORS.BABYBLUE);
@@ -3470,7 +3470,7 @@
         if (!room.started || (room.hostinfo.mode === 2 && !settings.modules.tag_duel_surrender)) {
           return cancel;
         }
-        if (room.random_type && room.turn < 3) {
+        if (room.random_type && room.turn < 3 && !client.flee_free) {
           ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE);
           return cancel;
         }
@@ -3478,7 +3478,7 @@
           ygopro.ctos_send(client.server, 'SURRENDER');
         } else {
           sur_player = CLIENT_get_partner(client);
-          if (sur_player.closed) {
+          if (sur_player.closed || sur_player.is_local) {
             sur_player = client;
           }
           if (room.hostinfo.mode === 2 && sur_player !== client) {
@@ -4121,7 +4121,6 @@
         if (client.side_tcount === 1) {
           ygopro.stoc_send_chat_to_room(room, client.name + "${side_overtime_room}", ygopro.constants.COLORS.BABYBLUE);
           ygopro.stoc_send_chat(client, "${side_overtime}", ygopro.constants.COLORS.RED);
-          room.scores[client.name] = -9;
           CLIENT_kick(client);
           return clearInterval(sinterval);
         } else {
