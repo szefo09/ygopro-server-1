@@ -938,6 +938,7 @@ class Room
     @random_type = ''
     @welcome = ''
     @scores = {}
+    @decks = {}
     @duel_count = 0
     @death = 0
     @turn = 0
@@ -1089,7 +1090,10 @@ class Room
     #log.info 'room-delete', this.name, ROOM_all.length
     score_array=[]
     for name, score of @scores
-      score_array.push { name: name, score: score }
+      score_form = { name: name, score: score, deck: null }
+      if @decks[name]
+        score_form.deck = @decks[name]
+      score_array.push score_form
     if settings.modules.arena_mode.enabled and @arena
       #log.info 'SCORE', score_array, @start_time
       end_time = moment().format()
@@ -1097,9 +1101,9 @@ class Room
         @start_time = end_time
       if score_array.length != 2
         if !score_array[0]
-          score_array[0] = { name: null, score: -5 }
+          score_array[0] = { name: null, score: -5, deck: null }
         if !score_array[1]
-          score_array[1] = { name: null, score: -5 }
+          score_array[1] = { name: null, score: -5, deck: null }
         score_array[0].score = -5
         score_array[1].score = -5
       request.post { url : settings.modules.arena_mode.post_score , form : {
@@ -1108,6 +1112,8 @@ class Room
         usernameB: score_array[1].name,
         userscoreA: score_array[0].score,
         userscoreB: score_array[1].score,
+        userdeckA: score_array[0].deck,
+        userdeckB: score_array[1].deck,
         start: @start_time,
         end: end_time,
         arena: @arena
@@ -1756,6 +1762,9 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
         when 4
           room = ROOM_find_or_create_by_name('M#' + info.pass.slice(8))
           if room
+            for player in room.get_playing_player() when player and player.name == client.name
+              ygopro.stoc_die(client, '${invalid_password_unauthorized}')
+              return
             room.private = true
             room.arena = settings.modules.arena_mode.mode
             if room.arena == "athletic"
@@ -2626,8 +2635,11 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server)->
         ROOM_players_oppentlist[player.ip] = null
   if settings.modules.tips.enabled
     ygopro.stoc_send_random_tip(client)
-  if settings.modules.deck_log.enabled and client.main and client.main.length and not client.deck_saved and not room.windbot
+  deck_text = null
+  if client.main and client.main.length
     deck_text = '#ygopro-server deck log\n#main\n' + client.main.join('\n') + '\n!side\n' + client.side.join('\n') + '\n'
+    room.decks[client.name] = deck_text
+  if settings.modules.deck_log.enabled and deck_text and not client.deck_saved and not room.windbot
     deck_arena = settings.modules.deck_log.arena + '-'
     if room.arena
       deck_arena = deck_arena + room.arena
