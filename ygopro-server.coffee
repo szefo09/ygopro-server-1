@@ -621,7 +621,8 @@ ROOM_unwelcome = (room, bad_player, reason)->
 CLIENT_kick = (client) ->
   client.system_kicked = true
   if settings.modules.reconnect.enabled and client.closed
-    CLIENT_reconnect_unregister(client, false, true)
+    if client.server and !client.had_new_reconnection
+      client.server.destroy()
   else
     client.destroy()
   return
@@ -937,11 +938,10 @@ class Room
     @random_type = ''
     @welcome = ''
     @scores = {}
+    @decks = {}
     @duel_count = 0
     @death = 0
     @turn = 0
-    if settings.modules.challonge.enabled
-      @challonge_duel_log = {}
     ROOM_all.push this
 
     @hostinfo ||= JSON.parse(JSON.stringify(settings.hostinfo))
@@ -1091,7 +1091,10 @@ class Room
     #log.info 'room-delete', this.name, ROOM_all.length
     score_array=[]
     for name, score of @scores
-      score_array.push { name: name, score: score }
+      score_form = { name: name, score: score, deck: null }
+      if @decks[name]
+        score_form.deck = @decks[name]
+      score_array.push score_form
     if settings.modules.arena_mode.enabled and @arena
       #log.info 'SCORE', score_array, @start_time
       end_time = moment().format()
@@ -1099,9 +1102,9 @@ class Room
         @start_time = end_time
       if score_array.length != 2
         if !score_array[0]
-          score_array[0] = { name: null, score: -5 }
+          score_array[0] = { name: null, score: -5, deck: null }
         if !score_array[1]
-          score_array[1] = { name: null, score: -5 }
+          score_array[1] = { name: null, score: -5, deck: null }
         score_array[0].score = -5
         score_array[1].score = -5
       request.post { url : settings.modules.arena_mode.post_score , form : {
@@ -1110,6 +1113,8 @@ class Room
         usernameB: score_array[1].name,
         userscoreA: score_array[0].score,
         userscoreB: score_array[1].score,
+        userdeckA: score_array[0].deck,
+        userdeckB: score_array[1].deck,
         start: @start_time,
         end: end_time,
         arena: @arena
@@ -1123,11 +1128,11 @@ class Room
           #  log.info 'SCORE POST OK', response.statusCode, response.statusMessage, @name, body
         return
 
-    if settings.modules.challonge.enabled and @started and !@kicked
+    if settings.modules.challonge.enabled and @started and @hostinfo.mode != 2 and !@kicked
       challonge.matches.update({
         id: settings.modules.challonge.tournament_id,
         matchId: @challonge_info.id,
-        match: @challonge_duel_log,
+        match: @get_challonge_score(),
         callback: (err, data) ->
           if err
             log.warn("Errored pushing scores to Challonge.", err)
@@ -1204,6 +1209,33 @@ class Room
     for player in @get_playing_player() when player.closed
       found++
     return found
+
+  get_challonge_score: ->
+    if !settings.modules.challonge.enabled or !@started or @hostinfo.mode == 2
+      return null
+    challonge_duel_log = {}
+    if @scores[@dueling_players[0].name] > @scores[@dueling_players[1].name]
+      challonge_duel_log.winnerId = @dueling_players[0].challonge_info.id
+    else if @scores[@dueling_players[0].name] < @scores[@dueling_players[1].name]
+      challonge_duel_log.winnerId = @dueling_players[1].challonge_info.id
+    else
+      challonge_duel_log.winnerId = "tie"
+    if settings.modules.challonge.post_detailed_score
+      if @dueling_players[0].challonge_info.id == @challonge_info.player1Id and @dueling_players[1].challonge_info.id == @challonge_info.player2Id
+        challonge_duel_log.scoresCsv = @scores[@dueling_players[0].name] + "-" + @scores[@dueling_players[1].name]
+      else if @dueling_players[1].challonge_info.id == @challonge_info.player1Id and @dueling_players[0].challonge_info.id == @challonge_info.player2Id
+        challonge_duel_log.scoresCsv = @scores[@dueling_players[1].name] + "-" + @scores[@dueling_players[0].name]
+      else
+        challonge_duel_log.scoresCsv = "0-0"
+        log.warn("Score mismatch.", @name)
+    else
+      if challonge_duel_log.winnerId == @challonge_info.player1Id
+        challonge_duel_log.scoresCsv = "1-0"
+      else if challonge_duel_log.winnerId == @challonge_info.player2Id
+        challonge_duel_log.scoresCsv = "0-1"
+      else
+        challonge_duel_log.scoresCsv = "0-0"
+    return challonge_duel_log
 
   add_windbot: (botdata)->
     @windbot = botdata
@@ -1731,6 +1763,9 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
         when 4
           room = ROOM_find_or_create_by_name('M#' + info.pass.slice(8))
           if room
+            for player in room.get_playing_player() when player and player.name == client.name
+              ygopro.stoc_die(client, '${invalid_password_unauthorized}')
+              return
             room.private = true
             room.arena = settings.modules.arena_mode.mode
             if room.arena == "athletic"
@@ -1858,7 +1893,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
                 return
               found = false
               for k,match of data
-                if match and match.match and !match.match.winnerId and match.match.player1Id and match.match.player2Id and (match.match.player1Id == client.challonge_info.id or match.match.player2Id == client.challonge_info.id)
+                if match and match.match and !match.match.winnerId and match.match.state != "complete" and match.match.player1Id and match.match.player2Id and (match.match.player1Id == client.challonge_info.id or match.match.player2Id == client.challonge_info.id)
                   found = match.match
                   break
               if !found
@@ -2244,28 +2279,6 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
       else if room.hostinfo.mode == 2 and settings.modules.vip.enabled and room.dueling_players[pos + 1].vip and vip_info.players[room.dueling_players[pos + 1].name].victory
         for line in _.lines vip_info.players[room.dueling_players[pos + 1].name].victory
           ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
-    if settings.modules.challonge.enabled and !room.kicked
-      if room.scores[room.dueling_players[0].name] > room.scores[room.dueling_players[1].name]
-        room.challonge_duel_log.winnerId = room.dueling_players[0].challonge_info.id
-      else if room.scores[room.dueling_players[0].name] < room.scores[room.dueling_players[1].name]
-        room.challonge_duel_log.winnerId = room.dueling_players[1].challonge_info.id
-      else
-        room.challonge_duel_log.winnerId = "tie"
-      if settings.modules.challonge.post_detailed_score
-        if room.dueling_players[0].challonge_info.id == room.challonge_info.player1Id and room.dueling_players[1].challonge_info.id == room.challonge_info.player2Id
-          room.challonge_duel_log.scoresCsv = room.scores[room.dueling_players[0].name] + "-" + room.scores[room.dueling_players[1].name]
-        else if room.dueling_players[1].challonge_info.id == room.challonge_info.player1Id and room.dueling_players[0].challonge_info.id == room.challonge_info.player2Id
-          room.challonge_duel_log.scoresCsv = room.scores[room.dueling_players[1].name] + "-" + room.scores[room.dueling_players[0].name]
-        else
-          room.challonge_duel_log.scoresCsv = "0-0"
-          log.warn("Score mismatch.", room.name)
-      else
-        if room.challonge_duel_log.winnerId == room.challonge_info.player1Id
-          room.challonge_duel_log.scoresCsv = "1-0"
-        else if room.challonge_duel_log.winnerId == room.challonge_info.player2Id
-          room.challonge_duel_log.scoresCsv = "0-1"
-        else
-          room.challonge_duel_log.scoresCsv = "0-0"
     if room.death
       if settings.modules.http.quick_death_rule == 1 or settings.modules.http.quick_death_rule == 3
         room.death = -1
@@ -2485,12 +2498,12 @@ ygopro.stoc_follow 'HS_PLAYER_CHANGE', false, (buffer, info, client, server)->
         room.waiting_for_player = p2
       if room.waiting_for_player != room.waiting_for_player2
         room.waiting_for_player2 = room.waiting_for_player
-        room.waiting_for_player_time = 20
+        room.waiting_for_player_time = settings.modules.arena_mode.ready_time
         room.waiting_for_player_interval = setInterval (()-> wait_room_start_arena(ROOM_all[client.rid]);return), 1000
       else if !room.waiting_for_player and room.waiting_for_player_interval
         clearInterval room.waiting_for_player_interval
         room.waiting_for_player_interval = null
-        room.waiting_for_player_time = 20
+        room.waiting_for_player_time = settings.modules.arena_mode.ready_time
     else
       room.ready_player_count_without_host = 0
       for player in room.players
@@ -2500,7 +2513,7 @@ ygopro.stoc_follow 'HS_PLAYER_CHANGE', false, (buffer, info, client, server)->
           room.ready_player_count_without_host += player.is_ready
       if room.ready_player_count_without_host >= room.max_player - 1
         #log.info "all ready"
-        setTimeout (()-> wait_room_start(ROOM_all[client.rid], 20);return), 1000
+        setTimeout (()-> wait_room_start(ROOM_all[client.rid], settings.modules.random_duel.ready_time);return), 1000
   return
 
 ygopro.ctos_follow 'REQUEST_FIELD', true, (buffer, info, client, server)->
@@ -2623,8 +2636,11 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server)->
         ROOM_players_oppentlist[player.ip] = null
   if settings.modules.tips.enabled
     ygopro.stoc_send_random_tip(client)
-  if settings.modules.deck_log.enabled and client.main and client.main.length and not client.deck_saved and not room.windbot
+  deck_text = null
+  if client.main and client.main.length
     deck_text = '#ygopro-server deck log\n#main\n' + client.main.join('\n') + '\n!side\n' + client.side.join('\n') + '\n'
+    room.decks[client.name] = deck_text
+  if settings.modules.deck_log.enabled and deck_text and not client.deck_saved and not room.windbot
     deck_arena = settings.modules.deck_log.arena + '-'
     if room.arena
       deck_arena = deck_arena + room.arena
@@ -2671,7 +2687,7 @@ ygopro.ctos_follow 'SURRENDER', true, (buffer, info, client, server)->
   if room.hostinfo.mode == 2
     if !settings.modules.tag_duel_surrender
       return true
-    else if !client.surrend_confirm and !CLIENT_get_partner(client).closed
+    else if !client.surrend_confirm and !CLIENT_get_partner(client).closed and !CLIENT_get_partner(client).is_local
       sur_player = CLIENT_get_partner(client)
       ygopro.stoc_send_chat(sur_player, "${surrender_confirm_tag}", ygopro.constants.COLORS.BABYBLUE)
       ygopro.stoc_send_chat(client, "${surrender_confirm_sent}", ygopro.constants.COLORS.BABYBLUE)
@@ -2711,14 +2727,14 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
     when '/投降', '/surrender'
       if !room.started or (room.hostinfo.mode==2 and !settings.modules.tag_duel_surrender)
         return cancel
-      if room.random_type and room.turn < 3
+      if room.random_type and room.turn < 3 and !client.flee_free
         ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
         return cancel
       if client.surrend_confirm
         ygopro.ctos_send(client.server, 'SURRENDER')
       else
         sur_player = CLIENT_get_partner(client)
-        if sur_player.closed
+        if sur_player.closed or sur_player.is_local
           sur_player = client
         if room.hostinfo.mode==2 and sur_player != client
           ygopro.stoc_send_chat(sur_player, "${surrender_confirm_tag}", ygopro.constants.COLORS.BABYBLUE)
@@ -3203,7 +3219,7 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server)->
       if client.side_tcount == 1
         ygopro.stoc_send_chat_to_room(room, client.name + "${side_overtime_room}", ygopro.constants.COLORS.BABYBLUE)
         ygopro.stoc_send_chat(client, "${side_overtime}", ygopro.constants.COLORS.RED)
-        room.scores[client.name] = -9
+        #room.scores[client.name] = -9
         CLIENT_kick(client)
         clearInterval sinterval
       else
@@ -3211,8 +3227,8 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server)->
         ygopro.stoc_send_chat(client, "${side_remain_part1}#{client.side_tcount}${side_remain_part2}", ygopro.constants.COLORS.BABYBLUE)
     , 60000
     client.side_interval = sinterval
-  if settings.modules.challonge.enabled and settings.modules.challonge.post_score_midduel and client.pos == 0
-    temp_log = JSON.parse(JSON.stringify(room.challonge_duel_log))
+  if settings.modules.challonge.enabled and settings.modules.challonge.post_score_midduel and room.hostinfo.mode != 2 and client.pos == 0
+    temp_log = JSON.parse(JSON.stringify(room.get_challonge_score()))
     delete temp_log.winnerId
     challonge.matches.update({
       id: settings.modules.challonge.tournament_id,
