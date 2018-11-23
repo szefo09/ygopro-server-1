@@ -1203,6 +1203,7 @@
       this.random_type = '';
       this.welcome = '';
       this.scores = {};
+      this.decks = {};
       this.duel_count = 0;
       this.death = 0;
       this.turn = 0;
@@ -1434,7 +1435,7 @@
     }
 
     Room.prototype["delete"] = function() {
-      var end_time, index, log_rep_id, name, player_ips, player_names, recorder_buffer, ref3, replay_id, score, score_array;
+      var end_time, index, log_rep_id, name, player_ips, player_names, recorder_buffer, ref3, replay_id, score, score_array, score_form;
       if (this.deleted) {
         return;
       }
@@ -1442,10 +1443,15 @@
       ref3 = this.scores;
       for (name in ref3) {
         score = ref3[name];
-        score_array.push({
+        score_form = {
           name: name,
-          score: score
-        });
+          score: score,
+          deck: null
+        };
+        if (this.decks[name]) {
+          score_form.deck = this.decks[name];
+        }
+        score_array.push(score_form);
       }
       if (settings.modules.arena_mode.enabled && this.arena) {
         end_time = moment().format();
@@ -1456,13 +1462,15 @@
           if (!score_array[0]) {
             score_array[0] = {
               name: null,
-              score: -5
+              score: -5,
+              deck: null
             };
           }
           if (!score_array[1]) {
             score_array[1] = {
               name: null,
-              score: -5
+              score: -5,
+              deck: null
             };
           }
           score_array[0].score = -5;
@@ -1476,6 +1484,8 @@
             usernameB: score_array[1].name,
             userscoreA: score_array[0].score,
             userscoreB: score_array[1].score,
+            userdeckA: score_array[0].deck,
+            userdeckB: score_array[1].deck,
             start: this.start_time,
             end: end_time,
             arena: this.arena
@@ -2165,7 +2175,7 @@
         return (checksum & 0xFF) === 0;
       };
       finish = function(buffer) {
-        var action, len2, len3, len4, line, m, n, name, o, opt1, opt2, opt3, options, ref3, ref4, ref5, room, title;
+        var action, len2, len3, len4, len5, line, m, n, name, o, opt1, opt2, opt3, options, p, player, ref3, ref4, ref5, ref6, room, title;
         if (client.closed) {
           return;
         }
@@ -2217,6 +2227,15 @@
           case 4:
             room = ROOM_find_or_create_by_name('M#' + info.pass.slice(8));
             if (room) {
+              ref3 = room.get_playing_player();
+              for (m = 0, len2 = ref3.length; m < len2; m++) {
+                player = ref3[m];
+                if (!(player && player.name === client.name)) {
+                  continue;
+                }
+                ygopro.stoc_die(client, '${invalid_password_unauthorized}');
+                return;
+              }
               room["private"] = true;
               room.arena = settings.modules.arena_mode.mode;
               if (room.arena === "athletic") {
@@ -2247,24 +2266,24 @@
             client.rid = _.indexOf(ROOM_all, room);
             client.is_post_watcher = true;
             if (settings.modules.vip.enabled && client.vip && vip_info.players[client.name].words) {
-              ref3 = _.lines(vip_info.players[client.name].words);
-              for (m = 0, len2 = ref3.length; m < len2; m++) {
-                line = ref3[m];
+              ref4 = _.lines(vip_info.players[client.name].words);
+              for (n = 0, len3 = ref4.length; n < len3; n++) {
+                line = ref4[n];
                 ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
               }
             } else if (settings.modules.words.enabled && words.words[client.name]) {
-              ref4 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
-              for (n = 0, len3 = ref4.length; n < len3; n++) {
-                line = ref4[n];
+              ref5 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
+              for (o = 0, len4 = ref5.length; o < len4; o++) {
+                line = ref5[o];
                 ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
               }
             }
             ygopro.stoc_send_chat_to_room(room, client.name + " ${watch_join}");
             room.watchers.push(client);
             ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE);
-            ref5 = room.watcher_buffers;
-            for (o = 0, len4 = ref5.length; o < len4; o++) {
-              buffer = ref5[o];
+            ref6 = room.watcher_buffers;
+            for (p = 0, len5 = ref6.length; p < len5; p++) {
+              buffer = ref6[p];
               client.write(buffer);
             }
           } else {
@@ -3354,8 +3373,12 @@
     if (settings.modules.tips.enabled) {
       ygopro.stoc_send_random_tip(client);
     }
-    if (settings.modules.deck_log.enabled && client.main && client.main.length && !client.deck_saved && !room.windbot) {
+    deck_text = null;
+    if (client.main && client.main.length) {
       deck_text = '#ygopro-server deck log\n#main\n' + client.main.join('\n') + '\n!side\n' + client.side.join('\n') + '\n';
+      room.decks[client.name] = deck_text;
+    }
+    if (settings.modules.deck_log.enabled && deck_text && !client.deck_saved && !room.windbot) {
       deck_arena = settings.modules.deck_log.arena + '-';
       if (room.arena) {
         deck_arena = deck_arena + room.arena;
