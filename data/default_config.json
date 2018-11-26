@@ -76,6 +76,9 @@
     "random_duel": {
       "enabled": false,
       "no_rematch_check": false,
+      "record_match_scores": true,
+      "blank_pass_match": true,
+      "ready_time": 20,
       "hang_timeout": 90
     },
     "cloud_replay": {
@@ -146,6 +149,7 @@
       "mode": "entertain",
       "comment": "mode: athletic / entertain",
       "accesskey": "233",
+      "ready_time": 30,
       "post_score": false,
       "get_score": false
     },
@@ -166,7 +170,8 @@
     "test_mode": {
       "watch_public_hand": false,
       "no_connect_count_limit": false,
-      "no_ban_player": false
+      "no_ban_player": false,
+      "surrender_anytime": false
     },
     "pre_util": {
       "enabled": false,
