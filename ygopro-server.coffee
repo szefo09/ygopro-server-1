@@ -528,7 +528,7 @@ ROOM_player_get_score = (player)->
   score = ROOM_players_scores[name] 
   if !score
     return "#{player.name} ${random_score_blank}"
-  total = score.win + score.lose + score.flee
+  total = score.win + score.lose
   if score.win < 2 and total < 3
     return "#{player.name} ${random_score_not_enough}"
   if score.combo >= 2
@@ -537,6 +537,28 @@ ROOM_player_get_score = (player)->
   else
     return "${random_score_part1}#{player.name} ${random_score_part2} #{Math.ceil(score.win/total*100)}${random_score_part3} #{Math.ceil(score.flee/total*100)}${random_score_part4}"
   return
+
+if settings.modules.random_duel.post_match_scores
+  setInterval(()->
+    scores_pair = _.pairs ROOM_players_scores
+    scores_by_lose = _.sortBy(scores_pair, (score)-> return score[1].lose).reverse() # 败场由高到低
+    scores_by_win = _.sortBy(scores_by_lose, (score)-> return score[1].win).reverse() # 然后胜场由低到高，再逆转，就是先排胜场再排败场
+    scores = _.first(scores_by_win, 10)
+    #log.info scores
+    request.post { url : settings.modules.random_duel.post_match_scores , form : {
+      accesskey: settings.modules.random_duel.post_match_accesskey,
+      rank: JSON.stringify(scores)
+    }}, (error, response, body)=>
+      if error
+        log.warn 'RANDOM SCORE POST ERROR', error
+      else
+        if response.statusCode != 204 and response.statusCode != 200
+          log.warn 'RANDOM SCORE POST FAIL', response.statusCode, response.statusMessage, body
+        #else
+        #  log.info 'RANDOM SCORE POST OK', response.statusCode, response.statusMessage
+      return
+    return
+  , 60000)
 
 ROOM_find_or_create_by_name = (name, player_ip)->
   uname=name.toUpperCase()
@@ -1381,7 +1403,8 @@ class Room
           @scores[client.name_vpass] = -9
           if @random_type and not client.flee_free and (!settings.modules.reconnect.enabled or @get_disconnected_count() == 0)
             ROOM_ban_player(client.name, client.ip, "${random_ban_reason_flee}")
-            ROOM_player_flee(client.name_vpass)
+            if settings.modules.random_duel.record_match_scores and @random_type == 'M'
+              ROOM_player_flee(client.name_vpass)
       if @players.length and !(@windbot and client.is_host) and !(@arena and !@started and client.pos <= 3)
         ygopro.stoc_send_chat_to_room this, "#{client.name} ${left_game}" + if error then ": #{error}" else ''
         roomlist.update(this) if !@windbot and !@started and settings.modules.http.websocket_roomlist
@@ -1745,6 +1768,74 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
       }
       CLIENT_kick(client)
       return), 500
+
+  else if info.pass.toUpperCase()=="L" and settings.modules.koishi_roomlist.enabled
+    ygopro.stoc_send_chat(client,"${koishi_roomlist_hint}", ygopro.constants.COLORS.BABYBLUE)
+    room_showed = []
+    for room in ROOM_all when room and room.established and room.name.indexOf('$') < 0
+      room_showed.push(room)
+    buffer_pos = 0
+    room_buffer = Buffer.alloc(2 + 333 * room_showed.length)
+    room_buffer.writeUInt16LE(room_showed.length, buffer_pos)
+    buffer_pos += 2
+    for room in room_showed
+      room_buffer.write(room.name, buffer_pos, 64, "utf8")
+      buffer_pos += 64
+      oppo_pos = if room.hostinfo.mode == 2 then 2 else 1
+      room_buffer.writeUInt8((if !room.started then 0 else if room.changing_side then 2 else 1), buffer_pos)
+      buffer_pos++
+      room_buffer.writeInt8(room.duel_count, buffer_pos)
+      buffer_pos++
+      room_buffer.writeInt8((if room.turn? then room.turn else 0), buffer_pos)
+      buffer_pos++
+      room_players = []
+      for player in room.get_playing_player() when player
+        room_players[player.pos] = player
+      player_string = "???"
+      if room_players[0]
+        player_string = room_players[0].name
+      if room.hostinfo.mode == 2
+        player_string = player_string + "+" + (if room_players[1] then room_players[1].name else "???")
+      room_buffer.write(player_string, buffer_pos, 128, "utf8")
+      buffer_pos += 128
+      if room.started
+        room_buffer.writeInt8((if room.scores[room_players[0].name_vpass]? then room.scores[room_players[0].name_vpass] else 0), buffer_pos)
+        buffer_pos++
+        room_buffer.writeInt32LE((if room_players[0].lp? then room_players[0].lp else room.hostinfo.start_lp), buffer_pos)
+        buffer_pos += 4
+      else
+        room_buffer.writeInt8(0, buffer_pos)
+        buffer_pos++
+        room_buffer.writeInt32LE(0, buffer_pos)
+        buffer_pos += 4
+      player_string = "???"
+      if room_players[oppo_pos]
+        player_string = room_players[oppo_pos].name
+      if room.hostinfo.mode == 2
+        player_string = player_string + "+" + (if room_players[oppo_pos + 1] then room_players[oppo_pos + 1].name else "???")
+      room_buffer.write(player_string, buffer_pos, 128, "utf8")
+      buffer_pos += 128
+      if room.started
+        room_buffer.writeInt8((if room.scores[room_players[oppo_pos].name_vpass]? then room.scores[room_players[oppo_pos].name_vpass] else 0), buffer_pos)
+        buffer_pos++
+        room_buffer.writeInt32LE((if room_players[oppo_pos].lp? then room_players[oppo_pos].lp else room.hostinfo.start_lp), buffer_pos)
+        buffer_pos += 4
+      else
+        room_buffer.writeInt8(0, buffer_pos)
+        buffer_pos++
+        room_buffer.writeInt32LE(0, buffer_pos)
+        buffer_pos += 4
+
+    #console.log(room_buffer.length)
+    ygopro.stoc_send(client, "SRVPRO_ROOMLIST", room_buffer)
+    setTimeout (()->
+      ygopro.stoc_send client, 'ERROR_MSG',{
+        msg: 1
+        code: 9
+      }
+      CLIENT_kick(client)
+      return), 500
+    
 
   else if info.pass[0...2].toUpperCase()=="R#" and settings.modules.cloud_replay.enabled
     replay_id=info.pass.split("#")[1]
