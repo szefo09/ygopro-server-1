@@ -528,7 +528,7 @@ ROOM_player_get_score = (player)->
   score = ROOM_players_scores[name] 
   if !score
     return "#{player.name} ${random_score_blank}"
-  total = score.win + score.lose + score.flee
+  total = score.win + score.lose
   if score.win < 2 and total < 3
     return "#{player.name} ${random_score_not_enough}"
   if score.combo >= 2
@@ -537,6 +537,28 @@ ROOM_player_get_score = (player)->
   else
     return "${random_score_part1}#{player.name} ${random_score_part2} #{Math.ceil(score.win/total*100)}${random_score_part3} #{Math.ceil(score.flee/total*100)}${random_score_part4}"
   return
+
+if settings.modules.random_duel.post_match_scores
+  setInterval(()->
+    scores_pair = _.pairs ROOM_players_scores
+    scores_by_lose = _.sortBy(scores_pair, (score)-> return score[1].lose).reverse() # 败场由高到低
+    scores_by_win = _.sortBy(scores_by_lose, (score)-> return score[1].win).reverse() # 然后胜场由低到高，再逆转，就是先排胜场再排败场
+    scores = _.first(scores_by_win, 10)
+    #log.info scores
+    request.post { url : settings.modules.random_duel.post_match_scores , form : {
+      accesskey: settings.modules.random_duel.post_match_accesskey,
+      rank: JSON.stringify(scores)
+    }}, (error, response, body)=>
+      if error
+        log.warn 'RANDOM SCORE POST ERROR', error
+      else
+        if response.statusCode != 204 and response.statusCode != 200
+          log.warn 'RANDOM SCORE POST FAIL', response.statusCode, response.statusMessage, body
+        #else
+        #  log.info 'RANDOM SCORE POST OK', response.statusCode, response.statusMessage
+      return
+    return
+  , 60000)
 
 ROOM_find_or_create_by_name = (name, player_ip)->
   uname=name.toUpperCase()
@@ -1345,7 +1367,8 @@ class Room
           @scores[client.name_vpass] = -9
           if @random_type and not client.flee_free and (!settings.modules.reconnect.enabled or @get_disconnected_count() == 0)
             ROOM_ban_player(client.name, client.ip, "${random_ban_reason_flee}")
-            ROOM_player_flee(client.name_vpass)
+            if settings.modules.random_duel.record_match_scores and @random_type == 'M'
+              ROOM_player_flee(client.name_vpass)
       if @players.length and !(@windbot and client.is_host) and !(@arena and !@started and client.pos <= 3)
         ygopro.stoc_send_chat_to_room this, "#{client.name} ${left_game}" + if error then ": #{error}" else ''
         roomlist.update(this) if !@windbot and !@started and settings.modules.http.websocket_roomlist

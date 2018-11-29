@@ -675,7 +675,7 @@
     if (!score) {
       return player.name + " ${random_score_blank}";
     }
-    total = score.win + score.lose + score.flee;
+    total = score.win + score.lose;
     if (score.win < 2 && total < 3) {
       return player.name + " ${random_score_not_enough}";
     }
@@ -685,6 +685,37 @@
       return "${random_score_part1}" + player.name + " ${random_score_part2} " + (Math.ceil(score.win / total * 100)) + "${random_score_part3} " + (Math.ceil(score.flee / total * 100)) + "${random_score_part4}";
     }
   };
+
+  if (settings.modules.random_duel.post_match_scores) {
+    setInterval(function() {
+      var scores, scores_by_lose, scores_by_win, scores_pair;
+      scores_pair = _.pairs(ROOM_players_scores);
+      scores_by_lose = _.sortBy(scores_pair, function(score) {
+        return score[1].lose;
+      }).reverse();
+      scores_by_win = _.sortBy(scores_by_lose, function(score) {
+        return score[1].win;
+      }).reverse();
+      scores = _.first(scores_by_win, 10);
+      request.post({
+        url: settings.modules.random_duel.post_match_scores,
+        form: {
+          accesskey: settings.modules.random_duel.post_match_accesskey,
+          rank: JSON.stringify(scores)
+        }
+      }, (function(_this) {
+        return function(error, response, body) {
+          if (error) {
+            log.warn('RANDOM SCORE POST ERROR', error);
+          } else {
+            if (response.statusCode !== 204 && response.statusCode !== 200) {
+              log.warn('RANDOM SCORE POST FAIL', response.statusCode, response.statusMessage, body);
+            }
+          }
+        };
+      })(this));
+    }, 60000);
+  }
 
   ROOM_find_or_create_by_name = function(name, player_ip) {
     var room, uname;
@@ -1754,7 +1785,9 @@
             this.scores[client.name_vpass] = -9;
             if (this.random_type && !client.flee_free && (!settings.modules.reconnect.enabled || this.get_disconnected_count() === 0)) {
               ROOM_ban_player(client.name, client.ip, "${random_ban_reason_flee}");
-              ROOM_player_flee(client.name_vpass);
+              if (settings.modules.random_duel.record_match_scores && this.random_type === 'M') {
+                ROOM_player_flee(client.name_vpass);
+              }
             }
           }
         }
