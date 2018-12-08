@@ -1318,12 +1318,8 @@
       } else if (name.slice(0, 3) === 'AI#') {
         this.hostinfo.rule = 2;
         this.hostinfo.lflist = -1;
-<<<<<<< HEAD
         this.hostinfo.time_limit = 0;
         this.hostinfo.no_check_deck = true;
-=======
-        this.hostinfo.time_limit = 999;
->>>>>>> mc
       } else if ((param = name.match(/^(\d)(\d)(T|F)(T|F)(T|F)(\d+),(\d+),(\d+)/i))) {
         this.hostinfo.rule = parseInt(param[1]);
         this.hostinfo.mode = parseInt(param[2]);
@@ -4593,15 +4589,9 @@
                     roomname: pass_validated ? room.name : room.name.split('$', 2)[0],
                     roommode: room.hostinfo.mode,
                     needpass: (room.name.indexOf('$') !== -1).toString(),
-<<<<<<< HEAD
-                    users: (function() {
+                    users: _.sortBy((function() {
                       var len3, n, ref3, results1;
                       ref3 = room.players;
-=======
-                    users: _.sortBy((function() {
-                      var len3, n, ref2, results1;
-                      ref2 = room.players;
->>>>>>> mc
                       results1 = [];
                       for (n = 0, len3 = ref3.length; n < len3; n++) {
                         player = ref3[n];
@@ -4815,15 +4805,9 @@
           response.end(addCallback(u.query.callback, "['ban ok', '" + u.query.ban + "']"));
         } else if (u.query.kick) {
           kick_room_found = false;
-<<<<<<< HEAD
           for (p = 0, len5 = ROOM_all.length; p < len5; p++) {
             room = ROOM_all[p];
-            if (!(room && room.established && (u.query.kick === "all" || u.query.kick === room.port.toString() || u.query.kick === room.name))) {
-=======
-          for (o = 0, len4 = ROOM_all.length; o < len4; o++) {
-            room = ROOM_all[o];
             if (!(room && room.established && (u.query.kick === "all" || u.query.kick === room.process_pid.toString() || u.query.kick === room.name))) {
->>>>>>> mc
               continue;
             }
             kick_room_found = true;
@@ -4843,15 +4827,9 @@
           }
         } else if (u.query.death) {
           death_room_found = false;
-<<<<<<< HEAD
           for (q = 0, len6 = ROOM_all.length; q < len6; q++) {
             room = ROOM_all[q];
-            if (!(room && room.established && room.started && !room.death && (u.query.death === "all" || u.query.death === room.port.toString() || u.query.death === room.name))) {
-=======
-          for (p = 0, len5 = ROOM_all.length; p < len5; p++) {
-            room = ROOM_all[p];
             if (!(room && room.established && room.started && !room.death && (u.query.death === "all" || u.query.death === room.process_pid.toString() || u.query.death === room.name))) {
->>>>>>> mc
               continue;
             }
             death_room_found = true;
@@ -4911,15 +4889,9 @@
           }
         } else if (u.query.deathcancel) {
           death_room_found = false;
-<<<<<<< HEAD
           for (r = 0, len7 = ROOM_all.length; r < len7; r++) {
             room = ROOM_all[r];
-            if (!(room && room.established && room.started && room.death && (u.query.deathcancel === "all" || u.query.deathcancel === room.port.toString()))) {
-=======
-          for (q = 0, len6 = ROOM_all.length; q < len6; q++) {
-            room = ROOM_all[q];
             if (!(room && room.established && room.started && room.death && (u.query.deathcancel === "all" || u.query.deathcancel === room.process_pid.toString()))) {
->>>>>>> mc
               continue;
             }
             death_room_found = true;
