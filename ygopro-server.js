@@ -2279,9 +2279,9 @@
         room_buffer.write(player_string, buffer_pos, 128, "utf8");
         buffer_pos += 128;
         if (room.started) {
-          room_buffer.writeInt8((room.scores[room_players[0].name_vpass] != null ? room.scores[room_players[0].name_vpass] : 0), buffer_pos);
+          room_buffer.writeInt8((room_players[0] && (room.scores[room_players[0].name_vpass] != null) ? room.scores[room_players[0].name_vpass] : 0), buffer_pos);
           buffer_pos++;
-          room_buffer.writeInt32LE((room_players[0].lp != null ? room_players[0].lp : room.hostinfo.start_lp), buffer_pos);
+          room_buffer.writeInt32LE((room_players[0] && (room_players[0].lp != null) ? room_players[0].lp : room.hostinfo.start_lp), buffer_pos);
           buffer_pos += 4;
         } else {
           room_buffer.writeInt8(0, buffer_pos);
@@ -2299,9 +2299,9 @@
         room_buffer.write(player_string, buffer_pos, 128, "utf8");
         buffer_pos += 128;
         if (room.started) {
-          room_buffer.writeInt8((room.scores[room_players[oppo_pos].name_vpass] != null ? room.scores[room_players[oppo_pos].name_vpass] : 0), buffer_pos);
+          room_buffer.writeInt8((room_players[oppo_pos] && (room.scores[room_players[oppo_pos].name_vpass] != null) ? room.scores[room_players[oppo_pos].name_vpass] : 0), buffer_pos);
           buffer_pos++;
-          room_buffer.writeInt32LE((room_players[oppo_pos].lp != null ? room_players[oppo_pos].lp : room.hostinfo.start_lp), buffer_pos);
+          room_buffer.writeInt32LE((room_players[oppo_pos] && (room_players[oppo_pos].lp != null) ? room_players[oppo_pos].lp : room.hostinfo.start_lp), buffer_pos);
           buffer_pos += 4;
         } else {
           room_buffer.writeInt8(0, buffer_pos);
