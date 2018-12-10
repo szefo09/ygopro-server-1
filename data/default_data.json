@@ -11,7 +11,19 @@
     "tips": [
       "欢迎来到本服务器",
       "本服务器使用萌卡代码搭建"
-    ]
+    ],
+    "tips_zh": []
+  },
+  "words": {
+    "file": "./config/words.json",
+    "words": {
+      "test1": [
+        "test_word_1"
+      ],
+      "test2": [
+        "test_word_2"
+      ]
+    }
   },
   "dialogues": {
     "file": "./config/dialogues.json",
@@ -22,6 +34,14 @@
       "58481572": [
         "我们来做朋友吧！"
       ]
+    },
+    "dialogues_custom": {
+      "37564303": [
+        "泡沫君のようだ\n触れて壊さぬように\n刹那哀のまほろば\n見守るよ"
+      ],
+	  "37564765": [
+        "キラキラひかる空\n二つ並ぶ白い雲\nスカートなびかせて\n裾を掴む影ぼうし"
+      ]
     }
   },
   "duel_log": {
@@ -31,5 +51,19 @@
   "chat_color": {
     "file": "./config/chat_color.json",
     "save_list": {}
+  },
+  "vip_info": {
+    "file": "./config/vip_info.json",
+    "cdkeys": {
+      "365": [],
+      "180": [],
+      "90": [],
+      "30": [],
+      "15": [],
+      "7": [],
+      "3": [],
+      "1": []
+    },
+    "players": {}
   }
 }

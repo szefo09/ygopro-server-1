@@ -1,10 +1,11 @@
 FROM node:stretch
 
 RUN ssh-keygen -A
+RUN sed -i 's/deb.debian.org/ftp.cn.debian.org/g' /etc/apt/sources.list
 RUN apt update
-RUN apt install -y openssh-server locales curl git vim build-essential premake4 libevent-dev libsqlite3-dev liblua5.3-dev mono-complete sqlite3 p7zip-full
+RUN apt install -y openssh-server locales curl git vim sudo cron build-essential premake4 libevent-dev libsqlite3-dev liblua5.3-dev mono-complete sqlite3 p7zip-full redis-server
 RUN ln -s /usr/lib/x86_64-linux-gnu/liblua5.3.so /usr/lib/liblua.so
-RUN npm install pm2 -g
+RUN npm install pm2 coffeescript@1.12.7 -g
 
 # 系统源
 #RUN sed -i 's/deb.debian.org/ftp.cn.debian.org/g' /etc/apt/sources.list

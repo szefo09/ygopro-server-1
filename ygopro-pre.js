@@ -208,9 +208,11 @@ var writeToFile = function(message) {
     }
     fs.writeFileSync(config.html_path+config.html_filename, fileContent);
     sendResponse("列表更新完成。");
+    /*
     if (!config.cdn.enabled) {
         copyImages();
     }
+    */
 }
 
 //读取指定文件夹里所有数据库，异步
@@ -259,10 +261,10 @@ var pushDatas = function() {
         uploadCDN(config.cdn.local, config.cdn.remote + "/" + dataver, function () {
             uploadCDN(config.db_path + "pics", config.cdn.pics_remote + "pics", function () {
                 sendResponse("CDN上传全部完成。");
-                pushHTMLs();
             });
         });
     }
+    pushHTMLs();
 }
 
 var pushHTMLs = function() {

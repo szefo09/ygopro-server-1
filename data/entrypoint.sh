@@ -4,4 +4,5 @@ if [ -n "$authorized_keys" ] && [ ! -f /root/.ssh/authorized_keys ]; then mkdir 
 if [ -n "$password" ] && passwd --status | grep -q 'L'; then echo "root:$password" | chpasswd ; fi
 unset authorized_keys
 unset password
+if [ -s /root/.pm2/dump.pm2 ]; then pm2 resurrect; fi
 /usr/sbin/sshd -D
