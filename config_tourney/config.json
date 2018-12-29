@@ -283,7 +283,7 @@
     "http": {
       "port": 1263,
       "password": "Nanahira",
-      "websocket_roomlist": true,
+      "websocket_roomlist": false,
       "public_roomlist": true,
       "show_ip": true,
       "show_info": true,
