@@ -470,40 +470,40 @@
       challonge_cache = [];
     }
     challonge_queue_callbacks = [[], []];
-    is_requesting = [false, false];
+    is_requesting = [null, null];
     get_callback = function(challonge_type, _callback) {
       return (function(err, data) {
         var cur_callback;
         if (settings.modules.challonge.cache_ttl && !err && data) {
           challonge_cache[challonge_type] = data;
         }
+        is_requesting[challonge_type] = null;
         _callback(err, data);
         while (challonge_queue_callbacks[challonge_type].length) {
           cur_callback = challonge_queue_callbacks[challonge_type].splice(0, 1)[0];
           cur_callback(err, data);
         }
-        is_requesting[challonge_type] = false;
       });
     };
     challonge.participants._index = function(_data) {
       if (settings.modules.challonge.cache_ttl && challonge_cache[0]) {
         _data.callback(null, challonge_cache[0]);
-      } else if (is_requesting[0]) {
+      } else if (is_requesting[0] && moment() - is_requesting[0] <= 5000) {
         challonge_queue_callbacks[0].push(_data.callback);
       } else {
         _data.callback = get_callback(0, _data.callback);
-        is_requesting[0] = true;
+        is_requesting[0] = moment();
         challonge.participants.index(_data);
       }
     };
     challonge.matches._index = function(_data) {
       if (settings.modules.challonge.cache_ttl && challonge_cache[1]) {
         _data.callback(null, challonge_cache[1]);
-      } else if (is_requesting[1]) {
+      } else if (is_requesting[1] && moment() - is_requesting[1] <= 5000) {
         challonge_queue_callbacks[1].push(_data.callback);
       } else {
         _data.callback = get_callback(1, _data.callback);
-        is_requesting[1] = true;
+        is_requesting[1] = moment();
         challonge.matches.index(_data);
       }
     };
@@ -1121,7 +1121,7 @@
       client.reconnecting = false;
     } else if (room.selecting_tp) {
       ygopro.stoc_send(client, 'DUEL_START');
-      if (client === room.selecting_tp && !client.selected_preduel) {
+      if (client === room.selecting_tp) {
         ygopro.stoc_send(client, 'SELECT_TP');
       }
       client.reconnecting = false;
@@ -1419,6 +1419,7 @@
         this.process = spawn('./ygopro', param, {
           cwd: 'ygopro'
         });
+        this.process_pid = this.process.pid;
         this.process.on('error', (function(_this) {
           return function(err) {
             _.each(_this.players, function(player) {
@@ -2235,9 +2236,9 @@
         room_buffer.write(player_string, buffer_pos, 128, "utf8");
         buffer_pos += 128;
         if (room.started) {
-          room_buffer.writeInt8((room.scores[room_players[0].name_vpass] != null ? room.scores[room_players[0].name_vpass] : 0), buffer_pos);
+          room_buffer.writeInt8((room_players[0] && (room.scores[room_players[0].name_vpass] != null) ? room.scores[room_players[0].name_vpass] : 0), buffer_pos);
           buffer_pos++;
-          room_buffer.writeInt32LE((room_players[0].lp != null ? room_players[0].lp : room.hostinfo.start_lp), buffer_pos);
+          room_buffer.writeInt32LE((room_players[0] && (room_players[0].lp != null) ? room_players[0].lp : room.hostinfo.start_lp), buffer_pos);
           buffer_pos += 4;
         } else {
           room_buffer.writeInt8(0, buffer_pos);
@@ -2255,9 +2256,9 @@
         room_buffer.write(player_string, buffer_pos, 128, "utf8");
         buffer_pos += 128;
         if (room.started) {
-          room_buffer.writeInt8((room.scores[room_players[oppo_pos].name_vpass] != null ? room.scores[room_players[oppo_pos].name_vpass] : 0), buffer_pos);
+          room_buffer.writeInt8((room_players[oppo_pos] && (room.scores[room_players[oppo_pos].name_vpass] != null) ? room.scores[room_players[oppo_pos].name_vpass] : 0), buffer_pos);
           buffer_pos++;
-          room_buffer.writeInt32LE((room_players[oppo_pos].lp != null ? room_players[oppo_pos].lp : room.hostinfo.start_lp), buffer_pos);
+          room_buffer.writeInt32LE((room_players[oppo_pos] && (room_players[oppo_pos].lp != null) ? room_players[oppo_pos].lp : room.hostinfo.start_lp), buffer_pos);
           buffer_pos += 4;
         } else {
           room_buffer.writeInt8(0, buffer_pos);
@@ -3551,7 +3552,7 @@
         deck_arena = deck_arena + 'custom';
       }
       if (settings.modules.deck_log.local) {
-        deck_name = moment().format('YYYY-MM-DD HH-mm-ss') + ' ' + room.port + ' ' + client.pos + ' ' + client.ip.slice(7) + ' ' + client.name.replace(/[\/\\\?\*]/g, '_');
+        deck_name = moment().format('YYYY-MM-DD HH-mm-ss') + ' ' + room.process_pid + ' ' + client.pos + ' ' + client.ip.slice(7) + ' ' + client.name.replace(/[\/\\\?\*]/g, '_');
         fs.writeFile(settings.modules.deck_log.local + deck_name + '.ydk', deck_text, 'utf-8', function(err) {
           if (err) {
             return log.warn('DECK SAVE ERROR', err);
@@ -3700,7 +3701,7 @@
         }
         break;
       case '/ai':
-        if (settings.modules.windbot.enabled && client.is_host && !settings.modules.challonge.enabled) {
+        if (settings.modules.windbot.enabled && client.is_host && !settings.modules.challonge.enabled && !room.arena && room.random_type !== 'M') {
           if (name = cmd[1]) {
             windbot = _.sample(_.filter(windbots, function(w) {
               return w.name === name || w.deck === name;
@@ -4200,7 +4201,6 @@
       return;
     }
     client.selected_preduel = true;
-    room.selecting_tp = false;
     if (!(room.random_type || room.arena)) {
       return;
     }
@@ -4368,7 +4368,7 @@
         duellog = {
           time: dueltime,
           name: room.name + (settings.modules.tournament_mode.show_info ? " (Duel:" + room.duel_count + ")" : ""),
-          roomid: room.port.toString(),
+          roomid: room.process_pid.toString(),
           cloud_replay_id: "R#" + room.cloud_replay_id,
           replay_filename: replay_filename,
           roommode: room.hostinfo.mode,
@@ -4535,12 +4535,11 @@
                 room = ROOM_all[m];
                 if (room && room.established) {
                   results.push({
-                    pid: room.process.pid.toString(),
-                    roomid: room.port.toString(),
+                    roomid: room.process_pid.toString(),
                     roomname: pass_validated ? room.name : room.name.split('$', 2)[0],
                     roommode: room.hostinfo.mode,
                     needpass: (room.name.indexOf('$') !== -1).toString(),
-                    users: (function() {
+                    users: _.sortBy((function() {
                       var len3, n, ref3, results1;
                       ref3 = room.players;
                       results1 = [];
@@ -4549,13 +4548,19 @@
                         if (player.pos != null) {
                           results1.push({
                             id: (-1).toString(),
-                            name: player.name + (settings.modules.http.show_ip && pass_validated && !player.is_local ? " (IP: " + player.ip.slice(7) + ")" : "") + (settings.modules.http.show_info && room.started && player.pos !== 7 && !(room.hostinfo.mode === 2 && player.pos % 2 > 0) ? " (Score:" + room.scores[player.name_vpass] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + (room.hostinfo.mode !== 2 ? " Cards:" + (player.card_count != null ? player.card_count : room.hostinfo.start_hand) : "") + ")" : ""),
+                            name: player.name,
+                            ip: settings.modules.http.show_ip && pass_validated && !player.is_local ? player.ip.slice(7) : null,
+                            status: settings.modules.http.show_info && room.started && player.pos !== 7 ? {
+                              score: room.scores[player.name_vpass],
+                              lp: player.lp != null ? player.lp : room.hostinfo.start_lp,
+                              cards: room.hostinfo.mode !== 2 ? (player.card_count != null ? player.card_count : room.hostinfo.start_hand) : null
+                            } : null,
                             pos: player.pos
                           });
                         }
                       }
                       return results1;
-                    })(),
+                    })(), "pos"),
                     istart: room.started ? (settings.modules.http.show_info ? "Duel:" + room.duel_count + " " + (room.changing_side ? "Siding" : "Turn:" + (room.turn != null ? room.turn : 0) + (room.death ? "/" + (room.death > 0 ? room.death - 1 : "Death") : "")) : 'start') : 'wait'
                   });
                 }
@@ -4752,7 +4757,7 @@
           kick_room_found = false;
           for (p = 0, len5 = ROOM_all.length; p < len5; p++) {
             room = ROOM_all[p];
-            if (!(room && room.established && (u.query.kick === "all" || u.query.kick === room.port.toString() || u.query.kick === room.name))) {
+            if (!(room && room.established && (u.query.kick === "all" || u.query.kick === room.process_pid.toString() || u.query.kick === room.name))) {
               continue;
             }
             kick_room_found = true;
@@ -4774,7 +4779,7 @@
           death_room_found = false;
           for (q = 0, len6 = ROOM_all.length; q < len6; q++) {
             room = ROOM_all[q];
-            if (!(room && room.established && room.started && !room.death && (u.query.death === "all" || u.query.death === room.port.toString() || u.query.death === room.name))) {
+            if (!(room && room.established && room.started && !room.death && (u.query.death === "all" || u.query.death === room.process_pid.toString() || u.query.death === room.name))) {
               continue;
             }
             death_room_found = true;
@@ -4836,7 +4841,7 @@
           death_room_found = false;
           for (r = 0, len7 = ROOM_all.length; r < len7; r++) {
             room = ROOM_all[r];
-            if (!(room && room.established && room.started && room.death && (u.query.deathcancel === "all" || u.query.deathcancel === room.port.toString()))) {
+            if (!(room && room.established && room.started && room.death && (u.query.deathcancel === "all" || u.query.deathcancel === room.process_pid.toString()))) {
               continue;
             }
             death_room_found = true;
