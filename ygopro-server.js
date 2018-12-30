@@ -588,6 +588,7 @@
             ROOM_bad_ip[bad_ip] = 99;
             settings.ban.banned_ip.push(player.ip);
             ygopro.stoc_send_chat_to_room(room, player.name + " ${kicked_by_system}", ygopro.constants.COLORS.RED);
+            CLIENT_send_replays(player, room);
             CLIENT_kick(player);
             continue;
           }
@@ -1491,6 +1492,7 @@
             _this.has_ygopro_error = true;
             _this.ygopro_error_length = _this.ygopro_error_length ? _this.ygopro_error_length + data.length : data.length;
             if (_this.ygopro_error_length > 10000) {
+              _this.send_replays();
               _this.process.kill();
             }
           };
@@ -1726,6 +1728,24 @@
       return challonge_duel_log;
     };
 
+    Room.prototype.send_replays = function() {
+      var len2, len3, m, n, player, ref2, ref3;
+      if (!(settings.modules.replay_delay && this.replays.length && this.hostinfo.mode === 1)) {
+        return false;
+      }
+      ref2 = this.players;
+      for (m = 0, len2 = ref2.length; m < len2; m++) {
+        player = ref2[m];
+        CLIENT_send_replays(player, this);
+      }
+      ref3 = this.watchers;
+      for (n = 0, len3 = ref3.length; n < len3; n++) {
+        player = ref3[n];
+        CLIENT_send_replays(player, this);
+      }
+      return true;
+    };
+
     Room.prototype.add_windbot = function(botdata) {
       this.windbot = botdata;
       request({
@@ -1817,6 +1837,7 @@
             roomlist.update(this);
           }
         } else {
+          this.send_replays();
           this.process.kill();
           this["delete"]();
         }
@@ -4824,6 +4845,7 @@
               room.scores[room.dueling_players[1].name_vpass] = 0;
             }
             room.kicked = true;
+            this.send_replays();
             room.process.kill();
             room["delete"]();
           }
