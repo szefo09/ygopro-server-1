@@ -1726,24 +1726,6 @@
       return challonge_duel_log;
     };
 
-    Room.prototype.send_replays = function() {
-      var len2, len3, m, n, player, ref3, ref4;
-      if (!(settings.modules.replay_delay && this.replays.length && this.hostinfo.mode === 1)) {
-        return false;
-      }
-      ref3 = this.players;
-      for (m = 0, len2 = ref3.length; m < len2; m++) {
-        player = ref3[m];
-        CLIENT_send_replays(player, this);
-      }
-      ref4 = this.watchers;
-      for (n = 0, len3 = ref4.length; n < len3; n++) {
-        player = ref4[n];
-        CLIENT_send_replays(player, this);
-      }
-      return true;
-    };
-
     Room.prototype.add_windbot = function(botdata) {
       this.windbot = botdata;
       request({
@@ -1921,9 +1903,6 @@
       }
       if (!server.client.closed) {
         ygopro.stoc_send_chat(server.client, "${server_closed}", ygopro.constants.COLORS.RED);
-        if (room && settings.modules.replay_delay) {
-          room.send_replays();
-        }
         CLIENT_kick(server.client);
         SERVER_clear_disconnect(server);
       }
@@ -1940,9 +1919,6 @@
       }
       if (!server.client.closed) {
         ygopro.stoc_send_chat(server.client, "${server_error}: " + error, ygopro.constants.COLORS.RED);
-        if (room && settings.modules.replay_delay) {
-          room.send_replays();
-        }
         CLIENT_kick(server.client);
         SERVER_clear_disconnect(server);
       }
@@ -3413,6 +3389,27 @@
       ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg);
     }
     return true;
+  });
+
+  ygopro.stoc_follow('DUEL_END', false, function(buffer, info, client, server) {
+    var len2, m, player, ref3, results, room;
+    room = ROOM_all[client.rid];
+    if (!(room && settings.modules.replay_delay && room.hostinfo.mode === 1)) {
+      return;
+    }
+    CLIENT_send_replays(client, room);
+    if (!room.replays_sent_to_watchers) {
+      room.replays_sent_to_watchers = true;
+      ref3 = room.watchers;
+      results = [];
+      for (m = 0, len2 = ref3.length; m < len2; m++) {
+        player = ref3[m];
+        if (player) {
+          results.push(CLIENT_send_replays(player, room));
+        }
+      }
+      return results;
+    }
   });
 
   wait_room_start = function(room, time) {
