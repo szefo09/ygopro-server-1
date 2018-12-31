@@ -284,7 +284,7 @@
     "http": {
       "port": 7211,
       "password": "Nanahira",
-      "websocket_roomlist": true,
+      "websocket_roomlist": false,
       "public_roomlist": false,
       "show_ip": true,
       "show_info": true,
