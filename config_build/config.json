@@ -21,6 +21,7 @@
     "stop": false,
     "side_timeout": 3,
     "tag_duel_surrender": true,
+    "replay_delay": true,
     "i18n": {
       "auto_pick": true,
       "default": "zh-cn",
