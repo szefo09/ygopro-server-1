@@ -939,7 +939,7 @@ CLIENT_heartbeat_unregister = (client) ->
   return true
 
 CLIENT_heartbeat_register = (client, send) ->
-  if !settings.modules.heartbeat_detection.enabled or client.closed or client.is_post_watcher or client.pre_reconnecting or client.reconnecting or client.waiting_for_last or client.pos > 3 or client.heartbeat_protected
+  if !settings.modules.heartbeat_detection.enabled or client.closed or client.is_post_watcher or client.pre_reconnecting or client.reconnecting or client.pos > 3 or client.heartbeat_protected
     return false
   if client.heartbeat_timeout
     CLIENT_heartbeat_unregister(client)
@@ -990,6 +990,12 @@ CLIENT_send_replays = (client, room) ->
     ygopro.stoc_send_chat(client, "${replay_hint_part1}" + i + "${replay_hint_part2}", ygopro.constants.COLORS.BABYBLUE)
     ygopro.stoc_send(client, "REPLAY", buffer)
   return true
+
+SOCKET_flush_data = (sk, datas) ->
+  for buffer in datas
+    sk.write(buffer)
+  datas.splice(0, datas.length)
+  return
 
 class Room
   constructor: (name, @hostinfo) ->
@@ -1568,9 +1574,9 @@ net.createServer (client) ->
                 struct._setBuff(b)
                 info = _.clone(struct.fields)
               if ygopro.ctos_follows[ctos_proto].synchronous
-                cancel = ygopro.ctos_follows[ctos_proto].callback b, info, client, client.server
+                cancel = ygopro.ctos_follows[ctos_proto].callback b, info, client, client.server, datas
               else
-                ygopro.ctos_follows[ctos_proto].callback b, info, client, client.server
+                ygopro.ctos_follows[ctos_proto].callback b, info, client, client.server, datas
             datas.push ctos_buffer.slice(0, 2 + ctos_message_length) unless cancel
             ctos_buffer = ctos_buffer.slice(2 + ctos_message_length)
             ctos_message_length = 0
@@ -1637,9 +1643,9 @@ net.createServer (client) ->
               struct._setBuff(b)
               info = _.clone(struct.fields)
             if ygopro.stoc_follows[stoc_proto].synchronous
-              cancel = ygopro.stoc_follows[stoc_proto].callback b, info, server.client, server
+              cancel = ygopro.stoc_follows[stoc_proto].callback b, info, server.client, server, datas
             else
-              ygopro.stoc_follows[stoc_proto].callback b, info, server.client, server
+              ygopro.stoc_follows[stoc_proto].callback b, info, server.client, server, datas
           datas.push stoc_buffer.slice(0, 2 + stoc_message_length) unless cancel
           stoc_buffer = stoc_buffer.slice(2 + stoc_message_length)
           stoc_message_length = 0
@@ -1669,7 +1675,7 @@ if settings.modules.stop
 # 功能模块
 # return true to cancel a synchronous message
 
-ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server)->
+ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server, datas)->
   # checkmate use username$password, but here don't
   # so remove the password
   name_full =info.name.split("$")
@@ -1728,7 +1734,7 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server)->
         client.lang=settings.modules.i18n.fallback
   return false
 
-ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
+ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
 #log.info info
   info.pass=info.pass.trim()
   client.pass = info.pass
@@ -2196,7 +2202,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server)->
       room.connect(client)
   return
 
-ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
   #欢迎信息
   room=ROOM_all[client.rid]
   return unless room and !client.reconnecting
@@ -2332,7 +2338,7 @@ if settings.modules.dialogues.get
 if settings.modules.dialogues.get_custom
   load_dialogues_custom()
 
-ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
+ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room and !client.reconnecting
   msg = buffer.readInt8(0)
@@ -2601,7 +2607,7 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server)->
   return false
 
 #房间管理
-ygopro.ctos_follow 'HS_TOOBSERVER', true, (buffer, info, client, server)->
+ygopro.ctos_follow 'HS_TOOBSERVER', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   if room.no_watch
@@ -2615,7 +2621,7 @@ ygopro.ctos_follow 'HS_TOOBSERVER', true, (buffer, info, client, server)->
       return true
   return false
 
-ygopro.ctos_follow 'HS_KICK', true, (buffer, info, client, server)->
+ygopro.ctos_follow 'HS_KICK', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   for player in room.players
@@ -2633,7 +2639,7 @@ ygopro.ctos_follow 'HS_KICK', true, (buffer, info, client, server)->
       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_player}", ygopro.constants.COLORS.RED)
   return false
 
-ygopro.stoc_follow 'TYPE_CHANGE', true, (buffer, info, client, server)->
+ygopro.stoc_follow 'TYPE_CHANGE', true, (buffer, info, client, server, datas)->
   selftype = info.type & 0xf
   is_host = ((info.type >> 4) & 0xf) != 0
   # if room and room.no_watch and selftype == 7
@@ -2644,7 +2650,7 @@ ygopro.stoc_follow 'TYPE_CHANGE', true, (buffer, info, client, server)->
   #console.log "TYPE_CHANGE to #{client.name}:", info, selftype, is_host
   return false
 
-ygopro.stoc_follow 'HS_PLAYER_CHANGE', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'HS_PLAYER_CHANGE', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room and room.max_player and client.is_host
   pos = info.status >> 4
@@ -2690,29 +2696,32 @@ ygopro.stoc_follow 'HS_PLAYER_CHANGE', false, (buffer, info, client, server)->
         setTimeout (()-> wait_room_start(ROOM_all[client.rid], settings.modules.random_duel.ready_time);return), 1000
   return
 
-ygopro.ctos_follow 'REQUEST_FIELD', true, (buffer, info, client, server)->
+ygopro.ctos_follow 'REQUEST_FIELD', true, (buffer, info, client, server, datas)->
   return true
 
-ygopro.stoc_follow 'FIELD_FINISH', true, (buffer, info, client, server)->
+ygopro.stoc_follow 'FIELD_FINISH', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return true unless room and settings.modules.reconnect.enabled
   client.reconnecting = false
-  if client.time_confirm_required # client did not send TIME_CONFIRM
-    client.waiting_for_last = true
-  else if client.last_game_msg and client.last_game_msg_title != 'WAITING' # client sent TIME_CONFIRM
+  #if client.time_confirm_required # client did not send TIME_CONFIRM
+  #  client.waiting_for_last = true
+  #else 
+  if client.last_game_msg and client.last_game_msg_title != 'WAITING' # client sent TIME_CONFIRM
+    SOCKET_flush_data(client, datas)
     if client.last_hint_msg
       ygopro.stoc_send(client, 'GAME_MSG', client.last_hint_msg)
     ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg)
   return true
 
-ygopro.stoc_follow 'DUEL_END', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'DUEL_END', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room and settings.modules.replay_delay and room.hostinfo.mode == 1
+  SOCKET_flush_data(client, datas)
   CLIENT_send_replays(client, room)
   if !room.replays_sent_to_watchers
     room.replays_sent_to_watchers = true
-    for player in room.players when player and player.pos > 3
-      CLIENT_send_replays(player, room)
+    # for player in room.players when player and player.pos > 3
+    #   CLIENT_send_replays(player, room)
     for player in room.watchers when player
       CLIENT_send_replays(player, room)
 
@@ -2802,7 +2811,7 @@ if settings.modules.tips.enabled
     return
   , 30000
 
-ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room and !client.reconnecting
   unless room.started #first start
@@ -2861,7 +2870,7 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server)->
     client.deck_saved = true
   return
 
-ygopro.ctos_follow 'SURRENDER', true, (buffer, info, client, server)->
+ygopro.ctos_follow 'SURRENDER', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   if !room.started
@@ -2901,7 +2910,7 @@ report_to_big_brother = (roomname, sender, ip, level, content, match) ->
     return
   return
 
-ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
+ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   msg = _.trim(info.msg)
@@ -3157,7 +3166,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server)->
     ROOM_ban_player(client.name, client.ip, "${random_ban_reason_abuse}")
   return cancel
 
-ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server)->
+ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server, datas)->
   if settings.modules.reconnect.enabled and client.pre_reconnecting
     if !CLIENT_is_able_to_reconnect(client) and !CLIENT_is_able_to_kick_reconnect(client)
       ygopro.stoc_send_chat(client, "${reconnect_failed}", ygopro.constants.COLORS.RED)
@@ -3248,13 +3257,13 @@ ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server)->
       ygopro.stoc_send_chat(client, "#{client.name}${deck_not_found}", ygopro.constants.COLORS.RED)
   return false
 
-ygopro.ctos_follow 'RESPONSE', false, (buffer, info, client, server)->
+ygopro.ctos_follow 'RESPONSE', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room and (room.random_type or room.arena)
   room.last_active_time = moment()
   return
 
-ygopro.stoc_follow 'TIME_LIMIT', true, (buffer, info, client, server)->
+ygopro.stoc_follow 'TIME_LIMIT', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   if settings.modules.reconnect.enabled
@@ -3290,16 +3299,16 @@ ygopro.stoc_follow 'TIME_LIMIT', true, (buffer, info, client, server)->
     CLIENT_heartbeat_register(client, false)
   return false
 
-ygopro.ctos_follow 'TIME_CONFIRM', false, (buffer, info, client, server)->
+ygopro.ctos_follow 'TIME_CONFIRM', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   if settings.modules.reconnect.enabled
-    if client.waiting_for_last
-      client.waiting_for_last = false
-      if client.last_game_msg and client.last_game_msg_title != 'WAITING'
-        if client.last_hint_msg
-          ygopro.stoc_send(client, 'GAME_MSG', client.last_hint_msg)
-        ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg)
+    #if client.waiting_for_last
+    #  client.waiting_for_last = false
+    #  if client.last_game_msg and client.last_game_msg_title != 'WAITING'
+    #    if client.last_hint_msg
+    #      ygopro.stoc_send(client, 'GAME_MSG', client.last_hint_msg)
+    #    ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg)
     client.time_confirm_required = false
   if settings.modules.heartbeat_detection.enabled
     client.heartbeat_protected = false
@@ -3307,7 +3316,7 @@ ygopro.ctos_follow 'TIME_CONFIRM', false, (buffer, info, client, server)->
     CLIENT_heartbeat_unregister(client)
   return
 
-ygopro.ctos_follow 'HAND_RESULT', false, (buffer, info, client, server)->
+ygopro.ctos_follow 'HAND_RESULT', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   client.selected_preduel = true
@@ -3317,7 +3326,7 @@ ygopro.ctos_follow 'HAND_RESULT', false, (buffer, info, client, server)->
   room.last_active_time = moment().subtract(settings.modules.random_duel.hang_timeout - 19, 's')
   return
 
-ygopro.ctos_follow 'TP_RESULT', false, (buffer, info, client, server)->
+ygopro.ctos_follow 'TP_RESULT', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   client.selected_preduel = true
@@ -3326,7 +3335,7 @@ ygopro.ctos_follow 'TP_RESULT', false, (buffer, info, client, server)->
   room.last_active_time = moment()
   return
 
-ygopro.stoc_follow 'CHAT', true, (buffer, info, client, server)->
+ygopro.stoc_follow 'CHAT', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   pid = info.player
   return unless room and pid < 4 and settings.modules.chat_color.enabled
@@ -3352,7 +3361,7 @@ ygopro.stoc_follow 'CHAT', true, (buffer, info, client, server)->
     return true
   return
 
-ygopro.stoc_follow 'SELECT_HAND', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'SELECT_HAND', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   client.selected_preduel = false
@@ -3367,7 +3376,7 @@ ygopro.stoc_follow 'SELECT_HAND', false, (buffer, info, client, server)->
   room.last_active_time = moment().subtract(settings.modules.random_duel.hang_timeout - 19, 's')
   return
 
-ygopro.stoc_follow 'SELECT_TP', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'SELECT_TP', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   client.selected_preduel = false
@@ -3379,7 +3388,7 @@ ygopro.stoc_follow 'SELECT_TP', false, (buffer, info, client, server)->
     room.last_active_time = moment()
   return
 
-ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server)->
+ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return unless room
   room.changing_side = true
@@ -3425,7 +3434,7 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server)->
     room.last_active_time = moment()
   return
 
-ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server)->
+ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe and settings.modules.tournament_mode.block_replay_to_player or settings.modules.replay_delay and room.hostinfo.mode == 1 unless room
   if settings.modules.cloud_replay.enabled and room.random_type
