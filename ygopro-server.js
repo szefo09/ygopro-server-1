@@ -3876,10 +3876,9 @@
     if (!room.started) {
       return true;
     }
-    if (room.random_type && room.turn < 3 && !client.flee_free && !settings.modules.test_mode.surrender_anytime && !(room.random_type === 'M' && settings.modules.random_duel.record_match_scores)) {
-      ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE);
-      return true;
-    }
+    // if room.random_type and room.turn < 3 and not client.flee_free and not settings.modules.test_mode.surrender_anytime and not (room.random_type=='M' and settings.modules.random_duel.record_match_scores)
+    //   ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
+    //   return true
     if (room.hostinfo.mode === 2) {
       if (!settings.modules.tag_duel_surrender) {
         return true;
@@ -3940,10 +3939,9 @@
         if (!room.started || (room.hostinfo.mode === 2 && !settings.modules.tag_duel_surrender)) {
           return cancel;
         }
-        if (room.random_type && room.turn < 3 && !client.flee_free) {
-          ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE);
-          return cancel;
-        }
+        // if room.random_type and room.turn < 3 and !client.flee_free
+        //   ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
+        //   return cancel
         if (client.surrend_confirm) {
           ygopro.ctos_send(client.server, 'SURRENDER');
         } else {
