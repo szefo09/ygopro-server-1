@@ -565,7 +565,7 @@ ROOM_find_or_create_by_name = (name, player_ip)->
   uname=name.toUpperCase()
   if settings.modules.windbot.enabled and (uname[0...2] == 'AI' or (!settings.modules.random_duel.enabled and uname == ''))
     return ROOM_find_or_create_ai(name)
-  if settings.modules.random_duel.enabled and (uname == '' or uname == 'S' or uname == 'M' or uname == 'T')
+  if settings.modules.random_duel.enabled and (uname == '' or uname == 'S' or uname == 'M' or uname == 'T' or uname == 'TOR' or uname == 'TR' or uname == 'OOR' or uname == 'OR' or uname == 'TOMR' or uname == 'TMR' or uname == 'OOMR' or uname == 'OMR')
     return ROOM_find_or_create_random(uname, player_ip)
   if room = ROOM_find_by_name(name)
     return room
@@ -592,7 +592,7 @@ ROOM_find_or_create_random = (type, player_ip)->
   playerbanned = (bannedplayer and bannedplayer.count > 3 and moment() < bannedplayer.time)
   result = _.find ROOM_all, (room)->
     return room and room.random_type != '' and !room.started and
-    ((type == '' and (room.random_type == 'S' or (settings.modules.random_duel.blank_pass_match and room.random_type != 'T'))) or room.random_type == type) and
+    ((type == '' and room.random_type != 'T' and ((!_.endsWith(room.random_type, "MR") and room.random_type != 'M') or (settings.modules.random_duel.blank_pass_match and room.random_type != 'T'))) or room.random_type == type) and
     room.get_playing_player().length < max_player and
     (settings.modules.random_duel.no_rematch_check or room.get_host() == null or
     room.get_host().ip != ROOM_players_oppentlist[player_ip]) and
@@ -1060,6 +1060,42 @@ class Room
         @hostinfo.mode = 2
         @hostinfo.start_lp = 16000
 
+      if (rule.match /(^|，|,)(OOR|OCGONLYRANDOM)(，|,|$)/)
+        @hostinfo.rule = 0
+        @hostinfo.lflist = 0
+
+      if (rule.match /(^|，|,)(OR|OCGRANDOM)(，|,|$)/)
+        @hostinfo.rule = 2
+        @hostinfo.lflist = 0
+
+      if (rule.match /(^|，|,)(TOR|TCGONLYRANDOM)(，|,|$)/)
+        @hostinfo.rule = 1
+        @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+
+      if (rule.match /(^|，|,)(TR|TCGRANDOM)(，|,|$)/)
+        @hostinfo.rule = 2
+        @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+
+      if (rule.match /(^|，|,)(OOMR|OCGONLYMATCHRANDOM)(，|,|$)/)
+        @hostinfo.rule = 0
+        @hostinfo.lflist = 0
+        @hostinfo.mode = 1
+
+      if (rule.match /(^|，|,)(OMR|OCGMATCHRANDOM)(，|,|$)/)
+        @hostinfo.rule = 2
+        @hostinfo.lflist = 0
+        @hostinfo.mode = 1
+
+      if (rule.match /(^|，|,)(TOMR|TCGONLYMATCHRANDOM)(，|,|$)/)
+        @hostinfo.rule = 1
+        @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+        @hostinfo.mode = 1
+
+      if (rule.match /(^|，|,)(TMR|TCGMATCHRANDOM)(，|,|$)/)
+        @hostinfo.rule = 2
+        @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
+        @hostinfo.mode = 1
+
       if (rule.match /(^|，|,)(TCGONLY|TO)(，|,|$)/)
         @hostinfo.rule = 1
         @hostinfo.lflist = _.findIndex lflists, (list)-> list.tcg
@@ -1117,7 +1153,7 @@ class Room
       if (rule.match /(^|，|,)(NOWATCH|NW)(，|,|$)/)
         @no_watch = true
 
-    @hostinfo.replay_mode = if settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe or @hostinfo.mode == 1 and settings.modules.replay_delay then 1 else 0
+    @hostinfo.replay_mode = if settings.modules.tournament_mode.enabled or settings.modules.tournament_mode.replay_safe or @hostinfo.mode == 1 and settings.modules.replay_delay then 1 else 0
 
     param = [0, @hostinfo.lflist, @hostinfo.rule, @hostinfo.mode, (if @hostinfo.enable_priority then 'T' else 'F'),
       (if @hostinfo.no_check_deck then 'T' else 'F'), (if @hostinfo.no_shuffle_deck then 'T' else 'F'),
@@ -2840,6 +2876,11 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server, datas)->
       deck_arena = deck_arena + room.arena
     else if room.hostinfo.mode == 2
       deck_arena = deck_arena + 'tag'
+    else if room.random_type and _.endsWith(room.random_type, 'R')
+      if _.endsWith(room.random_type, 'MR')
+        deck_arena = deck_arena + 'athletic'
+      else
+        deck_arena = deck_arena + 'entertain'
     else if room.random_type == 'S'
       deck_arena = deck_arena + 'entertain'
     else if room.random_type == 'M'
@@ -2875,9 +2916,9 @@ ygopro.ctos_follow 'SURRENDER', true, (buffer, info, client, server, datas)->
   return unless room
   if !room.started
     return true
-  if room.random_type and room.turn < 3 and not client.flee_free and not settings.modules.test_mode.surrender_anytime and not (room.random_type=='M' and settings.modules.random_duel.record_match_scores)
-    ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
-    return true
+  # if room.random_type and room.turn < 3 and not client.flee_free and not settings.modules.test_mode.surrender_anytime and not (room.random_type=='M' and settings.modules.random_duel.record_match_scores)
+  #   ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
+  #   return true
   if room.hostinfo.mode == 2
     if !settings.modules.tag_duel_surrender
       return true
@@ -2921,9 +2962,9 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
     when '/投降', '/surrender'
       if !room.started or (room.hostinfo.mode==2 and !settings.modules.tag_duel_surrender)
         return cancel
-      if room.random_type and room.turn < 3 and !client.flee_free
-        ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
-        return cancel
+      # if room.random_type and room.turn < 3 and !client.flee_free
+      #   ygopro.stoc_send_chat(client, "${surrender_denied}", ygopro.constants.COLORS.BABYBLUE)
+      #   return cancel
       if client.surrend_confirm
         ygopro.ctos_send(client.server, 'SURRENDER')
       else
@@ -3436,12 +3477,12 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server, datas)->
 
 ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
-  return settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe and settings.modules.tournament_mode.block_replay_to_player or settings.modules.replay_delay and room.hostinfo.mode == 1 unless room
+  return settings.modules.tournament_mode.enabled or settings.modules.tournament_mode.replay_safe and settings.modules.tournament_mode.block_replay_to_player or settings.modules.replay_delay and room.hostinfo.mode == 1 unless room
   if settings.modules.cloud_replay.enabled and room.random_type
     Cloud_replay_ids.push room.cloud_replay_id
   if settings.modules.replay_delay and room.hostinfo.mode == 1 and client.pos == 0 and not (settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe and settings.modules.tournament_mode.block_replay_to_player)
     room.replays.push(buffer)
-  if settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe
+  if room.hostinfo.replay_mode==1 and !room.windbot
     if client.pos == 0
       dueltime=moment().format('YYYY-MM-DD HH-mm-ss')
       replay_filename=dueltime
@@ -3758,7 +3799,7 @@ if settings.modules.http
             room.scores[room.dueling_players[0].name_vpass] = 0
             room.scores[room.dueling_players[1].name_vpass] = 0
           room.kicked = true
-          @send_replays()
+          room.send_replays()
           room.process.kill()
           room.delete()
         response.writeHead(200)
