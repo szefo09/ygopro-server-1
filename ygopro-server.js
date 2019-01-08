@@ -4074,6 +4074,10 @@
     if (!room) {
       return false;
     }
+    if (info.mainc > 256 || info.sidec > 256) {
+      CLIENT_kick(client);
+      return true;
+    }
     buff_main = (function() {
       var m, ref3, results;
       results = [];
