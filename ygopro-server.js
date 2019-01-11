@@ -4652,7 +4652,7 @@
     if (settings.modules.replay_delay && room.hostinfo.mode === 1 && client.pos === 0 && !(settings.modules.tournament_mode.enabled && settings.modules.tournament_mode.replay_safe && settings.modules.tournament_mode.block_replay_to_player)) {
       room.replays.push(buffer);
     }
-    if (room.hostinfo.replay_mode === 1 && !room.windbot) {
+    if (room.hostinfo.replay_mode === 1) { //and !room.windbot
       if (client.pos === 0) {
         dueltime = moment().format('YYYY-MM-DD HH-mm-ss');
         replay_filename = dueltime;
