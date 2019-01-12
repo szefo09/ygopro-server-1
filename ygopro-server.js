@@ -486,6 +486,7 @@
       });
     };
     challonge.participants._index = function(_data) {
+      var err;
       if (settings.modules.challonge.cache_ttl && challonge_cache[0]) {
         _data.callback(null, challonge_cache[0]);
       } else if (is_requesting[0] && moment() - is_requesting[0] <= 5000) {
@@ -493,10 +494,16 @@
       } else {
         _data.callback = get_callback(0, _data.callback);
         is_requesting[0] = moment();
-        challonge.participants.index(_data);
+        try {
+          challonge.participants.index(_data);
+        } catch (error1) {
+          err = error1;
+          _data.callback(err, null);
+        }
       }
     };
     challonge.matches._index = function(_data) {
+      var err;
       if (settings.modules.challonge.cache_ttl && challonge_cache[1]) {
         _data.callback(null, challonge_cache[1]);
       } else if (is_requesting[1] && moment() - is_requesting[1] <= 5000) {
@@ -504,7 +511,12 @@
       } else {
         _data.callback = get_callback(1, _data.callback);
         is_requesting[1] = moment();
-        challonge.matches.index(_data);
+        try {
+          challonge.matches.index(_data);
+        } catch (error1) {
+          err = error1;
+          _data.callback(err, null);
+        }
       }
     };
     challonge.matches._update = function(_data) {
