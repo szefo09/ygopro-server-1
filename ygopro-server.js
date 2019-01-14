@@ -3082,7 +3082,7 @@
   }
 
   ygopro.stoc_follow('GAME_MSG', true, function(buffer, info, client, server, datas) {
-    var act_pos, card, chain, check, count, cpos, deck_found, found, hint_type, i, id, len10, len2, len3, len4, len5, len6, len7, len8, len9, limbo_found, line, loc, m, max_loop, msg, n, o, oppo_pos, p, phase, player, playertype, pos, ppos, q, r, r_player, reason, ref10, ref11, ref12, ref13, ref3, ref4, ref5, ref6, ref7, ref8, ref9, room, s, t, trigger_location, val, win_pos, x, y;
+    var act_pos, card, chain, check, count, cpos, deck_found, found, hint_type, i, id, len10, len2, len3, len4, len5, len6, len7, len8, len9, limbo_found, line, loc, m, max_loop, msg, n, o, oppo_pos, p, phase, player, playertype, pos, ppos, q, r, r_player, reason, ref10, ref11, ref3, ref4, ref5, ref6, ref7, ref8, ref9, room, s, t, trigger_location, val, win_pos, x, y;
     room = ROOM_all[client.rid];
     if (!(room && !client.reconnecting)) {
       return;
@@ -3263,10 +3263,9 @@
       if (room.dueling_players[pos].lp < 0) {
         room.dueling_players[pos].lp = 0;
       }
-      if ((0 < (ref6 = room.dueling_players[pos].lp) && ref6 <= 100)) {
-        ygopro.stoc_send_chat_to_room(room, "${lp_low_opponent}", ygopro.constants.COLORS.PINK);
-      }
     }
+    // if 0 < room.dueling_players[pos].lp <= 100
+    //   ygopro.stoc_send_chat_to_room(room, "${lp_low_opponent}", ygopro.constants.COLORS.PINK)
     if (ygopro.constants.MSG[msg] === 'RECOVER' && client.pos === 0) {
       pos = buffer.readUInt8(1);
       if (!client.is_first) {
@@ -3302,10 +3301,10 @@
       if (room.dueling_players[pos].lp < 0) {
         room.dueling_players[pos].lp = 0;
       }
-      if ((0 < (ref7 = room.dueling_players[pos].lp) && ref7 <= 100)) {
-        ygopro.stoc_send_chat_to_room(room, "${lp_low_self}", ygopro.constants.COLORS.PINK);
-      }
     }
+    // if 0 < room.dueling_players[pos].lp <= 100
+    //   ygopro.stoc_send_chat_to_room(room, "${lp_low_self}", ygopro.constants.COLORS.PINK)
+
     //track card count
     //todo: track card count in tag mode
     if (ygopro.constants.MSG[msg] === 'MOVE' && room.hostinfo.mode !== 2) {
@@ -3343,7 +3342,7 @@
       max_loop = 3 + (count - 1) * 7;
       deck_found = 0;
       limbo_found = 0; // support custom cards which may be in location 0 in KoishiPro or EdoPro
-      for (i = p = 3, ref8 = max_loop; p <= ref8; i = p += 7) {
+      for (i = p = 3, ref6 = max_loop; p <= ref6; i = p += 7) {
         loc = buffer.readInt8(i + 5);
         if ((loc & 0x41) > 0) {
           deck_found++;
@@ -3391,9 +3390,9 @@
         chain = buffer.readInt8(1);
         // console.log(2,chain)
         if (room.long_resolve_chain[chain]) {
-          ref9 = room.get_playing_player();
-          for (r = 0, len6 = ref9.length; r < len6; r++) {
-            player = ref9[r];
+          ref7 = room.get_playing_player();
+          for (r = 0, len6 = ref7.length; r < len6; r++) {
+            player = ref7[r];
             player.heartbeat_protected = true;
           }
         }
@@ -3421,27 +3420,27 @@
         }
         if (ygopro.constants.MSG[msg] !== 'CHAINING' || (trigger_location & 0x8) && client.ready_trap) {
           if (settings.modules.vip.enabled && room.dueling_players[act_pos].vip && vip_info.players[room.dueling_players[act_pos].name].dialogues[card]) {
-            ref10 = _.lines(vip_info.players[room.dueling_players[act_pos].name].dialogues[card]);
-            for (s = 0, len7 = ref10.length; s < len7; s++) {
-              line = ref10[s];
+            ref8 = _.lines(vip_info.players[room.dueling_players[act_pos].name].dialogues[card]);
+            for (s = 0, len7 = ref8.length; s < len7; s++) {
+              line = ref8[s];
               ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK);
             }
           } else if (settings.modules.vip.enabled && room.hostinfo.mode === 2 && room.dueling_players[act_pos + 1].vip && vip_info.players[room.dueling_players[act_pos + 1].name].dialogues[card]) {
-            ref11 = _.lines(vip_info.players[room.dueling_players[act_pos + 1].name].dialogues[card]);
-            for (t = 0, len8 = ref11.length; t < len8; t++) {
-              line = ref11[t];
+            ref9 = _.lines(vip_info.players[room.dueling_players[act_pos + 1].name].dialogues[card]);
+            for (t = 0, len8 = ref9.length; t < len8; t++) {
+              line = ref9[t];
               ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK);
             }
           } else if (settings.modules.dialogues.enabled && dialogues.dialogues[card]) {
-            ref12 = _.lines(dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]);
-            for (x = 0, len9 = ref12.length; x < len9; x++) {
-              line = ref12[x];
+            ref10 = _.lines(dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]);
+            for (x = 0, len9 = ref10.length; x < len9; x++) {
+              line = ref10[x];
               ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK);
             }
           } else if (settings.modules.dialogues.enabled && dialogues.dialogues_custom[card]) {
-            ref13 = _.lines(dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]);
-            for (y = 0, len10 = ref13.length; y < len10; y++) {
-              line = ref13[y];
+            ref11 = _.lines(dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]);
+            for (y = 0, len10 = ref11.length; y < len10; y++) {
+              line = ref11[y];
               ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK);
             }
           }

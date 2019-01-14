@@ -2509,8 +2509,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
     val = buffer.readInt32LE(2)
     room.dueling_players[pos].lp -= val
     room.dueling_players[pos].lp = 0 if room.dueling_players[pos].lp < 0
-    if 0 < room.dueling_players[pos].lp <= 100
-      ygopro.stoc_send_chat_to_room(room, "${lp_low_opponent}", ygopro.constants.COLORS.PINK)
+    # if 0 < room.dueling_players[pos].lp <= 100
+    #   ygopro.stoc_send_chat_to_room(room, "${lp_low_opponent}", ygopro.constants.COLORS.PINK)
 
   if ygopro.constants.MSG[msg] == 'RECOVER' and client.pos == 0
     pos = buffer.readUInt8(1)
@@ -2533,8 +2533,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
     val = buffer.readInt32LE(2)
     room.dueling_players[pos].lp -= val
     room.dueling_players[pos].lp = 0 if room.dueling_players[pos].lp < 0
-    if 0 < room.dueling_players[pos].lp <= 100
-      ygopro.stoc_send_chat_to_room(room, "${lp_low_self}", ygopro.constants.COLORS.PINK)
+    # if 0 < room.dueling_players[pos].lp <= 100
+    #   ygopro.stoc_send_chat_to_room(room, "${lp_low_self}", ygopro.constants.COLORS.PINK)
 
   #track card count
   #todo: track card count in tag mode
