@@ -69,7 +69,8 @@ import_datas = [
   "last_hint_msg",
   "start_deckbuf",
   "challonge_info",
-  "ready_trap"
+  "ready_trap",
+  "replays_sent"
 ]
 
 merge = require 'deepmerge'
@@ -398,7 +399,10 @@ if settings.modules.challonge.enabled
     else
       _data.callback = get_callback(0, _data.callback)
       is_requesting[0] = moment()
-      challonge.participants.index(_data)
+      try
+        challonge.participants.index(_data)
+      catch err
+        _data.callback(err, null)
     return 
   challonge.matches._index = (_data) ->
     if settings.modules.challonge.cache_ttl and challonge_cache[1]
@@ -408,7 +412,16 @@ if settings.modules.challonge.enabled
     else
       _data.callback = get_callback(1, _data.callback)
       is_requesting[1] = moment()
-      challonge.matches.index(_data)
+      try
+        challonge.matches.index(_data)
+      catch err
+        _data.callback(err, null)
+    return
+  challonge.matches._update = (_data) ->
+    try
+      challonge.matches.update(_data)
+    catch err
+      log.warn("Errored pushing scores to Challonge.", err)
     return
   refresh_challonge_cache = () ->
     if settings.modules.challonge.cache_ttl
@@ -679,13 +692,15 @@ ROOM_unwelcome = (room, bad_player, reason)->
   return
 
 CLIENT_kick = (client) ->
+  if !client
+    return false
   client.system_kicked = true
   if settings.modules.reconnect.enabled and client.closed
     if client.server and !client.had_new_reconnection
       client.server.destroy()
   else
     client.destroy()
-  return
+  return true
 
 release_disconnect = (dinfo, reconnected) ->
   if dinfo.old_client and !reconnected
@@ -939,7 +954,7 @@ CLIENT_heartbeat_unregister = (client) ->
   return true
 
 CLIENT_heartbeat_register = (client, send) ->
-  if !settings.modules.heartbeat_detection.enabled or client.closed or client.is_post_watcher or client.pre_reconnecting or client.reconnecting or client.pos > 3 or client.heartbeat_protected
+  if !settings.modules.heartbeat_detection.enabled or client.closed or client.is_post_watcher or client.pre_reconnecting or client.reconnecting or client.waiting_for_last or client.pos > 3 or client.heartbeat_protected
     return false
   if client.heartbeat_timeout
     CLIENT_heartbeat_unregister(client)
@@ -983,7 +998,8 @@ CLIENT_get_partner = (client) ->
     return room.dueling_players[5 - client.pos]
 
 CLIENT_send_replays = (client, room) ->
-  return false unless settings.modules.replay_delay and room.replays.length and room.hostinfo.mode == 1
+  return false unless settings.modules.replay_delay and room.replays.length and room.hostinfo.mode == 1 and !client.replays_sent and !client.closed
+  client.replays_sent = true
   i = 0
   for buffer in room.replays
     ++i
@@ -1257,7 +1273,7 @@ class Room
         return
 
     if settings.modules.challonge.enabled and @started and @hostinfo.mode != 2 and !@kicked
-      challonge.matches.update({
+      challonge.matches._update({
         id: settings.modules.challonge.tournament_id,
         matchId: @challonge_info.id,
         match: @get_challonge_score(),
@@ -2739,11 +2755,9 @@ ygopro.stoc_follow 'FIELD_FINISH', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
   return true unless room and settings.modules.reconnect.enabled
   client.reconnecting = false
-  #if client.time_confirm_required # client did not send TIME_CONFIRM
-  #  client.waiting_for_last = true
-  #else 
-  if client.last_game_msg and client.last_game_msg_title != 'WAITING' # client sent TIME_CONFIRM
-    SOCKET_flush_data(client, datas)
+  if client.time_confirm_required # client did not send TIME_CONFIRM
+    client.waiting_for_last = true
+  else if client.last_game_msg and client.last_game_msg_title != 'WAITING' # client sent TIME_CONFIRM
     if client.last_hint_msg
       ygopro.stoc_send(client, 'GAME_MSG', client.last_hint_msg)
     ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg)
@@ -3347,12 +3361,12 @@ ygopro.ctos_follow 'TIME_CONFIRM', false, (buffer, info, client, server, datas)-
   room=ROOM_all[client.rid]
   return unless room
   if settings.modules.reconnect.enabled
-    #if client.waiting_for_last
-    #  client.waiting_for_last = false
-    #  if client.last_game_msg and client.last_game_msg_title != 'WAITING'
-    #    if client.last_hint_msg
-    #      ygopro.stoc_send(client, 'GAME_MSG', client.last_hint_msg)
-    #    ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg)
+    if client.waiting_for_last
+      client.waiting_for_last = false
+      if client.last_game_msg and client.last_game_msg_title != 'WAITING'
+        if client.last_hint_msg
+          ygopro.stoc_send(client, 'GAME_MSG', client.last_hint_msg)
+        ygopro.stoc_send(client, 'GAME_MSG', client.last_game_msg)
     client.time_confirm_required = false
   if settings.modules.heartbeat_detection.enabled
     client.heartbeat_protected = false
@@ -3459,7 +3473,7 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server, datas)->
   if settings.modules.challonge.enabled and settings.modules.challonge.post_score_midduel and room.hostinfo.mode != 2 and client.pos == 0
     temp_log = JSON.parse(JSON.stringify(room.get_challonge_score()))
     delete temp_log.winnerId
-    challonge.matches.update({
+    challonge.matches._update({
       id: settings.modules.challonge.tournament_id,
       matchId: room.challonge_info.id,
       match: temp_log,
@@ -3480,7 +3494,7 @@ ygopro.stoc_follow 'CHANGE_SIDE', false, (buffer, info, client, server, datas)->
 
 ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
-  return settings.modules.tournament_mode.enabled or settings.modules.tournament_mode.replay_safe and settings.modules.tournament_mode.block_replay_to_player or settings.modules.replay_delay and room.hostinfo.mode == 1 unless room
+  return settings.modules.tournament_mode.enabled or settings.modules.tournament_mode.replay_safe and settings.modules.tournament_mode.block_replay_to_player or settings.modules.replay_delay unless room
   if settings.modules.cloud_replay.enabled and room.random_type
     Cloud_replay_ids.push room.cloud_replay_id
   if settings.modules.replay_delay and room.hostinfo.mode == 1 and client.pos == 0 and not (settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe and settings.modules.tournament_mode.block_replay_to_player)
