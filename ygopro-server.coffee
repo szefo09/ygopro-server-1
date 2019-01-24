@@ -1787,6 +1787,8 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server, datas)->
   client.name = name
   client.vpass = vpass
   client.name_vpass = if vpass then name + "$" + vpass else name
+  if settings.modules.pre_release_compat.enabled
+    client.is_using_pre_release = client.name_vpass == "COMPAT"
   #console.log client.name, client.vpass
   if settings.modules.vip.enabled and CLIENT_check_vip(client)
     client.vip = true

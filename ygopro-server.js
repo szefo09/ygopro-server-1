@@ -2278,6 +2278,9 @@
     client.name = name;
     client.vpass = vpass;
     client.name_vpass = vpass ? name + "$" + vpass : name;
+    if (settings.modules.pre_release_compat.enabled) {
+      client.is_using_pre_release = client.name_vpass === "COMPAT";
+    }
     if (settings.modules.vip.enabled && CLIENT_check_vip(client)) {
       client.vip = true;
     }
