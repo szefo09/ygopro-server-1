@@ -1409,8 +1409,6 @@
                 list_official_to_pre[official_code] = pre_release_code;
                 list_pre_to_official[pre_release_code] = official_code;
               }
-            }, function() {
-              console.log("Load success.");
             });
           });
         } catch (error1) {
@@ -4266,11 +4264,11 @@
           ygopro.stoc_send_chat(client, "${deck_correct_part1} " + found_deck + " ${deck_correct_part2}", ygopro.constants.COLORS.BABYBLUE);
         } else {
           ygopro.stoc_send_chat(client, "${deck_incorrect_part1} " + found_deck + " ${deck_incorrect_part2}", ygopro.constants.COLORS.RED);
-          return;
+          return false;
         }
       } else {
         ygopro.stoc_send_chat(client, client.name + "${deck_not_found}", ygopro.constants.COLORS.RED);
-        return;
+        return false;
       }
     }
     if (settings.modules.pre_release_compat.enabled) {

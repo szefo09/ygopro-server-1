@@ -3327,11 +3327,11 @@ ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server, datas)->
       else
         #log.info("bad deck: " + client.name + " / " + buff_main + " / " + buff_side)
         ygopro.stoc_send_chat(client, "${deck_incorrect_part1} #{found_deck} ${deck_incorrect_part2}", ygopro.constants.COLORS.RED)
-        return
+        return false
     else
       #log.info("player deck not found: " + client.name)
       ygopro.stoc_send_chat(client, "#{client.name}${deck_not_found}", ygopro.constants.COLORS.RED)
-      return
+      return false
 
   if settings.modules.pre_release_compat.enabled
     found = false
