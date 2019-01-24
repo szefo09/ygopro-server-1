@@ -1083,7 +1083,7 @@ class Room
               pre_release_code = temp_list[result.name]
               list_official_to_pre[official_code] = pre_release_code
               list_pre_to_official[pre_release_code] = official_code
-            return 
+            return
           #, () ->
           #  console.log("Load success.")
           #  return
