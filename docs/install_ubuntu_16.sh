@@ -6,26 +6,13 @@ sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328
 sudo apt-get install -y apt-transport-https curl wget
 echo "deb http://download.mono-project.com/repo/ubuntu stable-xenial main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
 curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
-sudo apt-get install -y git build-essential libreadline-dev libsqlite3-dev libevent-dev mono-complete nodejs
+sudo apt-get install -y git build-essential libreadline-dev libsqlite3-dev libevent-dev mono-complete nodejs redis-server
 sudo npm install pm2 -g
-
-mkdir lib
-cd lib
-
-wget http://download.redis.io/releases/redis-stable.tar.gz --no-check-certificate
-tar xzfv redis-stable.tar.gz
-cd redis-stable
-make -j$PROCESS_COUNT
-sudo make install
-sudo cp -rf src/redis-server /usr/bin/
-cd ..
 
 wget -O - https://github.com/premake/premake-core/releases/download/v5.0.0-alpha13/premake-5.0.0-alpha13-linux.tar.gz | tar zfx -
 cp -rf premake5 ~
 
-cd ..
-
-git clone https://github.com/purerosefallen/ygopro --branch=server --recursive
+git clone https://github.com/moecube/ygopro --branch=server --recursive
 cd ygopro/
 git submodule foreach git checkout master
 ~/premake5 gmake

@@ -6,19 +6,11 @@ sudo yum install epel-release yum-utils curl wget -y
 sudo rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
 curl https://download.mono-project.com/repo/centos6-stable.repo | sudo tee /etc/yum.repos.d/mono-centos6-stable.repo
 curl --silent --location https://rpm.nodesource.com/setup_10.x | sudo bash -
-sudo yum install nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel mono-complete -y
+sudo yum install -y nodejs git gcc gcc-c++ sqlite-devel readline-devel openssl-devel mono-complete redis
 sudo npm install pm2 -g
 
 mkdir lib
 cd lib
-
-wget http://download.redis.io/releases/redis-stable.tar.gz --no-check-certificate
-tar xzfv redis-stable.tar.gz
-cd redis-stable
-make -j$PROCESS_COUNT
-sudo make install
-sudo cp -rf src/redis-server /usr/bin/
-cd ..
 
 wget -O - https://github.com/premake/premake-core/releases/download/v5.0.0-alpha13/premake-5.0.0-alpha13-linux.tar.gz | tar zfx -
 cp -rf premake5 ~
