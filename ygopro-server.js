@@ -4149,7 +4149,7 @@
   });
 
   ygopro.ctos_follow('UPDATE_DECK', true, function(buffer, info, client, server, datas) {
-    var buff_main, buff_main_new, buff_side, buff_side_new, card, code, code_, compat_deckbuf, current_deck, deck, deck_array, deck_main, deck_side, deck_text, deckbuf, decks, found, found_deck, i, len3, len4, len5, len6, line, m, n, o, oppo_pos, p, room, struct, win_pos;
+    var buff_main, buff_main_new, buff_side, buff_side_new, card, code, code_, compat_deckbuf, current_deck, deck, deck_array, deck_main, deck_side, deck_text, deckbuf, decks, found, found_deck, i, len3, len4, len5, len6, len7, line, m, n, o, oppo_pos, p, q, ref3, room, struct, win_pos;
     if (settings.modules.reconnect.enabled && client.pre_reconnecting) {
       if (!CLIENT_is_able_to_reconnect(client) && !CLIENT_is_able_to_kick_reconnect(client)) {
         ygopro.stoc_send_chat(client, "${reconnect_failed}", ygopro.constants.COLORS.RED);
@@ -4225,6 +4225,20 @@
       }
       return true;
     }
+    if (settings.modules.side_restrict.enabled && room.started) {
+      ref3 = settings.modules.side_restrict.restrict_cards;
+      for (m = 0, len3 = ref3.length; m < len3; m++) {
+        code = ref3[m];
+        if (_.indexOf(buff_side, code) > -1 || (settings.modules.pre_release_compat.enabled && _.indexOf(buff_side, room.list_pre_to_official[code]) > -1)) {
+          ygopro.stoc_send_chat_to_room(room, "${invalid_side_rule}", ygopro.constants.COLORS.RED);
+          ygopro.stoc_send(client, 'ERROR_MSG', {
+            msg: 3,
+            code: 0
+          });
+          return true;
+        }
+      }
+    }
     struct = ygopro.structs["deck"];
     struct._setBuff(buffer);
     if (room.random_type || room.arena) {
@@ -4239,8 +4253,8 @@
       buffer = struct.buffer;
       found_deck = false;
       decks = fs.readdirSync(settings.modules.tournament_mode.deck_path);
-      for (m = 0, len3 = decks.length; m < len3; m++) {
-        deck = decks[m];
+      for (n = 0, len4 = decks.length; n < len4; n++) {
+        deck = decks[n];
         if (_.endsWith(deck, client.name + ".ydk")) {
           found_deck = deck;
         }
@@ -4256,8 +4270,8 @@
         deck_main = [];
         deck_side = [];
         current_deck = deck_main;
-        for (n = 0, len4 = deck_array.length; n < len4; n++) {
-          line = deck_array[n];
+        for (o = 0, len5 = deck_array.length; o < len5; o++) {
+          line = deck_array[o];
           if (line.indexOf("!side") >= 0) {
             current_deck = deck_side;
           }
@@ -4286,8 +4300,8 @@
       found = false;
       buff_main_new = [];
       buff_side_new = [];
-      for (o = 0, len5 = buff_main.length; o < len5; o++) {
-        code = buff_main[o];
+      for (p = 0, len6 = buff_main.length; p < len6; p++) {
+        code = buff_main[p];
         code_ = code;
         if (room.list_pre_to_official[code]) {
           code_ = room.list_pre_to_official[code];
@@ -4295,8 +4309,8 @@
         }
         buff_main_new.push(code_);
       }
-      for (p = 0, len6 = buff_side.length; p < len6; p++) {
-        code = buff_side[p];
+      for (q = 0, len7 = buff_side.length; q < len7; q++) {
+        code = buff_side[q];
         code_ = code;
         if (room.list_pre_to_official[code]) {
           code_ = room.list_pre_to_official[code];

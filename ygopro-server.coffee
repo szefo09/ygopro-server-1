@@ -3293,6 +3293,15 @@ ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server, datas)->
     CLIENT_kick(room.dueling_players[oppo_pos - win_pos])
     CLIENT_kick(room.dueling_players[oppo_pos - win_pos + 1]) if room.hostinfo.mode == 2
     return true
+  if settings.modules.side_restrict.enabled and room.started
+    for code in settings.modules.side_restrict.restrict_cards
+      if _.indexOf(buff_side, code) > -1 or (settings.modules.pre_release_compat.enabled and _.indexOf(buff_side, room.list_pre_to_official[code]) > -1)
+        ygopro.stoc_send_chat_to_room(room, "${invalid_side_rule}", ygopro.constants.COLORS.RED)
+        ygopro.stoc_send client, 'ERROR_MSG', {
+          msg: 3
+          code: 0
+        }
+        return true
   struct = ygopro.structs["deck"]
   struct._setBuff(buffer)
   if room.random_type or room.arena
