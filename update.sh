@@ -15,10 +15,13 @@ cp -u Live2017Links/*.cdb target
 mv -f cdb/*.cdb target/
 mv -f cdb/*.conf target/
 cp -u Live2017Links/lflist.conf target
+cp -u Live2017Links/strings.conf target
 cp -u ygopro-scripts/*.lua target
 cp -u ygopro-pre-script/**/**/*.lua target
 cp -u ygopro-pre-script/**/**/**/*.lua target
 mv -f cdb/*.lua target/
+cp -u target/*.cdb /home/pi/server/ygopro-server/updateYGOPro2
+cp -u target/*.conf /home/pi/server/ygopro-server/updateYGOPro2
 cp -u target/cards.cdb /home/pi/server/ygopro-server/ygopro
 cp -u target/strings.conf /home/pi/server/ygopro-server/ygopro
 rm -rf target/cards.cdb
@@ -31,10 +34,10 @@ mv -f target/lflist.conf /home/pi/server/ygopro-server/ygopro
 #rm -rf ygopro-pre-script
 #rm -rf ygopro-scripts
 #rm -rf target
-#cd /home/pi/server/ygopro-server/ygopro/script
-#git add *
-#git commit -m "autoUpdate"
-#git push
+cd /home/pi/server/ygopro-server/updateYGOPro2
+git add --all
+git commit -m "autoUpdate"
+git push
 cd /home/pi/server/ygopro-server
 rm -rf update
 chmod -R 777 /home/pi/server/*
