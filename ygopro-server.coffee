@@ -2684,9 +2684,9 @@ ygopro.ctos_follow 'HS_KICK', true, (buffer, info, client, server, datas)->
         return true
       client.kick_count = if client.kick_count then client.kick_count+1 else 1
       if client.kick_count>=5 and room.random_type
-        ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-        ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
-        CLIENT_kick(client)
+        # ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+        # ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
+        # CLIENT_kick(client)
         return true
       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_player}", ygopro.constants.COLORS.RED)
   return false
@@ -2782,12 +2782,12 @@ wait_room_start = (room, time)->
       unless time % 5
         ygopro.stoc_send_chat_to_room(room, "#{if time <= 9 then ' ' else ''}#{time}${kick_count_down}", if time <= 9 then ygopro.constants.COLORS.RED else ygopro.constants.COLORS.LIGHTBLUE)
       setTimeout (()-> wait_room_start(room, time);return), 1000
-    else
-      for player in room.players
-        if player and player.is_host
-          ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
-          ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-          CLIENT_kick(player)
+    # else
+    #   for player in room.players
+    #     if player and player.is_host
+    #       ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
+    #       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+    #       CLIENT_kick(player)
   return
 
 wait_room_start_arena = (room)->

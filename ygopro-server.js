@@ -3526,9 +3526,9 @@
         }
         client.kick_count = client.kick_count ? client.kick_count + 1 : 1;
         if (client.kick_count >= 5 && room.random_type) {
-          ygopro.stoc_send_chat_to_room(room, `${client.name} \${kicked_by_system}`, ygopro.constants.COLORS.RED);
-          ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}");
-          CLIENT_kick(client);
+          // ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+          // ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
+          // CLIENT_kick(client)
           return true;
         }
         ygopro.stoc_send_chat_to_room(room, `${player.name} \${kicked_by_player}`, ygopro.constants.COLORS.RED);
@@ -3668,7 +3668,6 @@
   });
 
   wait_room_start = function(room, time) {
-    var len2, m, player, ref3;
     if (!(!room || room.started || room.ready_player_count_without_host < room.max_player - 1)) {
       time -= 1;
       if (time) {
@@ -3678,20 +3677,16 @@
         setTimeout((function() {
           wait_room_start(room, time);
         }), 1000);
-      } else {
-        ref3 = room.players;
-        for (m = 0, len2 = ref3.length; m < len2; m++) {
-          player = ref3[m];
-          if (player && player.is_host) {
-            ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}");
-            ygopro.stoc_send_chat_to_room(room, `${player.name} \${kicked_by_system}`, ygopro.constants.COLORS.RED);
-            CLIENT_kick(player);
-          }
-        }
       }
     }
   };
 
+  // else
+  //   for player in room.players
+  //     if player and player.is_host
+  //       ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
+  //       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+  //       CLIENT_kick(player)
   wait_room_start_arena = function(room) {
     if (!(!room || room.started || !room.waiting_for_player)) {
       room.waiting_for_player_time = room.waiting_for_player_time - 1;
