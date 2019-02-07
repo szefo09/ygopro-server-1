@@ -3023,7 +3023,7 @@
     if (settings.modules.pre_release_compat.enabled && client.is_using_pre_release) {
       replace_buffer(buffer, room.list_official_to_pre, 1);
     }
-    if (!!client.reconnecting) {
+    if (client.reconnecting) {
       return;
     }
     if (settings.modules.retry_handle.enabled) {

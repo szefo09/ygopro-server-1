@@ -2423,7 +2423,7 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
   msg = buffer.readInt8(0)
   if settings.modules.pre_release_compat.enabled and client.is_using_pre_release
     replace_buffer(buffer, room.list_official_to_pre, 1)
-  return unless !client.reconnecting
+  return if client.reconnecting
   if settings.modules.retry_handle.enabled
     if ygopro.constants.MSG[msg] == 'RETRY'
       if !client.retry_count?
