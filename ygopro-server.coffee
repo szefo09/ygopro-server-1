@@ -3608,7 +3608,7 @@ ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server, datas)->
   if settings.modules.replay_delay and room.hostinfo.mode == 1 and not (settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe and settings.modules.tournament_mode.block_replay_to_player) and !room.replays[room.duel_count - 1]
     # console.log("Replay saved: ", room.duel_count - 1, client.pos)
     room.replays[room.duel_count - 1] = buffer
-    if room.hostinfo.replay_mode==1 and !room.windbot
+  if room.hostinfo.replay_mode==1 and !room.windbot
     if client.pos == 0
       dueltime=moment().format('YYYY-MM-DD HH-mm-ss')
       replay_filename=dueltime
