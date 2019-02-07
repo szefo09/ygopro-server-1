@@ -3019,13 +3019,13 @@
     if (!room) {
       return;
     }
-    msg = buffer.readInt8(0);
     if (settings.modules.pre_release_compat.enabled && client.is_using_pre_release) {
       replace_buffer(buffer, room.list_official_to_pre, 1);
     }
     if (client.reconnecting) {
       return;
     }
+    msg = buffer.readInt8(0);
     if (settings.modules.retry_handle.enabled) {
       if (ygopro.constants.MSG[msg] === 'RETRY') {
         if (client.retry_count == null) {
