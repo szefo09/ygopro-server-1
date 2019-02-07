@@ -2419,10 +2419,10 @@ if settings.modules.dialogues.get_custom
 
 ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
-  return unless room
+  return false unless room
   if settings.modules.pre_release_compat.enabled and client.is_using_pre_release
     replace_buffer(buffer, room.list_official_to_pre, 1)
-  return if client.reconnecting
+  return false if client.reconnecting
   msg = buffer.readInt8(0)
   if settings.modules.retry_handle.enabled
     if ygopro.constants.MSG[msg] == 'RETRY'
