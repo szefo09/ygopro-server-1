@@ -1615,7 +1615,7 @@
     }
 
     Room.prototype["delete"] = function() {
-      var end_time, index, log_rep_id, name, player_ips, player_names, recorder_buffer, ref3, replay_id, score, score_array, score_form;
+      var end_time, index, log_rep_id, name, player_ips, player_names, recorder_buffer, ref3, replay_id, room_name, score, score_array, score_form;
       if (this.deleted) {
         return;
       }
@@ -1701,13 +1701,14 @@
         })(this));
       }
       if (settings.modules.challonge.enabled && this.started && this.hostinfo.mode !== 2 && !this.kicked) {
+        room_name = this.name;
         challonge.matches._update({
           id: settings.modules.challonge.tournament_id,
           matchId: this.challonge_info.id,
           match: this.get_challonge_score(),
           callback: function(err, data) {
             if (err) {
-              log.warn("Errored pushing scores to Challonge.", err);
+              log.warn("Errored pushing scores to Challonge.", room_name, err);
             } else {
               refresh_challonge_cache();
             }
@@ -4544,7 +4545,7 @@
   });
 
   ygopro.stoc_follow('CHANGE_SIDE', false, function(buffer, info, client, server, datas) {
-    var room, sinterval, temp_log;
+    var room, room_name, sinterval, temp_log;
     room = ROOM_all[client.rid];
     if (!room) {
       return;
@@ -4575,13 +4576,14 @@
     if (settings.modules.challonge.enabled && settings.modules.challonge.post_score_midduel && room.hostinfo.mode !== 2 && client.pos === 0) {
       temp_log = JSON.parse(JSON.stringify(room.get_challonge_score()));
       delete temp_log.winnerId;
+      room_name = room.name;
       challonge.matches._update({
         id: settings.modules.challonge.tournament_id,
         matchId: room.challonge_info.id,
         match: temp_log,
         callback: function(err, data) {
           if (err) {
-            log.warn("Errored pushing scores to Challonge.", err);
+            log.warn("Errored pushing scores to Challonge.", room_name, err);
           } else {
             refresh_challonge_cache();
           }
