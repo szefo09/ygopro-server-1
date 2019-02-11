@@ -1916,7 +1916,7 @@
         }
         client.server.destroy();
       } else {
-        if (this.arena && !this.started) {
+        if (this.arena && !this.started && this.disconnector !== 'server' && !this.arena_score_handled) {
           ref3 = this.players;
           for (m = 0, len3 = ref3.length; m < len3; m++) {
             player = ref3[m];
@@ -1927,6 +1927,7 @@
           if (this.players.length === 2) {
             this.scores[client.name_vpass] = -9;
           }
+          this.arena_score_handled = true;
         }
         index = _.indexOf(this.players, client);
         if (index !== -1) {
