@@ -37,10 +37,6 @@ cp -u ygopro-scripts/*.lua target
 cp -u ygopro-pre-script/**/**/*.lua target
 cp -u ygopro-pre-script/**/**/**/*.lua target
 cp -f cdb/*.lua target
-<<<<<<< HEAD
-=======
-rm -rf /home/pi/server/ygopro-server/updateYGOPro2/*
->>>>>>> 519401ae8eaeb8da57d79b979072b7b63ea324b8
 cp -u target/*.cdb /home/pi/server/ygopro-server/updateYGOPro2
 cp -u target/*.conf /home/pi/server/ygopro-server/updateYGOPro2
 cp -u target/cards.cdb /home/pi/server/ygopro-server/ygopro
@@ -67,8 +63,4 @@ git commit -m "autoUpdate"
 git push
 cd /home/pi/server/ygopro-server
 #rm -rf update
-<<<<<<< HEAD
-chmod -R 777 /home/pi/server/*
-=======
->>>>>>> 519401ae8eaeb8da57d79b979072b7b63ea324b8
 echo "done"
