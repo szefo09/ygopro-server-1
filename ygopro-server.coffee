@@ -1013,10 +1013,12 @@ CLIENT_send_replays = (client, room) ->
   return true
 
 SOCKET_flush_data = (sk, datas) ->
+  if !sk or sk.closed
+    return false
   for buffer in datas
     sk.write(buffer)
   datas.splice(0, datas.length)
-  return
+  return true
 
 replace_buffer = (buffer, list, start_pos) ->
   found = 0
@@ -2747,11 +2749,11 @@ ygopro.ctos_follow 'HS_KICK', true, (buffer, info, client, server, datas)->
         CLIENT_kick(client)
         return true
       client.kick_count = if client.kick_count then client.kick_count+1 else 1
-      if client.kick_count>=5 and room.random_type
-        # ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-        # ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
-        # CLIENT_kick(client)
-        return true
+      # if client.kick_count>=5 and room.random_type
+      #   ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+      #   ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
+      #   CLIENT_kick(client)
+      #   return true
       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_player}", ygopro.constants.COLORS.RED)
   return false
 
@@ -2834,8 +2836,8 @@ ygopro.stoc_follow 'DUEL_END', false, (buffer, info, client, server, datas)->
   CLIENT_send_replays(client, room)
   if !room.replays_sent_to_watchers
     room.replays_sent_to_watchers = true
-    # for player in room.players when player and player.pos > 3
-    #   CLIENT_send_replays(player, room)
+    for player in room.players when player and player.pos > 3
+      CLIENT_send_replays(player, room)
     for player in room.watchers when player
       CLIENT_send_replays(player, room)
 
@@ -2846,12 +2848,12 @@ wait_room_start = (room, time)->
       unless time % 5
         ygopro.stoc_send_chat_to_room(room, "#{if time <= 9 then ' ' else ''}#{time}${kick_count_down}", if time <= 9 then ygopro.constants.COLORS.RED else ygopro.constants.COLORS.LIGHTBLUE)
       setTimeout (()-> wait_room_start(room, time);return), 1000
-    # else
-    #   for player in room.players
-    #     if player and player.is_host
-    #       ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
-    #       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-    #       CLIENT_kick(player)
+    else
+      for player in room.players
+        if player and player.is_host
+          ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
+          ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+          CLIENT_kick(player)
   return
 
 wait_room_start_arena = (room)->
@@ -3206,7 +3208,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
 
     #when '/test'
     #  ygopro.stoc_send_hint_card_to_room(room, 2333365)
-  if (msg.length>100)
+  if (msg.length>300)
     log.warn "SPAM WORD", client.name, client.ip, msg
     client.abuse_count=client.abuse_count+2 if client.abuse_count
     ygopro.stoc_send_chat(client, "${chat_warn_level0}", ygopro.constants.COLORS.RED)
