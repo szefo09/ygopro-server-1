@@ -1373,11 +1373,15 @@
 
   SOCKET_flush_data = function(sk, datas) {
     var buffer, len3, m;
+    if (!sk || sk.closed) {
+      return false;
+    }
     for (m = 0, len3 = datas.length; m < len3; m++) {
       buffer = datas[m];
       sk.write(buffer);
     }
     datas.splice(0, datas.length);
+    return true;
   };
 
   replace_buffer = function(buffer, list, start_pos) {
@@ -3603,12 +3607,11 @@
           return true;
         }
         client.kick_count = client.kick_count ? client.kick_count + 1 : 1;
-        if (client.kick_count >= 5 && room.random_type) {
-          // ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-          // ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
-          // CLIENT_kick(client)
-          return true;
-        }
+        // if client.kick_count>=5 and room.random_type
+        //   ygopro.stoc_send_chat_to_room(room, "#{client.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+        //   ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
+        //   CLIENT_kick(client)
+        //   return true
         ygopro.stoc_send_chat_to_room(room, `${player.name} \${kicked_by_player}`, ygopro.constants.COLORS.RED);
       }
     }
@@ -3722,7 +3725,7 @@
   });
 
   ygopro.stoc_follow('DUEL_END', false, function(buffer, info, client, server, datas) {
-    var len3, m, player, ref3, results, room;
+    var len3, len4, m, n, player, ref3, ref4, results, room;
     room = ROOM_all[client.rid];
     if (!(room && settings.modules.replay_delay && room.hostinfo.mode === 1)) {
       return;
@@ -3731,12 +3734,17 @@
     CLIENT_send_replays(client, room);
     if (!room.replays_sent_to_watchers) {
       room.replays_sent_to_watchers = true;
-      ref3 = room.watchers;
-      // for player in room.players when player and player.pos > 3
-      //   CLIENT_send_replays(player, room)
-      results = [];
+      ref3 = room.players;
       for (m = 0, len3 = ref3.length; m < len3; m++) {
         player = ref3[m];
+        if (player && player.pos > 3) {
+          CLIENT_send_replays(player, room);
+        }
+      }
+      ref4 = room.watchers;
+      results = [];
+      for (n = 0, len4 = ref4.length; n < len4; n++) {
+        player = ref4[n];
         if (player) {
           results.push(CLIENT_send_replays(player, room));
         }
@@ -3746,6 +3754,7 @@
   });
 
   wait_room_start = function(room, time) {
+    var len3, m, player, ref3;
     if (!(!room || room.started || room.ready_player_count_without_host < room.max_player - 1)) {
       time -= 1;
       if (time) {
@@ -3755,16 +3764,20 @@
         setTimeout((function() {
           wait_room_start(room, time);
         }), 1000);
+      } else {
+        ref3 = room.players;
+        for (m = 0, len3 = ref3.length; m < len3; m++) {
+          player = ref3[m];
+          if (player && player.is_host) {
+            ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}");
+            ygopro.stoc_send_chat_to_room(room, `${player.name} \${kicked_by_system}`, ygopro.constants.COLORS.RED);
+            CLIENT_kick(player);
+          }
+        }
       }
     }
   };
 
-  // else
-  //   for player in room.players
-  //     if player and player.is_host
-  //       ROOM_ban_player(player.name, player.ip, "${random_ban_reason_zombie}")
-  //       ygopro.stoc_send_chat_to_room(room, "#{player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-  //       CLIENT_kick(player)
   wait_room_start_arena = function(room) {
     if (!(!room || room.started || !room.waiting_for_player)) {
       room.waiting_for_player_time = room.waiting_for_player_time - 1;
@@ -4258,7 +4271,7 @@
     }
     //when '/test'
     //  ygopro.stoc_send_hint_card_to_room(room, 2333365)
-    if (msg.length > 100) {
+    if (msg.length > 300) {
       log.warn("SPAM WORD", client.name, client.ip, msg);
       if (client.abuse_count) {
         client.abuse_count = client.abuse_count + 2;
