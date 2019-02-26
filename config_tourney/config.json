@@ -129,7 +129,7 @@
       "cache_ttl": 60000,
       "api_key": "11",
       "tournament_id": "22",
-      "use_custom_module": "./challonge"
+      "use_custom_module": false
     },
     "deck_log": {
       "enabled": false,
