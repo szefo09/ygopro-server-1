@@ -45,7 +45,6 @@ challonge.participants.index({
 			const id = player_info.id;
 			name_list[id] = name;
 		}
-		ygopro-generate-result.js
 		console.log("Requesting match datas from Challonge.");
 		//for (var i = 1; i <=)
 		challonge.matches.index({
