@@ -45,7 +45,7 @@ challonge.participants.index({
 			const id = player_info.id;
 			name_list[id] = name;
 		}
-
+		ygopro-generate-result.js
 		console.log("Requesting match datas from Challonge.");
 		//for (var i = 1; i <=)
 		challonge.matches.index({
@@ -72,10 +72,6 @@ challonge.participants.index({
 						continue;
 					const player1 = match_info.player1Id;
 					const player2 = match_info.player2Id;
-					const match_result = {
-						player1: scores_data[0],
-						player2: scores_data[1]
-					}
 					const match_txt = "[" + sign + "]组：\n  [1号]" + name_list[player1] + "    " + scores_data[0] + "\n  [2号]" + name_list[player2] + "    " + scores_data[1] + "\n";
 					if (!results[round])
 						results[round] = [];
