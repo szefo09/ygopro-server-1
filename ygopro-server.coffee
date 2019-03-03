@@ -505,19 +505,19 @@ ban_user = (name) ->
 # automatically ban user to use random duel
 ROOM_ban_player = (name, ip, reason, countadd = 1)->
   return if settings.modules.test_mode.no_ban_player
-  bannedplayer = _.find ROOM_players_banned, (bannedplayer)->
-    ip == bannedplayer.ip
-  if bannedplayer
-    bannedplayer.count = bannedplayer.count + countadd
-    bantime = if bannedplayer.count > 3 then Math.pow(2, bannedplayer.count - 3) * 2 else 0
-    bannedplayer.time = if moment() < bannedplayer.time then moment(bannedplayer.time).add(bantime, 'm') else moment().add(bantime, 'm')
-    bannedplayer.reasons.push(reason) if not _.find bannedplayer.reasons, (bannedreason)->
-      bannedreason == reason
-    bannedplayer.need_tip = true
-  else
-    bannedplayer = {"ip": ip, "time": moment(), "count": countadd, "reasons": [reason], "need_tip": true}
-    ROOM_players_banned.push(bannedplayer)
-  #log.info("banned", name, ip, reason, bannedplayer.count)
+  # bannedplayer = _.find ROOM_players_banned, (bannedplayer)->
+  #   ip == bannedplayer.ip
+  # if bannedplayer
+  #   bannedplayer.count = bannedplayer.count + countadd
+  #   bantime = if bannedplayer.count > 3 then Math.pow(2, bannedplayer.count - 3) * 2 else 0
+  #   bannedplayer.time = if moment() < bannedplayer.time then moment(bannedplayer.time).add(bantime, 'm') else moment().add(bantime, 'm')
+  #   bannedplayer.reasons.push(reason) if not _.find bannedplayer.reasons, (bannedreason)->
+  #     bannedreason == reason
+  #   bannedplayer.need_tip = true
+  # else
+  #   bannedplayer = {"ip": ip, "time": moment(), "count": countadd, "reasons": [reason], "need_tip": true}
+  #   ROOM_players_banned.push(bannedplayer)
+  # #log.info("banned", name, ip, reason, bannedplayer.count)
   return
 
 ROOM_player_win = (name)->
@@ -603,8 +603,8 @@ ROOM_find_or_create_random = (type, player_ip)->
     else if bannedplayer.need_tip
       bannedplayer.need_tip = false
       return {"error": "${random_warn_part1}#{bannedplayer.reasons.join('${random_ban_reason_separator}')}${random_warn_part2}"}
-    else if bannedplayer.count > 2
-      bannedplayer.need_tip = true
+    # else if bannedplayer.count > 2
+    #   #bannedplayer.need_tip = true
   max_player = if type == 'T' then 4 else 2
   playerbanned = (bannedplayer and bannedplayer.count > 3 and moment() < bannedplayer.time)
   result = _.find ROOM_all, (room)->

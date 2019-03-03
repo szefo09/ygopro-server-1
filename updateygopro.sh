@@ -1,10 +1,12 @@
 #!/bin/bash
 echo "updating Ygopro"
-sudo pm2 stop 0 1 2 3 
+#sudo pm2 stop 0 1 2 3 
 cd /home/pi/server/ygopro-server
-rm -rf ygopro
+#rm -rf ygopro
 git clone https://github.com/purerosefallen/ygopro --branch=server --recursive
 cd ygopro/
+git reset --hard
+git pull
 git submodule foreach git checkout master
 premake4 gmake
 cd build/

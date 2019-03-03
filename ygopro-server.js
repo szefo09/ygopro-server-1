@@ -660,36 +660,24 @@
 
   // automatically ban user to use random duel
   ROOM_ban_player = function(name, ip, reason, countadd = 1) {
-    var bannedplayer, bantime;
     if (settings.modules.test_mode.no_ban_player) {
       return;
     }
-    bannedplayer = _.find(ROOM_players_banned, function(bannedplayer) {
-      return ip === bannedplayer.ip;
-    });
-    if (bannedplayer) {
-      bannedplayer.count = bannedplayer.count + countadd;
-      bantime = bannedplayer.count > 3 ? Math.pow(2, bannedplayer.count - 3) * 2 : 0;
-      bannedplayer.time = moment() < bannedplayer.time ? moment(bannedplayer.time).add(bantime, 'm') : moment().add(bantime, 'm');
-      if (!_.find(bannedplayer.reasons, function(bannedreason) {
-        return bannedreason === reason;
-      })) {
-        bannedplayer.reasons.push(reason);
-      }
-      bannedplayer.need_tip = true;
-    } else {
-      bannedplayer = {
-        "ip": ip,
-        "time": moment(),
-        "count": countadd,
-        "reasons": [reason],
-        "need_tip": true
-      };
-      ROOM_players_banned.push(bannedplayer);
-    }
   };
 
-  //log.info("banned", name, ip, reason, bannedplayer.count)
+  // bannedplayer = _.find ROOM_players_banned, (bannedplayer)->
+  //   ip == bannedplayer.ip
+  // if bannedplayer
+  //   bannedplayer.count = bannedplayer.count + countadd
+  //   bantime = if bannedplayer.count > 3 then Math.pow(2, bannedplayer.count - 3) * 2 else 0
+  //   bannedplayer.time = if moment() < bannedplayer.time then moment(bannedplayer.time).add(bantime, 'm') else moment().add(bantime, 'm')
+  //   bannedplayer.reasons.push(reason) if not _.find bannedplayer.reasons, (bannedreason)->
+  //     bannedreason == reason
+  //   bannedplayer.need_tip = true
+  // else
+  //   bannedplayer = {"ip": ip, "time": moment(), "count": countadd, "reasons": [reason], "need_tip": true}
+  //   ROOM_players_banned.push(bannedplayer)
+  // #log.info("banned", name, ip, reason, bannedplayer.count)
   ROOM_player_win = function(name) {
     if (!ROOM_players_scores[name]) {
       ROOM_players_scores[name] = {
@@ -819,10 +807,10 @@
         return {
           "error": `\${random_warn_part1}${bannedplayer.reasons.join('${random_ban_reason_separator}')}\${random_warn_part2}`
         };
-      } else if (bannedplayer.count > 2) {
-        bannedplayer.need_tip = true;
       }
     }
+    // else if bannedplayer.count > 2
+    //   #bannedplayer.need_tip = true
     max_player = type === 'T' ? 4 : 2;
     playerbanned = bannedplayer && bannedplayer.count > 3 && moment() < bannedplayer.time;
     result = _.find(ROOM_all, function(room) {
