@@ -4892,7 +4892,7 @@
           response.end(addCallback(u.query.callback, duellog));
         }
       } else if (u.pathname === '/api/getkeys' && settings.modules.vip.enabled) {
-        if (!(u.query.pass === settings.modules.http.password)) {
+        if (!auth.auth(u.query.username, u.query.pass, "vip", "get_keys")) {
           response.writeHead(200);
           response.end(addCallback(u.query.callback, "Unauthorized."));
           return;
@@ -5215,6 +5215,11 @@
             response.end(addCallback(u.query.callback, "['room not found', '" + u.query.deathcancel + "']"));
           }
         } else if (u.query.generatekey && settings.modules.vip.enabled) {
+          if (!auth.auth(u.query.username, u.query.pass, "vip", "generate_keys")) {
+            response.writeHead(200);
+            response.end(addCallback(u.query.callback, "['密码错误', 0]"));
+            return;
+          }
           VIP_generate_cdkeys(u.query.generatekey, settings.modules.vip.generate_count);
           response.writeHead(200);
           response.end(addCallback(u.query.callback, "['Keys generated', '" + u.query.generatekey + "']"));

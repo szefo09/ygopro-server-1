@@ -83,7 +83,8 @@
         "kick_user": true,
         "start_death": true,
         "pre_dashboard": true,
-        "update_dashboard": true
+        "update_dashboard": true,
+        "vip": true
       },
       "judge": {
         "get_rooms": true,
