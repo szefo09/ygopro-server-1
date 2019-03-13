@@ -1948,7 +1948,7 @@
     };
 
     Room.prototype.disconnect = function(client, error) {
-      var index, len3, m, player, ref3;
+      var index, left_name, len3, m, player, ref3;
       if (client.had_new_reconnection) {
         return;
       }
@@ -1990,7 +1990,8 @@
           }
         }
         if (this.players.length && !(this.windbot && client.is_host) && !(this.arena && !this.started && client.pos <= 3)) {
-          ygopro.stoc_send_chat_to_room(this, (client.name + " ${left_game}") + (error ? ": " + error : ''));
+          left_name = (settings.modules.hide_name && !this.started ? "********" : client.name);
+          ygopro.stoc_send_chat_to_room(this, (left_name + " ${left_game}") + (error ? ": " + error : ''));
           if (!this.windbot && !this.started && settings.modules.http.websocket_roomlist) {
             roomlist.update(this);
           }
@@ -3487,6 +3488,22 @@
     return false;
   });
 
+  ygopro.stoc_follow('HS_PLAYER_ENTER', true, function(buffer, info, client, server, datas) {
+    var pos, room, struct;
+    room = ROOM_all[client.rid];
+    if (!(room && settings.modules.hide_name && !room.started)) {
+      return false;
+    }
+    pos = info.pos;
+    if (pos < 4 && pos !== client.pos) {
+      struct = ygopro.structs["STOC_HS_PlayerEnter"];
+      struct._setBuff(buffer);
+      struct.set("name", "********");
+      buffer = struct.buffer;
+    }
+    return false;
+  });
+
   ygopro.stoc_follow('HS_PLAYER_CHANGE', false, function(buffer, info, client, server, datas) {
     var is_ready, len3, len4, m, n, p1, p2, player, pos, ref3, ref4, room;
     room = ROOM_all[client.rid];
@@ -3634,11 +3651,20 @@
   };
 
   wait_room_start_arena = function(room) {
+    var display_name, len3, m, player, ref3;
     if (!(!room || room.started || !room.waiting_for_player)) {
       room.waiting_for_player_time = room.waiting_for_player_time - 1;
       if (room.waiting_for_player_time > 0) {
         if (!(room.waiting_for_player_time % 5)) {
-          ygopro.stoc_send_chat_to_room(room, "" + (room.waiting_for_player_time <= 9 ? ' ' : '') + room.waiting_for_player_time + "${kick_count_down_arena_part1} " + room.waiting_for_player.name + " ${kick_count_down_arena_part2}", room.waiting_for_player_time <= 9 ? ygopro.constants.COLORS.RED : ygopro.constants.COLORS.LIGHTBLUE);
+          ref3 = room.players;
+          for (m = 0, len3 = ref3.length; m < len3; m++) {
+            player = ref3[m];
+            if (!(player)) {
+              continue;
+            }
+            display_name = (settings.modules.hide_name && player !== room.waiting_for_player ? "********" : room.waiting_for_player.name);
+            ygopro.stoc_send_chat(player, "" + (room.waiting_for_player_time <= 9 ? ' ' : '') + room.waiting_for_player_time + "${kick_count_down_arena_part1} " + display_name + " ${kick_count_down_arena_part2}", room.waiting_for_player_time <= 9 ? ygopro.constants.COLORS.RED : ygopro.constants.COLORS.LIGHTBLUE);
+          }
         }
       } else {
         ygopro.stoc_send_chat_to_room(room, room.waiting_for_player.name + " ${kicked_by_system}", ygopro.constants.COLORS.RED);
@@ -3737,7 +3763,7 @@
   }
 
   ygopro.stoc_follow('DUEL_START', false, function(buffer, info, client, server, datas) {
-    var deck_arena, deck_name, deck_text, len3, m, player, ref3, room;
+    var deck_arena, deck_name, deck_text, len3, len4, m, n, player, ref3, ref4, room;
     room = ROOM_all[client.rid];
     if (!(room && !client.reconnecting)) {
       return;
@@ -3764,6 +3790,18 @@
         });
         if (room.random_type === 'T') {
           ROOM_players_oppentlist[player.ip] = null;
+        }
+      }
+    }
+    if (settings.modules.hide_name && room.duel_count === 0) {
+      ref4 = room.get_playing_player();
+      for (n = 0, len4 = ref4.length; n < len4; n++) {
+        player = ref4[n];
+        if (player !== client) {
+          ygopro.stoc_send(client, 'HS_PLAYER_ENTER', {
+            name: player.name,
+            pos: player.pos
+          });
         }
       }
     }
@@ -4516,7 +4554,7 @@
     var len3, m, pid, player, ref3, room, tcolor, tplayer;
     room = ROOM_all[client.rid];
     pid = info.player;
-    if (!(room && pid < 4 && settings.modules.chat_color.enabled)) {
+    if (!(room && pid < 4 && settings.modules.chat_color.enabled && (!settings.modules.hide_name || room.started))) {
       return;
     }
     if (room.started && room.turn > 0 && !room.dueling_players[0].is_first) {
