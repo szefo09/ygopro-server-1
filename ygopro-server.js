@@ -2365,7 +2365,7 @@
   });
 
   ygopro.ctos_follow('JOIN_GAME', false, function(buffer, info, client, server, datas) {
-    var buffer_pos, check, decrypted_buffer, finish, i, id, len10, len3, len4, len5, len6, len7, len8, len9, line, m, n, name, o, oppo_pos, p, player, player_string, pre_room, q, r, ref3, ref4, ref5, ref6, ref7, ref8, replay_id, room, room_buffer, room_players, room_showed, s, secret, t;
+    var buffer_handle_callback, buffer_pos, check_buffer_indentity, len3, len4, len5, len6, len7, len8, len9, line, m, match_permit_callback, n, name, o, oppo_pos, p, player, player_string, pre_room, q, r, ref3, ref4, ref5, ref6, ref7, replay_id, room, room_buffer, room_players, room_showed, s;
     info.pass = info.pass.trim();
     client.pass = info.pass;
     if (CLIENT_is_able_to_reconnect(client) || CLIENT_is_able_to_kick_reconnect(client)) {
@@ -2519,7 +2519,7 @@
         ygopro.stoc_die(client, '${invalid_password_payload}');
         return;
       }
-      check = function(buf) {
+      check_buffer_indentity = function(buf) {
         var checksum, i, p, ref4;
         checksum = 0;
         for (i = p = 0, ref4 = buf.length; 0 <= ref4 ? p < ref4 : p > ref4; i = 0 <= ref4 ? ++p : --p) {
@@ -2527,7 +2527,7 @@
         }
         return (checksum & 0xFF) === 0;
       };
-      finish = function(buffer) {
+      buffer_handle_callback = function(buffer, decrypted_buffer, match_permit) {
         var action, len6, len7, len8, len9, line, name, opt1, opt2, opt3, options, p, q, r, ref4, ref5, ref6, ref7, s, title;
         if (client.closed) {
           return;
@@ -2578,6 +2578,10 @@
             }
             break;
           case 4:
+            if (match_permit && !match_permit.permit) {
+              ygopro.stoc_die(client, '${invalid_password_unauthorized}');
+              return;
+            }
             room = ROOM_find_or_create_by_name('M#' + info.pass.slice(8));
             if (room) {
               ref4 = room.get_playing_player();
@@ -2650,48 +2654,76 @@
           room.connect(client);
         }
       };
-      if (id = users_cache[client.name]) {
-        secret = id % 65535 + 1;
-        decrypted_buffer = Buffer.allocUnsafe(6);
-        ref4 = [0, 2, 4];
-        for (p = 0, len6 = ref4.length; p < len6; p++) {
-          i = ref4[p];
-          decrypted_buffer.writeUInt16LE(buffer.readUInt16LE(i) ^ secret, i);
-        }
-        if (check(decrypted_buffer)) {
-          return finish(decrypted_buffer);
-        }
-      }
-      request({
-        baseUrl: settings.modules.mycard.auth_base_url,
-        url: '/users/' + encodeURIComponent(client.name) + '.json',
-        qs: {
-          api_key: settings.modules.mycard.auth_key,
-          api_username: client.name,
-          skip_track_visit: true
-        },
-        json: true
-      }, function(error, response, body) {
-        var len7, q, ref5;
-        if (body && body.user) {
-          users_cache[client.name] = body.user.id;
-          secret = body.user.id % 65535 + 1;
-          decrypted_buffer = Buffer.allocUnsafe(6);
-          ref5 = [0, 2, 4];
-          for (q = 0, len7 = ref5.length; q < len7; q++) {
-            i = ref5[q];
-            decrypted_buffer.writeUInt16LE(buffer.readUInt16LE(i) ^ secret, i);
-          }
-          if (check(decrypted_buffer)) {
-            buffer = decrypted_buffer;
-          }
-        }
-        if (!check(buffer)) {
-          ygopro.stoc_die(client, '${invalid_password_checksum}');
+      match_permit_callback = function(buffer, match_permit) {
+        var decrypted_buffer, i, id, len6, p, ref4, secret;
+        if (client.closed) {
           return;
         }
-        return finish(buffer);
-      });
+        if (id = users_cache[client.name]) {
+          secret = id % 65535 + 1;
+          decrypted_buffer = Buffer.allocUnsafe(6);
+          ref4 = [0, 2, 4];
+          for (p = 0, len6 = ref4.length; p < len6; p++) {
+            i = ref4[p];
+            decrypted_buffer.writeUInt16LE(buffer.readUInt16LE(i) ^ secret, i);
+          }
+          if (check_buffer_indentity(decrypted_buffer)) {
+            return buffer_handle_callback(decrypted_buffer, decrypted_buffer, match_permit);
+          }
+        }
+        request({
+          baseUrl: settings.modules.mycard.auth_base_url,
+          url: '/users/' + encodeURIComponent(client.name) + '.json',
+          qs: {
+            api_key: settings.modules.mycard.auth_key,
+            api_username: client.name,
+            skip_track_visit: true
+          },
+          json: true
+        }, function(error, response, body) {
+          var len7, q, ref5;
+          if (body && body.user) {
+            users_cache[client.name] = body.user.id;
+            secret = body.user.id % 65535 + 1;
+            decrypted_buffer = Buffer.allocUnsafe(6);
+            ref5 = [0, 2, 4];
+            for (q = 0, len7 = ref5.length; q < len7; q++) {
+              i = ref5[q];
+              decrypted_buffer.writeUInt16LE(buffer.readUInt16LE(i) ^ secret, i);
+            }
+            if (check_buffer_indentity(decrypted_buffer)) {
+              buffer = decrypted_buffer;
+            }
+          }
+          if (!check_buffer_indentity(buffer)) {
+            ygopro.stoc_die(client, '${invalid_password_checksum}');
+            return;
+          }
+          return buffer_handle_callback(buffer, decrypted_buffer, match_permit);
+        });
+      };
+      if (settings.modules.arena_mode.check_permit) {
+        request({
+          url: settings.modules.arena_mode.check_permit,
+          json: true,
+          qs: {
+            username: client.name,
+            password: info.pass
+          }
+        }, function(error, response, body) {
+          if (client.closed) {
+            return;
+          }
+          if (!error && body) {
+            match_permit_callback(buffer, body);
+          } else {
+            log.warn("Match permit request error", error);
+            match_permit_callback(buffer, null);
+          }
+        });
+      } else {
+        match_permit_callback(buffer, null);
+      }
     } else if (settings.modules.challonge.enabled) {
       pre_room = ROOM_find_by_name(info.pass);
       if (pre_room && pre_room.started && settings.modules.cloud_replay.enable_halfway_watch && !pre_room.no_watch) {
@@ -2702,9 +2734,9 @@
         ygopro.stoc_send_chat_to_room(room, client.name + " ${watch_join}");
         room.watchers.push(client);
         ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE);
-        ref5 = room.watcher_buffers;
-        for (q = 0, len7 = ref5.length; q < len7; q++) {
-          buffer = ref5[q];
+        ref4 = room.watcher_buffers;
+        for (p = 0, len6 = ref4.length; p < len6; p++) {
+          buffer = ref4[p];
           client.write(buffer);
         }
       } else {
@@ -2740,7 +2772,7 @@
             challonge.matches._index({
               id: settings.modules.challonge.tournament_id,
               callback: function(err, data) {
-                var len10, len11, len8, len9, line, match, r, ref6, ref7, ref8, ref9, s, t, x;
+                var len10, len7, len8, len9, line, match, q, r, ref5, ref6, ref7, ref8, s, t;
                 if (client.closed) {
                   return;
                 }
@@ -2777,24 +2809,24 @@
                     client.rid = _.indexOf(ROOM_all, room);
                     client.is_post_watcher = true;
                     if (settings.modules.vip.enabled && client.vip && vip_info.players[client.name].words) {
-                      ref6 = _.lines(vip_info.players[client.name].words);
-                      for (r = 0, len8 = ref6.length; r < len8; r++) {
-                        line = ref6[r];
+                      ref5 = _.lines(vip_info.players[client.name].words);
+                      for (q = 0, len7 = ref5.length; q < len7; q++) {
+                        line = ref5[q];
                         ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
                       }
                     } else if (settings.modules.words.enabled && words.words[client.name]) {
-                      ref7 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
-                      for (s = 0, len9 = ref7.length; s < len9; s++) {
-                        line = ref7[s];
+                      ref6 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
+                      for (r = 0, len8 = ref6.length; r < len8; r++) {
+                        line = ref6[r];
                         ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
                       }
                     }
                     ygopro.stoc_send_chat_to_room(room, client.name + " ${watch_join}");
                     room.watchers.push(client);
                     ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE);
-                    ref8 = room.watcher_buffers;
-                    for (t = 0, len10 = ref8.length; t < len10; t++) {
-                      buffer = ref8[t];
+                    ref7 = room.watcher_buffers;
+                    for (s = 0, len9 = ref7.length; s < len9; s++) {
+                      buffer = ref7[s];
                       client.write(buffer);
                     }
                   } else {
@@ -2803,9 +2835,9 @@
                 } else if (room.no_watch && room.players.length >= (room.hostinfo.mode === 2 ? 4 : 2)) {
                   ygopro.stoc_die(client, "${watch_denied_room}");
                 } else {
-                  ref9 = room.get_playing_player();
-                  for (x = 0, len11 = ref9.length; x < len11; x++) {
-                    player = ref9[x];
+                  ref8 = room.get_playing_player();
+                  for (t = 0, len10 = ref8.length; t < len10; t++) {
+                    player = ref8[t];
                     if (!(player && player !== client && player.challonge_info.id === client.challonge_info.id)) {
                       continue;
                     }
@@ -2868,24 +2900,24 @@
           client.rid = _.indexOf(ROOM_all, room);
           client.is_post_watcher = true;
           if (settings.modules.vip.enabled && client.vip && vip_info.players[client.name].words) {
-            ref6 = _.lines(vip_info.players[client.name].words);
-            for (r = 0, len8 = ref6.length; r < len8; r++) {
-              line = ref6[r];
+            ref5 = _.lines(vip_info.players[client.name].words);
+            for (q = 0, len7 = ref5.length; q < len7; q++) {
+              line = ref5[q];
               ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
             }
           } else if (settings.modules.words.enabled && words.words[client.name]) {
-            ref7 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
-            for (s = 0, len9 = ref7.length; s < len9; s++) {
-              line = ref7[s];
+            ref6 = _.lines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
+            for (r = 0, len8 = ref6.length; r < len8; r++) {
+              line = ref6[r];
               ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK);
             }
           }
           ygopro.stoc_send_chat_to_room(room, client.name + " ${watch_join}");
           room.watchers.push(client);
           ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE);
-          ref8 = room.watcher_buffers;
-          for (t = 0, len10 = ref8.length; t < len10; t++) {
-            buffer = ref8[t];
+          ref7 = room.watcher_buffers;
+          for (s = 0, len9 = ref7.length; s < len9; s++) {
+            buffer = ref7[s];
             client.write(buffer);
           }
         } else {
