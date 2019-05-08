@@ -27,7 +27,7 @@ or as follows, to use a specific set of permissions.
 fs = require 'fs'
 loadJSON = require('load-json-file').sync
 moment = require 'moment'
-moment.locale('zh-cn', {
+moment.updateLocale('zh-cn', {
   relativeTime: {
     future: '%s内',
     past: '%s前',
@@ -51,7 +51,7 @@ if not fs.existsSync('./logs')
 add_log = (message) ->
   mt = moment()
   text = mt.format('YYYY-MM-DD HH:mm:ss') + " --> " + message + "\n"
-  console.log(text)
+  # console.log(text)
   res = false
   try
     fs.appendFileSync("./logs/"+mt.format('YYYY-MM-DD')+".log", text)
@@ -101,18 +101,18 @@ check_permission = (user, permission_required) ->
   reload()
   user = users.users[name]
   if !user
-    add_log("Unknown user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+    # add_log("Unknown user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
     return false
   if user.password != pass
-    add_log("Unauthorized user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+    # add_log("Unauthorized user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
     return false
   if !user.enabled
-    add_log("Disabled user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+    # add_log("Disabled user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
     return false
   if !check_permission(user, permission_required)
-    add_log("Permission denied. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+    # add_log("Permission denied. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
     return false
-  add_log("Operation success. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+  # add_log("Operation success. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
   return true
 
 @add_user = (name, pass, enabled, permissions) ->

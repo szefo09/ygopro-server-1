@@ -14,7 +14,7 @@ var execSync = require('child_process').execSync;
 var spawn = require('child_process').spawn;
 var url = require('url');
 var moment = require('moment');
-moment.locale('zh-cn');
+moment.updateLocale('zh-cn');
 var loadJSON = require('load-json-file').sync;
 
 var auth = require('./ygopro-auth.js');
