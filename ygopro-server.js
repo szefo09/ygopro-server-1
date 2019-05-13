@@ -3343,6 +3343,10 @@
       if (room && !room.finished && room.dueling_players[pos]) {
         room.winner_name = room.dueling_players[pos].name_vpass;
         room.scores[room.winner_name] = room.scores[room.winner_name] + 1;
+        if (room.match_kill) {
+          room.match_kill = false;
+          room.scores[room.winner_name] = 99;
+        }
         if (settings.modules.vip.enabled && room.dueling_players[pos].vip && vip_info.players[room.dueling_players[pos].name].victory) {
           ref4 = _.lines(vip_info.players[room.dueling_players[pos].name].victory);
           for (n = 0, len4 = ref4.length; n < len4; n++) {
@@ -3364,6 +3368,9 @@
           room.death = 5;
         }
       }
+    }
+    if (ygopro.constants.MSG[msg] === 'MATCH_KILL' && client.pos === 0) {
+      room.match_kill = true;
     }
     if (ygopro.constants.MSG[msg] === 'DAMAGE' && client.pos === 0) {
       pos = buffer.readUInt8(1);

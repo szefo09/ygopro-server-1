@@ -2682,6 +2682,9 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
       room.winner_name = room.dueling_players[pos].name_vpass
       #log.info room.dueling_players, pos
       room.scores[room.winner_name] = room.scores[room.winner_name] + 1
+      if room.match_kill
+        room.match_kill = false
+        room.scores[room.winner_name] = 99
       if settings.modules.vip.enabled and room.dueling_players[pos].vip and vip_info.players[room.dueling_players[pos].name].victory
         for line in _.lines vip_info.players[room.dueling_players[pos].name].victory
           ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
@@ -2693,6 +2696,9 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
         room.death = -1
       else
         room.death = 5
+
+  if ygopro.constants.MSG[msg] == 'MATCH_KILL' and client.pos == 0
+    room.match_kill = true
 
   #lp跟踪
   if ygopro.constants.MSG[msg] == 'DAMAGE' and client.pos == 0
