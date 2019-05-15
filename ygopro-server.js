@@ -1982,7 +1982,7 @@
     };
 
     Room.prototype.disconnect = function(client, error) {
-      var index, left_name, len3, m, player, ref3;
+      var index, left_name, len3, len4, m, n, player, ref3, ref4;
       if (client.had_new_reconnection) {
         return;
       }
@@ -1995,15 +1995,23 @@
         client.server.destroy();
       } else {
         if (this.arena && !this.started && this.disconnector !== 'server' && !this.arena_score_handled) {
-          ref3 = this.players;
-          for (m = 0, len3 = ref3.length; m < len3; m++) {
-            player = ref3[m];
-            if (player.pos !== 7) {
-              this.scores[player.name_vpass] = 0;
+          if (settings.modules.arena_mode.punish_quit_before_match && this.players.length === 2 && !client.arena_quit_free) {
+            ref3 = this.players;
+            for (m = 0, len3 = ref3.length; m < len3; m++) {
+              player = ref3[m];
+              if (player.pos !== 7) {
+                this.scores[player.name_vpass] = 0;
+              }
             }
-          }
-          if (this.players.length === 2 && !client.arena_quit_free) {
             this.scores[client.name_vpass] = -9;
+          } else {
+            ref4 = this.players;
+            for (n = 0, len4 = ref4.length; n < len4; n++) {
+              player = ref4[n];
+              if (player.pos !== 7) {
+                this.scores[player.name_vpass] = -5;
+              }
+            }
           }
           this.arena_score_handled = true;
         }
@@ -4940,19 +4948,21 @@
           ygopro.stoc_send_chat_to_room(room, room.waiting_for_player.name + " ${afk_warn_part1}" + (settings.modules.random_duel.hang_timeout - time_passed) + "${afk_warn_part2}", ygopro.constants.COLORS.RED);
         }
       }
-      for (n = 0, len4 = ROOM_all.length; n < len4; n++) {
-        room = ROOM_all[n];
-        if (!(room && room.arena && !room.started && room.get_playing_player().length < 2)) {
-          continue;
-        }
-        player = room.get_playing_player()[0];
-        if (player && player.join_time && !player.arena_quit_free) {
-          waited_time = moment() - player.join_time;
-          if (waited_time >= 30000) {
-            ygopro.stoc_send_chat(player, "${arena_wait_timeout}", ygopro.constants.COLORS.BABYBLUE);
-            player.arena_quit_free = true;
-          } else if (waited_time >= 5000 && waited_time < 6000) {
-            ygopro.stoc_send_chat(player, "${arena_wait_hint}", ygopro.constants.COLORS.BABYBLUE);
+      if (settings.modules.arena_mode.punish_quit_before_match) {
+        for (n = 0, len4 = ROOM_all.length; n < len4; n++) {
+          room = ROOM_all[n];
+          if (!(room && room.arena && !room.started && room.get_playing_player().length < 2)) {
+            continue;
+          }
+          player = room.get_playing_player()[0];
+          if (player && player.join_time && !player.arena_quit_free) {
+            waited_time = moment() - player.join_time;
+            if (waited_time >= 30000) {
+              ygopro.stoc_send_chat(player, "${arena_wait_timeout}", ygopro.constants.COLORS.BABYBLUE);
+              player.arena_quit_free = true;
+            } else if (waited_time >= 5000 && waited_time < 6000) {
+              ygopro.stoc_send_chat(player, "${arena_wait_hint}", ygopro.constants.COLORS.BABYBLUE);
+            }
           }
         }
       }
