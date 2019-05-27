@@ -13,7 +13,9 @@
     "start_lp": 8000,
     "start_hand": 5,
     "draw_count": 1,
-    "time_limit": 180
+    "time_limit": 180,
+    "no_watch": false,
+    "auto_death": false
   },
   "modules": {
     "welcome": "MyCard YGOPro Server",
@@ -22,6 +24,7 @@
     "side_timeout": false,
     "tag_duel_surrender": true,
     "replay_delay": false,
+    "hide_name": false,
     "i18n": {
       "auto_pick": false,
       "default": "zh-cn",
@@ -161,8 +164,14 @@
       "comment": "mode: athletic / entertain",
       "accesskey": "233",
       "ready_time": 30,
+      "check_permit": "https://api.mycard.moe/ygopro/match/permit",
       "post_score": false,
-      "get_score": false
+      "get_score": false,
+      "init_post": {
+        "enabled": false,
+        "url": "https://api.mycard.moe/ygopro/match/clear",
+        "accesskey": "momobako"
+      }
     },
     "tournament_mode": {
       "enabled": false,
@@ -297,7 +306,7 @@
       "public_roomlist": false,
       "show_ip": false,
       "show_info": true,
-      "quick_death_rule": false,
+      "quick_death_rule": 2,
       "ssl": {
         "enabled": false,
         "port": 7923,

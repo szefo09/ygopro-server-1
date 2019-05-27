@@ -101,16 +101,16 @@ check_permission = (user, permission_required) ->
   reload()
   user = users.users[name]
   if !user
-    # add_log("Unknown user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+   # add_log("Unknown user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
     return false
   if user.password != pass
-    # add_log("Unauthorized user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+  # add_log("Unauthorized user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
     return false
   if !user.enabled
-    # add_log("Disabled user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+   # add_log("Disabled user login. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
     return false
   if !check_permission(user, permission_required)
-    # add_log("Permission denied. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
+   # add_log("Permission denied. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
     return false
   # add_log("Operation success. User: "+ name+", Permission needed: "+ permission_required+", Action: " +action)
   return true
