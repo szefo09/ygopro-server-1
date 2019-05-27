@@ -75,7 +75,8 @@ import_datas = [
   "join_time",
   "arena_quit_free",
   "replays_sent",
-  "duel_time"
+  "duel_time",
+  "deck_name"
 ]
 
 merge = require 'deepmerge'
@@ -3139,8 +3140,8 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server, datas)->
     #log.info "DECK LOG START", client.name, room.arena
     if settings.modules.deck_log.local
       client.duel_time = moment().format('YYYY-MM-DD HH-mm-ss').toString()
-      deck_name = client.duel_time + ' ' + room.process_pid + ' ' + client.pos + ' ' + client.name.replace(/[\/\\\?\*]/g, '_')
-      fs.writeFile settings.modules.deck_log.local + deck_name + '.ydk', deck_text, 'utf-8', (err) ->
+      client.deck_name = client.duel_time + ' ' + room.process_pid + ' ' + client.pos + ' ' + client.name.replace(/[\/\\\?\*]/g, '_')
+      fs.writeFile settings.modules.deck_log.local + client.deck_name + '.ydk', deck_text, 'utf-8', (err) ->
         if err
           log.warn 'DECK SAVE ERROR', err
     if settings.modules.deck_log.post
@@ -3802,7 +3803,7 @@ ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server, datas)->
         players: (for player in room.dueling_players
           name: player.name + (if settings.modules.tournament_mode.show_info and not (room.hostinfo.mode == 2 and player.pos % 2 > 0) then (" (Score:" + room.scores[player.name_vpass] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + (if room.hostinfo.mode != 2 then (" Cards:" + (if player.card_count? then player.card_count else room.hostinfo.start_hand)) else "") + ")") else ""),
           winner: player.pos == room.winner
-          deckname: client.duel_time + ' ' + room.process_pid.toString() + ' ' + player.pos.toString() + ' ' + player.name.toString().replace(/[\/\\\?\*]/g, '_') + ".ydk"
+          deckname: player.deck_name
         )
       }
       duel_log.duel_log.unshift duellog

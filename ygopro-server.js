@@ -60,7 +60,7 @@
     }
   });
 
-  import_datas = ["abuse_count", "ban_mc", "vip", "is_using_pre_release", "vpass", "rag", "rid", "is_post_watcher", "retry_count", "name", "pass", "name_vpass", "is_first", "lp", "card_count", "is_host", "pos", "surrend_confirm", "kick_count", "deck_saved", "main", "side", "side_interval", "side_tcount", "selected_preduel", "last_game_msg", "last_game_msg_title", "last_hint_msg", "start_deckbuf", "challonge_info", "ready_trap", "join_time", "arena_quit_free", "replays_sent", "duel_time"];
+  import_datas = ["abuse_count", "ban_mc", "vip", "is_using_pre_release", "vpass", "rag", "rid", "is_post_watcher", "retry_count", "name", "pass", "name_vpass", "is_first", "lp", "card_count", "is_host", "pos", "surrend_confirm", "kick_count", "deck_saved", "main", "side", "side_interval", "side_tcount", "selected_preduel", "last_game_msg", "last_game_msg_title", "last_hint_msg", "start_deckbuf", "challonge_info", "ready_trap", "join_time", "arena_quit_free", "replays_sent", "duel_time", "deck_name"];
 
   merge = require('deepmerge');
 
@@ -4084,7 +4084,7 @@
   }
 
   ygopro.stoc_follow('DUEL_START', false, function(buffer, info, client, server, datas) {
-    var deck_arena, deck_name, deck_text, len3, len4, m, n, player, ref3, ref4, room;
+    var deck_arena, deck_text, len3, len4, m, n, player, ref3, ref4, room;
     room = ROOM_all[client.rid];
     if (!(room && !client.reconnecting)) {
       return;
@@ -4161,8 +4161,8 @@
       //log.info "DECK LOG START", client.name, room.arena
       if (settings.modules.deck_log.local) {
         client.duel_time = moment().format('YYYY-MM-DD HH-mm-ss').toString();
-        deck_name = client.duel_time + ' ' + room.process_pid + ' ' + client.pos + ' ' + client.name.replace(/[\/\\\?\*]/g, '_');
-        fs.writeFile(settings.modules.deck_log.local + deck_name + '.ydk', deck_text, 'utf-8', function(err) {
+        client.deck_name = client.duel_time + ' ' + room.process_pid + ' ' + client.pos + ' ' + client.name.replace(/[\/\\\?\*]/g, '_');
+        fs.writeFile(settings.modules.deck_log.local + client.deck_name + '.ydk', deck_text, 'utf-8', function(err) {
           if (err) {
             return log.warn('DECK SAVE ERROR', err);
           }
@@ -5077,7 +5077,7 @@
               results.push({
                 name: player.name + (settings.modules.tournament_mode.show_info && !(room.hostinfo.mode === 2 && player.pos % 2 > 0) ? " (Score:" + room.scores[player.name_vpass] + " LP:" + (player.lp != null ? player.lp : room.hostinfo.start_lp) + (room.hostinfo.mode !== 2 ? " Cards:" + (player.card_count != null ? player.card_count : room.hostinfo.start_hand) : "") + ")" : ""),
                 winner: player.pos === room.winner,
-                deckname: client.duel_time + ' ' + room.process_pid.toString() + ' ' + player.pos.toString() + ' ' + player.name.toString().replace(/[\/\\\?\*]/g, '_') + ".ydk"
+                deckname: player.deck_name
               });
             }
             return results;
