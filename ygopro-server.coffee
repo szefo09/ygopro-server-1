@@ -3138,7 +3138,7 @@ ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server, datas)->
       deck_arena = deck_arena + 'custom'
     #log.info "DECK LOG START", client.name, room.arena
     if settings.modules.deck_log.local
-      client.duel_time = moment().format('YYYY-MM-DD HH-mm-ss')
+      client.duel_time = moment().format('YYYY-MM-DD HH-mm-ss').toString()
       deck_name = client.duel_time + ' ' + room.process_pid + ' ' + client.pos + ' ' + client.name.replace(/[\/\\\?\*]/g, '_')
       fs.writeFile settings.modules.deck_log.local + deck_name + '.ydk', deck_text, 'utf-8', (err) ->
         if err
