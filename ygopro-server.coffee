@@ -3845,6 +3845,7 @@ setInterval ()->
 
 # spawn windbot
 windbot_looplimit = 0
+windbot_process = null
 
 spawn_windbot = () ->
   if /^win/.test(process.platform)
@@ -3858,13 +3859,13 @@ spawn_windbot = () ->
   windbot_process = spawn windbot_bin, windbot_parameters, {cwd: 'windbot'}
   windbot_process.on 'error', (err)->
     log.warn 'WindBot ERROR', err
-    if windbot_looplimit < 1000
+    if windbot_looplimit < 1000 and !rebooted
       windbot_looplimit++
       spawn_windbot()
     return
   windbot_process.on 'exit', (code)->
     log.warn 'WindBot EXIT', code
-    if windbot_looplimit < 1000
+    if windbot_looplimit < 1000 and !rebooted
       windbot_looplimit++
       spawn_windbot()
     return
@@ -3881,6 +3882,7 @@ spawn_windbot = () ->
 if settings.modules.windbot.enabled and settings.modules.windbot.spawn
   spawn_windbot()
 
+rebooted = false
 #http
 if settings.modules.http
 
@@ -4154,6 +4156,26 @@ if settings.modules.http
           response.end(addCallback(u.query.callback, "['death cancel ok', '" + u.query.deathcancel + "']"))
         else
           response.end(addCallback(u.query.callback, "['room not found', '" + u.query.deathcancel + "']"))
+
+      else if u.query.reboot
+        if !auth.auth(u.query.username, u.query.pass, "stop", "reboot")
+          response.writeHead(200)
+          response.end(addCallback(u.query.callback, "['密码错误', 0]"))
+          return
+        for room in ROOM_all when room
+          if room.started
+            room.scores[room.dueling_players[0].name_vpass] = 0
+            room.scores[room.dueling_players[1].name_vpass] = 0
+          room.kicked = true
+          room.send_replays()
+          room.process.kill()
+          room.delete()
+        rebooted = true
+        if windbot_process
+          windbot_process.kill()
+        response.writeHead(200)
+        response.end(addCallback(u.query.callback, "['reboot ok', '" + u.query.reboot + "']"))
+        throw "rebooted"
 
       else if u.query.generatekey and settings.modules.vip.enabled
         if !auth.auth(u.query.username, u.query.pass, "vip", "generate_keys")
