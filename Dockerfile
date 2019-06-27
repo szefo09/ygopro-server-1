@@ -39,7 +39,7 @@ RUN git submodule foreach git checkout master && \
     mkdir replay expansions
 
 # windbot
-RUN git clone --depth=1 https://github.com/purerosefallen/windbot  --depth=1/ygopro-server/windbot
+RUN git clone --depth=1 https://github.com/purerosefallen/windbot  /ygopro-server/windbot
 WORKDIR /ygopro-server/windbot
 RUN xbuild /property:Configuration=Release /property:TargetFrameworkVersion="v4.5" && \
     ln -s ./bin/Release/WindBot.exe . && \
