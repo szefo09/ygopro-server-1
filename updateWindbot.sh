@@ -1,13 +1,13 @@
 #!/bin/bash
 echo "updating Windbot"
 cd /home/pi/server/ygopro-server
-rm -rf windbot
-git clone https://github.com/szefo09/Windbot --recursive
-mv Windbot windbot
+git clone https://github.com/szefo09/windbot.git --recursive
 cd windbot
+git reset --hard
+git pull
 xbuild /property:Configuration=Release /property:TargetFrameworkVersion="v4.5"
 ln -s bin/Release/WindBot.exe .
 #ln -s ../ygopro/cards.cdb .
 cd ..
 chmod -R 777 /home/pi/server/*
-sudo pm2 restart 1
+sudo pm2 restart windbot-server
