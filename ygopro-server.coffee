@@ -12,16 +12,16 @@ spawn = require('child_process').spawn
 spawnSync = require('child_process').spawnSync
 
 # 三方库
-_ = require 'underscore'
+_ = global._ = require 'underscore'
 _.str = require 'underscore.string'
 _.mixin(_.str.exports())
 
 request = require 'request'
 
 bunyan = require 'bunyan'
-log = bunyan.createLogger name: "mycard"
+log = global.log = bunyan.createLogger name: "mycard"
 
-moment = require 'moment'
+moment = global.moment = require 'moment'
 moment.updateLocale('zh-cn', {
   relativeTime: {
     future: '%s内',
