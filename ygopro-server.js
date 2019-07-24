@@ -5433,6 +5433,7 @@
     plugin_filename = plugin_list[m];
     plugin_path = process.cwd() + "/plugins/" + plugin_filename;
     require(plugin_path);
+    log.info("Plugin loaded:", plugin_filename);
   }
 
 }).call(this);
