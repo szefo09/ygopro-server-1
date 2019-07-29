@@ -1896,6 +1896,13 @@
       return challonge_duel_log;
     };
 
+    Room.prototype.get_old_hostinfo = function() {
+      var ret;
+      ret = _.clone(this.hostinfo);
+      ret.enable_priority = this.hostinfo.duel_rule === 4;
+      return ret;
+    };
+
     Room.prototype.send_replays = function() {
       var len2, len3, m, n, player, ref3, ref4;
       if (!(settings.modules.replay_delay && this.replays.length && this.hostinfo.mode === 1)) {
