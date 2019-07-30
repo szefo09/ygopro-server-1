@@ -4023,7 +4023,7 @@
     }
     msg = _.trim(info.msg);
     cancel = _.startsWith(msg, "/");
-    if (!(cancel || !(room.random_type || room.arena))) {
+    if (!(cancel || !(room.random_type || room.arena) || room.duel_stage === ygopro.constants.DUEL_STAGE.FINGER || room.duel_stage === ygopro.constants.DUEL_STAGE.FIRSTGO || room.duel_stage === ygopro.constants.DUEL_STAGE.SIDING)) {
       room.last_active_time = moment();
     }
     cmd = msg.split(' ');
@@ -4804,7 +4804,7 @@
       var len2, m, room, time_passed;
       for (m = 0, len2 = ROOM_all.length; m < len2; m++) {
         room = ROOM_all[m];
-        if (!(room && room.duel_stage !== ygopro.constants.DUEL_STAGE.BEGIN && room.random_type && room.last_active_time && room.waiting_for_player && room.get_disconnected_count() === 0)) {
+        if (!(room && room.duel_stage !== ygopro.constants.DUEL_STAGE.BEGIN && room.random_type && room.last_active_time && room.waiting_for_player && room.get_disconnected_count() === 0 && (!settings.modules.side_timeout || room.duel_stage !== ygopro.constants.DUEL_STAGE.SIDING))) {
           continue;
         }
         time_passed = Math.floor((moment() - room.last_active_time) / 1000);
@@ -4828,7 +4828,7 @@
       var len2, len3, m, n, player, room, time_passed, waited_time;
       for (m = 0, len2 = ROOM_all.length; m < len2; m++) {
         room = ROOM_all[m];
-        if (!(room && room.duel_stage !== ygopro.constants.DUEL_STAGE.BEGIN && room.arena && room.last_active_time && room.waiting_for_player && room.get_disconnected_count() === 0)) {
+        if (!(room && room.duel_stage !== ygopro.constants.DUEL_STAGE.BEGIN && room.arena && room.last_active_time && room.waiting_for_player && room.get_disconnected_count() === 0 && (!settings.modules.side_timeout || room.duel_stage !== ygopro.constants.DUEL_STAGE.SIDING))) {
           continue;
         }
         time_passed = Math.floor((moment() - room.last_active_time) / 1000);
