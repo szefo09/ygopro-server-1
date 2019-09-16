@@ -1454,6 +1454,7 @@
       this.turn = 0;
       this.duel_stage = ygopro.constants.DUEL_STAGE.BEGIN;
       this.replays = [];
+      this.first_list = [];
       ROOM_all.push(this);
       this.hostinfo || (this.hostinfo = JSON.parse(JSON.stringify(settings.hostinfo)));
       delete this.hostinfo.comment;
@@ -1737,6 +1738,7 @@
             userscoreB: score_array[1].score,
             userdeckA: score_array[0].deck,
             userdeckB: score_array[1].deck,
+            first: this.first_list,
             replays: formatted_replays,
             start: this.start_time,
             end: end_time,
@@ -2747,7 +2749,7 @@
           json: true
         }, function(error, response, body) {
           var len3, n, ref4;
-          if (body && body.user) {
+          if (!error && body && body.user) {
             users_cache[client.name] = body.user.id;
             secret = body.user.id % 65535 + 1;
             decrypted_buffer = Buffer.allocUnsafe(6);
@@ -2759,6 +2761,10 @@
             if (check_buffer_indentity(decrypted_buffer)) {
               buffer = decrypted_buffer;
             }
+          } else {
+            log.warn("READ USER FAIL", error, body);
+            ygopro.stoc_die(client, "${create_room_failed}");
+            return;
           }
           if (!check_buffer_indentity(buffer)) {
             ygopro.stoc_die(client, '${invalid_password_checksum}');
@@ -3211,6 +3217,9 @@
     if (ygopro.constants.MSG[msg] === 'START') {
       playertype = buffer.readUInt8(1);
       client.is_first = !(playertype & 0xf);
+      if (client.is_first && (room.hostinfo.mode !== 2 || client.pos === 0 || client.pos === 2)) {
+        room.first_list[room.duel_count - 1] = client.name_vpass;
+      }
       client.lp = room.hostinfo.start_lp;
       if (room.hostinfo.mode !== 2) {
         client.card_count = 0;

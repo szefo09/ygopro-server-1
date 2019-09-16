@@ -1120,6 +1120,7 @@ class Room
     @turn = 0
     @duel_stage = ygopro.constants.DUEL_STAGE.BEGIN
     @replays = []
+    @first_list = []
     ROOM_all.push this
 
     @hostinfo ||= JSON.parse(JSON.stringify(settings.hostinfo))
@@ -1328,6 +1329,7 @@ class Room
         userscoreB: score_array[1].score,
         userdeckA: score_array[0].deck,
         userdeckB: score_array[1].deck,
+        first: @first_list,
         replays: formatted_replays,
         start: @start_time,
         end: end_time,
@@ -2157,7 +2159,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
           skip_track_visit: true
         json: true
       , (error, response, body)->
-        if body and body.user
+        if !error and body and body.user
           users_cache[client.name] = body.user.id
           secret = body.user.id % 65535 + 1
           decrypted_buffer = Buffer.allocUnsafe(6)
@@ -2165,6 +2167,10 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
             decrypted_buffer.writeUInt16LE(buffer.readUInt16LE(i) ^ secret, i)
           if check_buffer_indentity(decrypted_buffer)
             buffer = decrypted_buffer
+        else
+          log.warn("READ USER FAIL", error, body)
+          ygopro.stoc_die(client, "${create_room_failed}")
+          return
 
         # buffer != decrypted_buffer  ==> auth failed
 
@@ -2553,6 +2559,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
   if ygopro.constants.MSG[msg] == 'START'
     playertype = buffer.readUInt8(1)
     client.is_first = !(playertype & 0xf)
+    if client.is_first and (room.hostinfo.mode != 2 or client.pos == 0 or client.pos == 2)
+      room.first_list[room.duel_count - 1] = client.name_vpass
     client.lp = room.hostinfo.start_lp
     client.card_count = 0 if room.hostinfo.mode != 2
     room.duel_stage = ygopro.constants.DUEL_STAGE.DUELING
