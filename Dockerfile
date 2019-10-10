@@ -15,7 +15,7 @@ RUN npm ci && \
     mkdir config decks replays logs /redis
 
 # ygopro
-RUN git clone --branch=server --recursive --depth=1 https://github.com/purerosefallen/ygopro && \
+RUN git clone --branch=server --recursive --depth=1 https://github.com/Smile-DK/ygopro && \
     cd ygopro && \
     git submodule foreach git checkout master && \
     wget -O - https://github.com/premake/premake-core/releases/download/v5.0.0-alpha13/premake-5.0.0-alpha13-linux.tar.gz | tar zfx - && \
