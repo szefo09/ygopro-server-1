@@ -1569,7 +1569,7 @@
         }
         if ((param = rule.match(/(^|，|,)(DUELRULE|MR)(\d+)(，|,|$)/))) {
           duel_rule = parseInt(param[3]);
-          if (duel_rule && duel_rule > 0 && duel_rule <= 4) {
+          if (duel_rule && duel_rule > 0 && duel_rule <= 5) {
             this.hostinfo.duel_rule = duel_rule;
           }
         }
