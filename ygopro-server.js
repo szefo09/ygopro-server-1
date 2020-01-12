@@ -2605,7 +2605,11 @@
         return (checksum & 0xFF) === 0;
       };
       buffer_handle_callback = function(buffer, decrypted_buffer, match_permit) {
+<<<<<<< HEAD
         var action, len2, len3, len4, len5, line, m, n, name, o, opt1, opt2, opt3, options, p, player, ref3, ref4, ref5, ref6, room, room_title, title;
+=======
+        var action, len2, len3, m, n, name, opt1, opt2, opt3, options, player, ref2, ref3, room, room_title, title;
+>>>>>>> mc
         if (client.closed) {
           return;
         }
@@ -2649,7 +2653,11 @@
               return room_title.match(regexp);
             }, room_title)) {
               log.warn("BAD NAME LEVEL 3", room_title, client.name, client.ip);
+<<<<<<< HEAD
               ygopro.stoc_die(client, "${bad_name_level3}");
+=======
+              ygopro.stoc_die(client, "${bad_roomname_level3}");
+>>>>>>> mc
               return;
             } else if (_.any(badwords.level2, function(badword) {
               var regexp;
@@ -2657,7 +2665,11 @@
               return room_title.match(regexp);
             }, room_title)) {
               log.warn("BAD NAME LEVEL 2", room_title, client.name, client.ip);
+<<<<<<< HEAD
               ygopro.stoc_die(client, "${bad_name_level2}");
+=======
+              ygopro.stoc_die(client, "${bad_roomname_level2}");
+>>>>>>> mc
               return;
             } else if (_.any(badwords.level1, function(badword) {
               var regexp;
@@ -2665,7 +2677,11 @@
               return room_title.match(regexp);
             }, room_title)) {
               log.warn("BAD NAME LEVEL 1", room_title, client.name, client.ip);
+<<<<<<< HEAD
               ygopro.stoc_die(client, "${bad_name_level1}");
+=======
+              ygopro.stoc_die(client, "${bad_roomname_level1}");
+>>>>>>> mc
               return;
             }
             room = new Room(name, options);
@@ -2975,21 +2991,21 @@
     } else if (_.indexOf(settings.ban.banned_ip, client.ip) > -1) {
       log.warn("BANNED IP LOGIN", client.name, client.ip);
       ygopro.stoc_die(client, "${banned_ip_login}");
-    } else if (_.any(badwords.level3, function(badword) {
+    } else if (!settings.modules.tournament_mode.enabled && !settings.modules.challonge.enabled && _.any(badwords.level3, function(badword) {
       var regexp;
       regexp = new RegExp(badword, 'i');
       return name.match(regexp);
     }, name = client.name)) {
       log.warn("BAD NAME LEVEL 3", client.name, client.ip);
       ygopro.stoc_die(client, "${bad_name_level3}");
-    } else if (_.any(badwords.level2, function(badword) {
+    } else if (!settings.modules.tournament_mode.enabled && !settings.modules.challonge.enabled && _.any(badwords.level2, function(badword) {
       var regexp;
       regexp = new RegExp(badword, 'i');
       return name.match(regexp);
     }, name = client.name)) {
       log.warn("BAD NAME LEVEL 2", client.name, client.ip);
       ygopro.stoc_die(client, "${bad_name_level2}");
-    } else if (_.any(badwords.level1, function(badword) {
+    } else if (!settings.modules.tournament_mode.enabled && !settings.modules.challonge.enabled && _.any(badwords.level1, function(badword) {
       var regexp;
       regexp = new RegExp(badword, 'i');
       return name.match(regexp);

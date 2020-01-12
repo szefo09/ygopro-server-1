@@ -2087,21 +2087,29 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
             return room_title.match(regexp)
           , room_title)
             log.warn("BAD NAME LEVEL 3", room_title, client.name, client.ip)
-            ygopro.stoc_die(client, "${bad_name_level3}")
+            ygopro.stoc_die(client, "${bad_roomname_level3}")
             return
           else if _.any(badwords.level2, (badword) ->
             regexp = new RegExp(badword, 'i')
             return room_title.match(regexp)
           , room_title)
             log.warn("BAD NAME LEVEL 2", room_title, client.name, client.ip)
+<<<<<<< HEAD
             ygopro.stoc_die(client, "${bad_name_level2}")
+=======
+            ygopro.stoc_die(client, "${bad_roomname_level2}")
+>>>>>>> mc
             return
           else if _.any(badwords.level1, (badword) ->
             regexp = new RegExp(badword, 'i')
             return room_title.match(regexp)
           , room_title)
             log.warn("BAD NAME LEVEL 1", room_title, client.name, client.ip)
+<<<<<<< HEAD
             ygopro.stoc_die(client, "${bad_name_level1}")
+=======
+            ygopro.stoc_die(client, "${bad_roomname_level1}")
+>>>>>>> mc
             return
           room = new Room(name, options)
           if room
@@ -2345,21 +2353,21 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
     log.warn("BANNED IP LOGIN", client.name, client.ip)
     ygopro.stoc_die(client, "${banned_ip_login}")
 
-  else if _.any(badwords.level3, (badword) ->
+  else if !settings.modules.tournament_mode.enabled and !settings.modules.challonge.enabled and _.any(badwords.level3, (badword) ->
     regexp = new RegExp(badword, 'i')
     return name.match(regexp)
   , name = client.name)
     log.warn("BAD NAME LEVEL 3", client.name, client.ip)
     ygopro.stoc_die(client, "${bad_name_level3}")
 
-  else if _.any(badwords.level2, (badword) ->
+  else if !settings.modules.tournament_mode.enabled and !settings.modules.challonge.enabled and _.any(badwords.level2, (badword) ->
     regexp = new RegExp(badword, 'i')
     return name.match(regexp)
   , name = client.name)
     log.warn("BAD NAME LEVEL 2", client.name, client.ip)
     ygopro.stoc_die(client, "${bad_name_level2}")
 
-  else if _.any(badwords.level1, (badword) ->
+  else if !settings.modules.tournament_mode.enabled and !settings.modules.challonge.enabled and _.any(badwords.level1, (badword) ->
     regexp = new RegExp(badword, 'i')
     return name.match(regexp)
   , name = client.name)
