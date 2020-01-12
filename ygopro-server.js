@@ -2605,11 +2605,7 @@
         return (checksum & 0xFF) === 0;
       };
       buffer_handle_callback = function(buffer, decrypted_buffer, match_permit) {
-<<<<<<< HEAD
         var action, len2, len3, len4, len5, line, m, n, name, o, opt1, opt2, opt3, options, p, player, ref3, ref4, ref5, ref6, room, room_title, title;
-=======
-        var action, len2, len3, m, n, name, opt1, opt2, opt3, options, player, ref2, ref3, room, room_title, title;
->>>>>>> mc
         if (client.closed) {
           return;
         }
@@ -2652,36 +2648,24 @@
               regexp = new RegExp(badword, 'i');
               return room_title.match(regexp);
             }, room_title)) {
-              log.warn("BAD NAME LEVEL 3", room_title, client.name, client.ip);
-<<<<<<< HEAD
-              ygopro.stoc_die(client, "${bad_name_level3}");
-=======
+              log.warn("BAD ROOM NAME LEVEL 3", room_title, client.name, client.ip);
               ygopro.stoc_die(client, "${bad_roomname_level3}");
->>>>>>> mc
               return;
             } else if (_.any(badwords.level2, function(badword) {
               var regexp;
               regexp = new RegExp(badword, 'i');
               return room_title.match(regexp);
             }, room_title)) {
-              log.warn("BAD NAME LEVEL 2", room_title, client.name, client.ip);
-<<<<<<< HEAD
-              ygopro.stoc_die(client, "${bad_name_level2}");
-=======
+              log.warn("BAD ROOM NAME LEVEL 2", room_title, client.name, client.ip);
               ygopro.stoc_die(client, "${bad_roomname_level2}");
->>>>>>> mc
               return;
             } else if (_.any(badwords.level1, function(badword) {
               var regexp;
               regexp = new RegExp(badword, 'i');
               return room_title.match(regexp);
             }, room_title)) {
-              log.warn("BAD NAME LEVEL 1", room_title, client.name, client.ip);
-<<<<<<< HEAD
-              ygopro.stoc_die(client, "${bad_name_level1}");
-=======
+              log.warn("BAD ROOM NAME LEVEL 1", room_title, client.name, client.ip);
               ygopro.stoc_die(client, "${bad_roomname_level1}");
->>>>>>> mc
               return;
             }
             room = new Room(name, options);
