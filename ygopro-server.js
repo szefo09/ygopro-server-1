@@ -2808,6 +2808,10 @@
       };
       _async.auto({
         match_permit: function(done) {
+          if (client.closed) {
+            done();
+            return;
+          }
           if (!settings.modules.arena_mode.check_permit) {
             done(null, null);
             return;
@@ -2826,7 +2830,7 @@
               return;
             }
             if (!error && body) {
-              done(null, boddy);
+              done(null, body);
             } else {
               log.warn("Match permit request error", error);
               match_permit_callback(null, null);
@@ -2836,6 +2840,7 @@
         get_user: function(done) {
           var decrypted_buffer, i, id, len2, m, ref3, secret;
           if (client.closed) {
+            done();
             return;
           }
           if (id = users_cache[client.name]) {
@@ -2851,6 +2856,7 @@
                 original: decrypted_buffer,
                 decrypted: decrypted_buffer
               });
+              return;
             }
           }
           request({
@@ -2885,7 +2891,7 @@
               done('${invalid_password_checksum}');
               return;
             }
-            return done(null, {
+            done(null, {
               original: buffer,
               decrypted: decrypted_buffer
             });
@@ -2899,7 +2905,7 @@
           ygopro.stoc_die(client, err);
           return;
         }
-        return create_room_with_action(data.get_user.original, data.get_user.decrypted, match_permit);
+        return create_room_with_action(data.get_user.original, data.get_user.decrypted, data.match_permit);
       });
     } else if (settings.modules.challonge.enabled) {
       pre_room = ROOM_find_by_name(info.pass);

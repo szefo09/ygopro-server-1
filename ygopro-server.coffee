@@ -2215,6 +2215,9 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
 
     _async.auto({
       match_permit: (done) ->
+        if client.closed
+          done()
+          return
         if(!settings.modules.arena_mode.check_permit)
           done(null, null)
           return
@@ -2230,7 +2233,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
             done(null, null)
             return
           if !error and body
-            done(null, boddy)
+            done(null, body)
           else
             log.warn("Match permit request error", error)
             match_permit_callback(null, null)
@@ -2238,6 +2241,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
         return
       get_user: (done) ->
         if client.closed
+          done()
           return
         if id = users_cache[client.name]
           secret = id % 65535 + 1
@@ -2249,6 +2253,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
               original: decrypted_buffer,
               decrypted: decrypted_buffer
             })
+            return
 
         #TODO: query database directly, like preload.
         request
@@ -2282,6 +2287,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
             original: buffer,
             decrypted: decrypted_buffer
           })
+          return
         return
     }, (err, data) ->
       if(client.closed)
@@ -2289,7 +2295,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
       if(err)
         ygopro.stoc_die(client, err)
         return
-      create_room_with_action(data.get_user.original, data.get_user.decrypted, match_permit)
+      create_room_with_action(data.get_user.original, data.get_user.decrypted, data.match_permit)
     )
 
 
