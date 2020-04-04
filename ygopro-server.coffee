@@ -10,6 +10,7 @@ exec = require('child_process').exec
 execFile = require('child_process').execFile
 spawn = require('child_process').spawn
 spawnSync = require('child_process').spawnSync
+_async = require('async')
 
 # 三方库
 _ = global._ = require 'underscore'
@@ -2054,7 +2055,7 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
         checksum += buf.readUInt8(i)
       (checksum & 0xFF) == 0
 
-    buffer_handle_callback = (buffer, decrypted_buffer, match_permit)->
+    create_room_with_action = (buffer, decrypted_buffer, match_permit)->
       if client.closed
         return
       action = buffer.readUInt8(1) >> 4
@@ -2179,67 +2180,84 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
         room.connect(client)
       return
 
-    match_permit_callback = (buffer, match_permit) ->
-      if client.closed
+    _async.auto({
+      match_permit: (done) ->
+        if(!settings.modules.arena_mode.check_permit)
+          done(null, null)
+          return
+        request
+          url: settings.modules.arena_mode.check_permit,
+          json: true,
+          qs:
+            username: client.name,
+            password: info.pass,
+            arena: settings.modules.arena_mode.mode
+        , (error, response, body)->
+          if client.closed
+            done(null, null)
+            return
+          if !error and body
+            done(null, boddy)
+          else
+            log.warn("Match permit request error", error)
+            match_permit_callback(null, null)
+          return
         return
-      if id = users_cache[client.name]
-        secret = id % 65535 + 1
-        decrypted_buffer = Buffer.allocUnsafe(6)
-        for i in [0, 2, 4]
-          decrypted_buffer.writeUInt16LE(buffer.readUInt16LE(i) ^ secret, i)
-        if check_buffer_indentity(decrypted_buffer)
-          return buffer_handle_callback(decrypted_buffer, decrypted_buffer, match_permit)
-
-      #TODO: query database directly, like preload.
-      request
-        baseUrl: settings.modules.mycard.auth_base_url,
-        url: '/users/' + encodeURIComponent(client.name) + '.json',
-        qs:
-          api_key: settings.modules.mycard.auth_key,
-          api_username: client.name,
-          skip_track_visit: true
-        json: true
-      , (error, response, body)->
-        if !error and body and body.user
-          users_cache[client.name] = body.user.id
-          secret = body.user.id % 65535 + 1
+      get_user: (done) ->
+        if client.closed
+          return
+        if id = users_cache[client.name]
+          secret = id % 65535 + 1
           decrypted_buffer = Buffer.allocUnsafe(6)
           for i in [0, 2, 4]
             decrypted_buffer.writeUInt16LE(buffer.readUInt16LE(i) ^ secret, i)
           if check_buffer_indentity(decrypted_buffer)
-            buffer = decrypted_buffer
-        else
-          log.warn("READ USER FAIL", error, body)
-          ygopro.stoc_die(client, "${create_room_failed}")
-          return
+            done(null, {
+              original: decrypted_buffer,
+              decrypted: decrypted_buffer
+            })
 
-        # buffer != decrypted_buffer  ==> auth failed
+        #TODO: query database directly, like preload.
+        request
+          baseUrl: settings.modules.mycard.auth_base_url,
+          url: '/users/' + encodeURIComponent(client.name) + '.json',
+          qs:
+            api_key: settings.modules.mycard.auth_key,
+            api_username: client.name,
+            skip_track_visit: true
+          json: true
+        , (error, response, body)->
+          if !error and body and body.user
+            users_cache[client.name] = body.user.id
+            secret = body.user.id % 65535 + 1
+            decrypted_buffer = Buffer.allocUnsafe(6)
+            for i in [0, 2, 4]
+              decrypted_buffer.writeUInt16LE(buffer.readUInt16LE(i) ^ secret, i)
+            if check_buffer_indentity(decrypted_buffer)
+              buffer = decrypted_buffer
+          else
+            log.warn("READ USER FAIL", error, body)
+            done("${create_room_failed}")
+            return
 
-        if !check_buffer_indentity(buffer)
-          ygopro.stoc_die(client, '${invalid_password_checksum}')
-          return
-        return buffer_handle_callback(buffer, decrypted_buffer, match_permit)
-      return
+          # buffer != decrypted_buffer  ==> auth failed
 
-    if settings.modules.arena_mode.check_permit
-      request
-        url: settings.modules.arena_mode.check_permit,
-        json: true,
-        qs:
-          username: client.name,
-          password: info.pass,
-          arena: settings.modules.arena_mode.mode
-      , (error, response, body)->
-        if client.closed
-          return
-        if !error and body
-          match_permit_callback(buffer, body)
-        else
-          log.warn("Match permit request error", error)
-          match_permit_callback(buffer, null)
+          if !check_buffer_indentity(buffer)
+            done('${invalid_password_checksum}')
+            return
+          done(null, {
+            original: buffer,
+            decrypted: decrypted_buffer
+          })
         return
-    else
-      match_permit_callback(buffer, null)
+    }, (err, data) ->
+      if(client.closed)
+        return
+      if(err)
+        ygopro.stoc_die(client, err)
+        return
+      create_room_with_action(data.get_user.original, data.get_user.decrypted, match_permit)
+    )
 
 
   else if settings.modules.challonge.enabled
@@ -2257,87 +2275,86 @@ ygopro.ctos_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
     else
       ygopro.stoc_send_chat(client, '${loading_user_info}', ygopro.constants.COLORS.BABYBLUE)
       client.setTimeout(300000) #连接后超时5分钟
-      challonge.participants._index({
-        id: settings.modules.challonge.tournament_id,
-        callback: (err, data) ->
-          if client.closed
-            return
-          if err or !data
-            if err
-              log.warn("Failed loading Challonge user info", err)
-            ygopro.stoc_die(client, '${challonge_match_load_failed}')
-            return
-          found = false
-          for k,user of data
-            if user.participant and user.participant.name and deck_name_match(user.participant.name, client.name)
-              found = user.participant
-              break
-          if !found
-            ygopro.stoc_die(client, '${challonge_user_not_found}')
-            return
-          client.challonge_info = found
-          challonge.matches._index({
+      _async.auto({
+        participant_data: (done) ->
+          challonge.participants._index({
             id: settings.modules.challonge.tournament_id,
-            callback: (err, data) ->
-              if client.closed
-                return
-              if err or !data
-                if err
-                  log.warn("Failed loading Challonge match info", err)
-                ygopro.stoc_die(client, '${challonge_match_load_failed}')
-                return
-              found = false
-              for k,match of data
-                if match and match.match and !match.match.winnerId and match.match.state != "complete" and match.match.player1Id and match.match.player2Id and (match.match.player1Id == client.challonge_info.id or match.match.player2Id == client.challonge_info.id)
-                  found = match.match
-                  break
-              if !found
-                ygopro.stoc_die(client, '${challonge_match_not_found}')
-                return
-              #if found.winnerId
-              #  ygopro.stoc_die(client, '${challonge_match_already_finished}')
-              #  return
-              room = ROOM_find_or_create_by_name('M#' + found.id)
-              if room
-                room.challonge_info = found
-                # room.max_player = 2
-                room.welcome = "${challonge_match_created}"
-              if !room
-                ygopro.stoc_die(client, "${server_full}")
-              else if room.error
-                ygopro.stoc_die(client, room.error)
-              else if room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
-                if settings.modules.cloud_replay.enable_halfway_watch and !room.hostinfo.no_watch
-                  #client.setTimeout(300000) #连接后超时5分钟
-                  client.rid = _.indexOf(ROOM_all, room)
-                  client.is_post_watcher = true
-                  if settings.modules.vip.enabled and client.vip and vip_info.players[client.name].words
-                    for line in _.lines vip_info.players[client.name].words
-                      ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
-                  else if settings.modules.words.enabled and words.words[client.name]
-                    for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
-                      ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
-                  ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
-                  room.watchers.push client
-                  ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
-                  for buffer in room.watcher_buffers
-                    client.write buffer
-                else
-                  ygopro.stoc_die(client, "${watch_denied}")
-              else if room.hostinfo.no_watch and room.players.length >= (if room.hostinfo.mode == 2 then 4 else 2)
-                ygopro.stoc_die(client, "${watch_denied_room}")
-              else
-                for player in room.get_playing_player() when player and player != client and player.challonge_info.id == client.challonge_info.id
-                  ygopro.stoc_die(client, "${challonge_player_already_in}")
-                  return
-                #client.room = room
-                #client.setTimeout(300000) #连接后超时5分钟
-                client.rid = _.indexOf(ROOM_all, room)
-                room.connect(client)
-              return
+            callback: done
           })
           return
-      })
+        ,
+        match_data: (done) ->
+          challonge.matches._index({
+            id: settings.modules.challonge.tournament_id,
+            callback: done
+          })
+          return
+      }, (err, datas) ->
+        if client.closed
+          return
+        if err or !datas.participant_data or !datas.match_data
+          log.warn("Failed loading Challonge user info", err)
+          ygopro.stoc_die(client, '${challonge_match_load_failed}')
+          return
+        found = false
+        for k,user of datas.participant_data
+          if user.participant and user.participant.name and deck_name_match(user.participant.name, client.name)
+            found = user.participant
+            break
+        if !found
+          ygopro.stoc_die(client, '${challonge_user_not_found}')
+          return
+        client.challonge_info = found
+        found = false
+        for k,match of datas.match_data
+          if match and match.match and !match.match.winnerId and match.match.state != "complete" and match.match.player1Id and match.match.player2Id and (match.match.player1Id == client.challonge_info.id or match.match.player2Id == client.challonge_info.id)
+            found = match.match
+            break
+        if !found
+          ygopro.stoc_die(client, '${challonge_match_not_found}')
+          return
+        #if found.winnerId
+        #  ygopro.stoc_die(client, '${challonge_match_already_finished}')
+        #  return
+        room = ROOM_find_or_create_by_name('M#' + found.id)
+        if room
+          room.challonge_info = found
+          # room.max_player = 2
+          room.welcome = "${challonge_match_created}"
+        if !room
+          ygopro.stoc_die(client, "${server_full}")
+        else if room.error
+          ygopro.stoc_die(client, room.error)
+        else if room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
+          if settings.modules.cloud_replay.enable_halfway_watch and !room.hostinfo.no_watch
+            #client.setTimeout(300000) #连接后超时5分钟
+            client.rid = _.indexOf(ROOM_all, room)
+            client.is_post_watcher = true
+            if settings.modules.vip.enabled and client.vip and vip_info.players[client.name].words
+              for line in _.lines vip_info.players[client.name].words
+                ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
+            else if settings.modules.words.enabled and words.words[client.name]
+              for line in _.lines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
+                ygopro.stoc_send_chat_to_room(room, line, ygopro.constants.COLORS.PINK)
+            ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
+            room.watchers.push client
+            ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
+            for buffer in room.watcher_buffers
+              client.write buffer
+          else
+            ygopro.stoc_die(client, "${watch_denied}")
+        else if room.hostinfo.no_watch and room.players.length >= (if room.hostinfo.mode == 2 then 4 else 2)
+          ygopro.stoc_die(client, "${watch_denied_room}")
+        else
+          for player in room.get_playing_player() when player and player != client and player.challonge_info.id == client.challonge_info.id
+            ygopro.stoc_die(client, "${challonge_player_already_in}")
+            return
+          #client.room = room
+          #client.setTimeout(300000) #连接后超时5分钟
+          client.rid = _.indexOf(ROOM_all, room)
+          room.connect(client)
+        return
+      )
 
   else if !client.name or client.name==""
     ygopro.stoc_die(client, "${bad_user_name}")
