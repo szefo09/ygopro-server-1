@@ -4141,7 +4141,7 @@ if settings.modules.http
           if(err)
             response.end(addCallback(u.query.callback, "['tip fail', '" + settings.modules.tips.get + "']"))
           else
-            response.end(addCallback(u.query.callback, "['tip ok', '" + settings.modules.tips.get + "']"))
+            response.end(addCallback(u.query.callback, "['tip ok', '" +  settings.modules.tips.get + "']"))
         )
 
       else if u.query.loaddialogues
@@ -4159,7 +4159,7 @@ if settings.modules.http
           if(err)
             response.end(addCallback(u.query.callback, "['dialogues fail', '" + settings.modules.dialogues.get + "']"))
           else
-            response.end(addCallback(u.query.callback, "['dialogues ok', '" + settings.modules.dialogues.get + "']"))
+            response.end(addCallback(u.query.callback, "['dialogues ok', '" +settings.modules.dialogues.get + "']"))
         )
 
       else if u.query.ban
