@@ -2590,7 +2590,7 @@ load_dialogues = global.load_dialogues = (callback) ->
     return
   return
 
-load_dialogues_custom = global.load_dialogues_custom = () ->
+load_dialogues_custom = global.load_dialogues_custom = (callback) ->
   request
     url: settings.modules.dialogues.get_custom
     json: true
@@ -2602,6 +2602,8 @@ load_dialogues_custom = global.load_dialogues_custom = () ->
     else
       setting_change(dialogues, "dialogues_custom", body)
       log.info "custom dialogues loaded", _.size dialogues.dialogues_custom
+    if callback
+      callback(error, body)
     return
   return
 
@@ -4129,10 +4131,12 @@ if settings.modules.http
           response.writeHead(200)
           response.end(addCallback(u.query.callback, "['密码错误', 0]"))
           return
-        _async.auto({
-          tips: load_tips,
-          tips_zh: load_tips_zh
-        }, (err)->
+        tasks = {
+          tips: load_tips
+        }
+        if settings.modules.tips.get_zh
+          tasks.tips_zh = load_tips_zh
+        _async.auto(tasks, (err)->
           response.writeHead(200)
           if(err)
             response.end(addCallback(u.query.callback, "['tip fail', '" + settings.modules.tips.get + "']"))
@@ -4145,10 +4149,12 @@ if settings.modules.http
           response.writeHead(200)
           response.end(addCallback(u.query.callback, "['密码错误', 0]"))
           return
-        _async.auto({
-          dialogues: load_dialogues,
-          dialogues_custom: load_dialogues_custom
-        }, (err)->
+        tasks = {
+          dialogues: load_dialogues
+        }
+        if settings.modules.dialogues.get_custom
+          tasks.dialogues_custom = load_dialogues_custom
+        _async.auto(tasks, (err)->
           response.writeHead(200)
           if(err)
             response.end(addCallback(u.query.callback, "['dialogues fail', '" + settings.modules.dialogues.get + "']"))

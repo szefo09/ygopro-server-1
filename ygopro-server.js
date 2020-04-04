@@ -3250,7 +3250,7 @@
     });
   };
 
-  load_dialogues_custom = global.load_dialogues_custom = function() {
+  load_dialogues_custom = global.load_dialogues_custom = function(callback) {
     request({
       url: settings.modules.dialogues.get_custom,
       json: true
@@ -3262,6 +3262,9 @@
       } else {
         setting_change(dialogues, "dialogues_custom", body);
         log.info("custom dialogues loaded", _.size(dialogues.dialogues_custom));
+      }
+      if (callback) {
+        callback(error, body);
       }
     });
   };
@@ -5068,7 +5071,7 @@
       return callback + "( " + text + " );";
     };
     requestListener = function(request, response) {
-      var archive_args, archive_name, archive_process, check, death_room_found, duellog, error, filename, getpath, key, len2, len3, len4, m, n, o, parseQueryString, pass_validated, ref3, ref4, replay, ret_keys, room, roomsjson, u;
+      var archive_args, archive_name, archive_process, check, death_room_found, duellog, error, filename, getpath, key, len2, len3, len4, m, n, o, parseQueryString, pass_validated, ref3, ref4, replay, ret_keys, room, roomsjson, tasks, u;
       parseQueryString = true;
       u = url.parse(request.url, parseQueryString);
       if (u.pathname === '/api/getrooms') {
@@ -5321,10 +5324,13 @@
             response.end(addCallback(u.query.callback, "['密码错误', 0]"));
             return;
           }
-          _async.auto({
-            tips: load_tips,
-            tips_zh: load_tips_zh
-          }, function(err) {
+          tasks = {
+            tips: load_tips
+          };
+          if (settings.modules.tips.get_zh) {
+            tasks.tips_zh = load_tips_zh;
+          }
+          _async.auto(tasks, function(err) {
             response.writeHead(200);
             if (err) {
               return response.end(addCallback(u.query.callback, "['tip fail', '" + settings.modules.tips.get + "']"));
@@ -5338,10 +5344,13 @@
             response.end(addCallback(u.query.callback, "['密码错误', 0]"));
             return;
           }
-          _async.auto({
-            dialogues: load_dialogues,
-            dialogues_custom: load_dialogues_custom
-          }, function(err) {
+          tasks = {
+            dialogues: load_dialogues
+          };
+          if (settings.modules.dialogues.get_custom) {
+            tasks.dialogues_custom = load_dialogues_custom;
+          }
+          _async.auto(tasks, function(err) {
             response.writeHead(200);
             if (err) {
               return response.end(addCallback(u.query.callback, "['dialogues fail', '" + settings.modules.dialogues.get + "']"));
