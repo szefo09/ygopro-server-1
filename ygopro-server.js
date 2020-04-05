@@ -5263,7 +5263,7 @@
       return callback + "( " + text + " );";
     };
     requestListener = async function(request, response) {
-      var archive_args, archive_name, archive_process, check, death_room_found, duellog, err, error, filename, getpath, key, len2, len3, len4, m, n, o, parseQueryString, pass_validated, ref3, ref4, replay, ret_keys, room, roomsjson, tasks, u;
+      var archive_args, archive_name, archive_process, check, death_room_found, duellog, err, error, filename, getpath, key, len2, len3, m, n, parseQueryString, pass_validated, ref3, ref4, replay, ret_keys, roomsjson, tasks, u;
       parseQueryString = true;
       u = url.parse(request.url, parseQueryString);
       //pass_validated = u.query.pass == settings.modules.http.password
@@ -5462,12 +5462,11 @@
             response.end(addCallback(u.query.callback, "['密码错误', 0]"));
             return;
           }
-          for (o = 0, len4 = ROOM_all.length; o < len4; o++) {
-            room = ROOM_all[o];
+          _async.each(ROOM_all, function(room) {
             if (room && room.established) {
-              ygopro.stoc_send_chat_to_room(room, u.query.shout, ygopro.constants.COLORS.YELLOW);
+              return ygopro.stoc_send_chat_to_room(room, u.query.shout, ygopro.constants.COLORS.YELLOW);
             }
-          }
+          });
           response.writeHead(200);
           response.end(addCallback(u.query.callback, "['shout ok', '" + u.query.shout + "']"));
         } else if (u.query.stop) {
