@@ -27,20 +27,20 @@ build_lite:
     - docker build --pull --no-cache -f ./Dockerfile.lite -t $CONTAINER_TEST_IMAGE_LITE .
     - docker push $CONTAINER_TEST_IMAGE_LITE
 
-upload_stuff_to_minio:
-  stage: deploy
-  tags:
-    - linux
-  image: $CONTAINER_TEST_IMAGE
-  script:
-    - apt update ; apt -y install python3-pip
-    - pip3 install -U -i https://mirrors.aliyun.com/pypi/simple/ awscli
-    - cd /ygopro-server
-    - mkdir /dist
-    - tar zcfv /dist/ygopro-server.tar.gz ./*
-    - aws s3 --endpoint=https://minio.mycard.moe:9000 cp /dist/ygopro-server.tar.gz s3://mycard/srvpro/ygopro-server.tar.gz 
-  only:
-    - master
+#upload_stuff_to_minio:
+#  stage: deploy
+#  tags:
+#    - linux
+#  image: $CONTAINER_TEST_IMAGE
+#  script:
+#    - apt update ; apt -y install python3-pip
+#    - pip3 install -U -i https://mirrors.aliyun.com/pypi/simple/ awscli
+#    - cd /ygopro-server
+#    - mkdir /dist
+#    - tar zcfv /dist/ygopro-server.tar.gz ./*
+#    - aws s3 --endpoint=https://minio.mycard.moe:9000 cp /dist/ygopro-server.tar.gz s3://mycard/srvpro/ygopro-server.tar.gz 
+#  only:
+#    - master
 
 deploy_latest:
   stage: deploy
