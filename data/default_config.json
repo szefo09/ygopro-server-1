@@ -23,6 +23,7 @@
     "update": "请更新游戏版本",
     "stop": false,
     "side_timeout": false,
+    "tag_duel_surrender": true,
     "replay_delay": true,
     "hide_name": false,
     "display_watchers": false,
@@ -61,11 +62,22 @@
     },
     "tips": {
       "enabled": true,
-      "get": false
+      "split_zh": false,
+      "get": false,
+      "get_zh": false
     },
     "dialogues": {
       "enabled": true,
+      "get_custom": "http://purerosefallen.github.io/ygopro-tips/dialogues-222.json",
       "get": "http://mercury233.me/ygosrv233/dialogues.json"
+    },
+    "words": {
+      "enabled": true,
+      "get": false
+    },
+    "vip": {
+      "enabled": false,
+      "generate_count": 500
     },
     "random_duel": {
       "enabled": true,
@@ -105,7 +117,8 @@
       "my_ip": "127.0.0.1"
     },
     "chat_color": {
-      "enabled": false
+      "enabled": false,
+      "restrict_to_vip": false
     },
     "retry_handle": {
       "enabled": true,

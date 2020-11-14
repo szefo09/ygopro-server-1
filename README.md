@@ -35,11 +35,11 @@
   * 安装修改后的YGOPro服务端：https://github.com/moecube/ygopro/tree/server
 * `node ygopro-server.js`即可运行
 * 简易的控制台在 http://srvpro.ygo233.com/dashboard.html 或 http://srvpro-cn.ygo233.com/dashboard.html
-* 使用本项目的Docker镜像: https://hub.docker.com/r/mycard/ygopro-server/
+* 使用本项目的Docker镜像: https://hub.docker.com/r/nanahira/ygopro-server/
 
   * 镜像标签
-    * `mycard/ygopro-server:latest`: 完整镜像
-    * `mycard/ygopro-server:lite`: 基本镜像，云录像和人机对战功能需要配合`redis`和`nanahira/windbot`这两个镜像使用。
+    * `nanahira/ygopro-server:latest`: 完整镜像
+    * `nanahira/ygopro-server:lite`: 基本镜像，云录像和人机对战功能需要配合`redis`和`nanahira/windbot`这两个镜像使用。
 
   * 端口
     * `7911`: YGOPro端口

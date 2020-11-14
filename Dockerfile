@@ -15,7 +15,7 @@ RUN npm ci && \
     mkdir config decks replays logs /redis
 
 # ygopro
-RUN git clone --branch=server --recursive --depth=1 https://github.com/moecube/ygopro && \
+RUN git clone --branch=server --recursive --depth=1 https://github.com/purerosefallen/ygopro && \
     cd ygopro && \
     git submodule foreach git checkout master && \
     wget -O - https://github.com/premake/premake-core/releases/download/v5.0.0-alpha14/premake-5.0.0-alpha14-linux.tar.gz | tar zfx - && \
@@ -30,7 +30,7 @@ RUN git clone --branch=server --recursive --depth=1 https://github.com/moecube/y
     ls gframe | sed '/game.cpp/d' | xargs -I {} rm -rf gframe/{}
 
 # windbot
-RUN git clone --depth=1 https://github.com/moecube/windbot /tmp/windbot && \
+RUN git clone --depth=1 https://github.com/purerosefallen/windbot /tmp/windbot && \
     cd /tmp/windbot && \
     xbuild /property:Configuration=Release /property:TargetFrameworkVersion="v4.5" && \
     mv /tmp/windbot/bin/Release /ygopro-server/windbot && \

@@ -217,14 +217,14 @@ var writeToFile = function(message, callback) {
     _async.auto({
         write: (done) => { 
             fs.writeFile(config.html_path + config.html_filename, fileContent, done)
-        },
+        }/*,
         copy: ["write", (results, done) => { 
             if (!config.cdn.enabled) {
                 copyImages(done);
             } else { 
                 done();
             }
-        }]
+        }]*/
     }, (err) => { 
         if (!err) {
             sendResponse("列表更新完成。");
@@ -300,7 +300,10 @@ var pushDatas = function(callback) {
                 pushHTMLs(done);
             }]
         }, callback);
+    } else { 
+        pushHTMLs(callback);
     }
+
 }
 
 var pushHTMLs = function(callback) {
