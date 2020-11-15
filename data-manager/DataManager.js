@@ -83,7 +83,7 @@ class DataManager {
             if (!minQuery || !maxQuery) {
                 return null;
             }
-            const [maxId, minId] = [minQuery, maxQuery].map(query => parseInt(query.value));
+            const [minId, maxId] = [minQuery, maxQuery].map(query => parseInt(query.value));
             const targetId = Math.floor((maxId - minId) * Math.random()) + minId;
             return await this.db.createQueryBuilder(CloudReplay_1.CloudReplay, "replay")
                 .where("replay.id >= :targetId", { targetId })
