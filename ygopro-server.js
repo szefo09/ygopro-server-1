@@ -3478,7 +3478,7 @@
   };
 
   ygopro.stoc_follow('GAME_MSG', true, async function(buffer, info, client, server, datas) {
-    var act_pos, card, chain, check, count, cpos, deck_found, found, hint_type, i, id, j, l, len, len1, len2, len3, limbo_found, loc, m, max_loop, msg, n, o, oppo_pos, phase, player, playertype, pos, ppos, r_player, reason, ref, ref1, ref2, ref3, ref4, room, trigger_location, val, victoryWordPlayerList, win_pos;
+    var act_pos, card, chain, check, count, cpos, deck_found, dialogText, found, hint_type, i, id, j, l, len, len1, len2, len3, limbo_found, loc, m, max_loop, msg, n, o, oppo_pos, phase, player, playertype, pos, ppos, r_player, reason, ref, ref1, ref2, ref3, ref4, room, trigger_location, val, victoryWordPlayerList, win_pos;
     room = ROOM_all[client.rid];
     if (!(room && !client.reconnecting)) {
       return;
@@ -3854,10 +3854,10 @@
           act_pos = act_pos * 2;
         }
         if (ygopro.constants.MSG[msg] !== 'CHAINING' || (trigger_location & 0x8) && client.ready_trap) {
-          if (settings.modules.vip.enabled && (await CLIENT_check_vip(room.dueling_players[act_pos])) && (await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card))) {
-            client.playLines((await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)));
-          } else if (settings.modules.vip.enabled && room.hostinfo.mode === 2 && (await CLIENT_check_vip(room.dueling_players[act_pos + 1])) && (await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card))) {
-            client.playLines((await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)));
+          if (settings.modules.vip.enabled && (await CLIENT_check_vip(room.dueling_players[act_pos])) && (dialogText = (await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)))) {
+            client.playLines(dialogText);
+          } else if (settings.modules.vip.enabled && room.hostinfo.mode === 2 && (await CLIENT_check_vip(room.dueling_players[act_pos + 1])) && (dialogText = (await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)))) {
+            client.playLines(dialogText);
           } else if (settings.modules.dialogues.enabled && dialogues.dialogues[card]) {
             client.playLines(dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]);
           } else if (settings.modules.dialogues.enabled && dialogues.dialogues_custom[card]) {

@@ -2913,10 +2913,10 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
       if room.hostinfo.mode == 2
         act_pos = act_pos * 2
       if ygopro.constants.MSG[msg] != 'CHAINING' or (trigger_location & 0x8) and client.ready_trap
-        if settings.modules.vip.enabled and await CLIENT_check_vip(room.dueling_players[act_pos]) and await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)
-          client.playLines await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)
-        else if settings.modules.vip.enabled and room.hostinfo.mode == 2 and await CLIENT_check_vip(room.dueling_players[act_pos + 1]) and await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)
-          client.playLines await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)
+        if settings.modules.vip.enabled and await CLIENT_check_vip(room.dueling_players[act_pos]) and dialogText = await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)
+          client.playLines dialogText
+        else if settings.modules.vip.enabled and room.hostinfo.mode == 2 and await CLIENT_check_vip(room.dueling_players[act_pos + 1]) and dialogText = await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)
+          client.playLines dialogText
         else if settings.modules.dialogues.enabled and dialogues.dialogues[card]
           client.playLines dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]
         else if settings.modules.dialogues.enabled and dialogues.dialogues_custom[card]
