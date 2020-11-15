@@ -972,6 +972,8 @@ CLIENT_get_authorize_key = global.CLIENT_get_authorize_key = (client) ->
     return client.name_vpass
   else if settings.modules.mycard.enabled or settings.modules.tournament_mode.enabled or settings.modules.challonge.enabled or client.is_local
     return client.name
+  else if client.vip
+    return client.name + "$" + client.vpass
   else
     return client.ip + ":" + client.name
 
@@ -3373,7 +3375,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
               ygopro.stoc_send_chat(client, "${chat_order_vip_help}")
               ygopro.stoc_send_chat(client, "${chat_order_vip_status}")
               ygopro.stoc_send_chat(client, "${chat_order_vip_buy}")
-              ygopro.stoc_send_chat(client, "${chat_order_vip_password}")
+              # ygopro.stoc_send_chat(client, "${chat_order_vip_password}")
               ygopro.stoc_send_chat(client, "${chat_order_vip_dialogues}")
               ygopro.stoc_send_chat(client, "${chat_order_vip_words}")
               ygopro.stoc_send_chat(client, "${chat_order_vip_victory}")

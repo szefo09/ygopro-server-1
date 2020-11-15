@@ -7,4 +7,6 @@ export class User {
 
     @Column("varchar", {length: 16, nullable: true})
     chatColor: string;
+
+
 }
