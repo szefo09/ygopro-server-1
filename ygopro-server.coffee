@@ -78,7 +78,8 @@ import_datas = global.import_datas = [
   "ready_trap",
   "join_time",
   "arena_quit_free",
-  "replays_sent"
+  "replays_sent",
+  "victory_words"
 ]
 
 merge = require 'deepmerge'
