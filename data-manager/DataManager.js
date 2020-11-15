@@ -335,6 +335,10 @@ class DataManager {
         user.chatColor = color;
         return await this.saveUser(user);
     }
+    async isUserVip(key) {
+        const user = await this.getUser(key);
+        return user ? user.isVip() : false;
+    }
     async getUserDialogueText(key, cardCode) {
         try {
             const dialogue = await this.db.getRepository(UserDialog_1.UserDialog)
@@ -395,6 +399,20 @@ class DataManager {
             }
         });
     }
+    async removeUserDialogues(key, cardCode) {
+        try {
+            await this.db.createQueryBuilder()
+                .delete()
+                .from(UserDialog_1.UserDialog)
+                .where("cardCode = :cardCode and userKey = :key", { cardCode, key })
+                .execute();
+            return true;
+        }
+        catch (e) {
+            this.log.warn(`Failed to remove dialogue: ${e.toString()}`);
+            return false;
+        }
+    }
     async migrateChatColors(data) {
         await this.transaction(async (mdb) => {
             try {
@@ -443,9 +461,11 @@ class DataManager {
         });
         try {
             await this.db.manager.save(vipKeys);
+            return true;
         }
         catch (e) {
             this.log.warn(`Failed to generate keys of keyType ${keyType}: ${e.toString()}`);
+            return false;
         }
     }
     async useVipKey(userKey, vipKeyText) {
