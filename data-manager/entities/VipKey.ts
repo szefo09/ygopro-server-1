@@ -13,7 +13,7 @@ export class VipKey {
     @Column("int", {unsigned: true})
     type: number;
 
-    @Column("tinyint", {unsigned: true})
+    @Column("tinyint", {unsigned: true, default: 0})
     isUsed: number;
 
     @ManyToOne(() => User, user => user.usedKeys)

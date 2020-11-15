@@ -8,11 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = void 0;
 const typeorm_1 = require("typeorm");
 const UserDialog_1 = require("./UserDialog");
+const VipKey_1 = require("./VipKey");
+const moment_1 = __importDefault(require("moment"));
 let User = class User {
+    isVip() {
+        return this.vipExpireDate && moment_1.default().isBefore(this.vipExpireDate);
+    }
 };
 __decorate([
     typeorm_1.PrimaryColumn({ type: "varchar", length: 128 }),
@@ -25,7 +33,7 @@ __decorate([
 __decorate([
     typeorm_1.Index(),
     typeorm_1.Column("datetime", { nullable: true }),
-    __metadata("design:type", String)
+    __metadata("design:type", Date)
 ], User.prototype, "vipExpireDate", void 0);
 __decorate([
     typeorm_1.Column("text", { nullable: true }),
@@ -39,6 +47,10 @@ __decorate([
     typeorm_1.OneToMany(() => UserDialog_1.UserDialog, dialog => dialog.user),
     __metadata("design:type", Array)
 ], User.prototype, "dialogues", void 0);
+__decorate([
+    typeorm_1.OneToMany(() => VipKey_1.VipKey, vipKey => vipKey.usedBy),
+    __metadata("design:type", Array)
+], User.prototype, "usedKeys", void 0);
 User = __decorate([
     typeorm_1.Entity()
 ], User);

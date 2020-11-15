@@ -15,4 +15,6 @@ export class UserDialog {
 
     @ManyToOne(() => User, user => user.dialogues)
     user: User;
+
+
 }

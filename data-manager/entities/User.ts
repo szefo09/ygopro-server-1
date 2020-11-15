@@ -1,6 +1,7 @@
 import {Column, Entity, Index, OneToMany, PrimaryColumn} from "typeorm";
 import {UserDialog} from "./UserDialog";
 import {VipKey} from "./VipKey";
+import moment from "moment";
 
 @Entity()
 export class User {
@@ -13,6 +14,10 @@ export class User {
     @Index()
     @Column("datetime", {nullable: true})
     vipExpireDate: Date;
+
+    isVip() {
+        return this.vipExpireDate && moment().isBefore(this.vipExpireDate);
+    }
 
     @Column("text", {nullable: true})
     victory: string;

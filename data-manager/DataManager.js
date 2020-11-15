@@ -14,11 +14,32 @@ const underscore_1 = __importDefault(require("underscore"));
 const DuelLog_1 = require("./entities/DuelLog");
 const DuelLogPlayer_1 = require("./entities/DuelLogPlayer");
 const User_1 = require("./entities/User");
+const VipKey_1 = require("./entities/VipKey");
+const UserDialog_1 = require("./entities/UserDialog");
 class DataManager {
     constructor(config, log) {
         this.config = config;
         this.ready = false;
         this.log = log;
+    }
+    async transaction(fun) {
+        const runner = await this.db.createQueryRunner();
+        await runner.connect();
+        await runner.startTransaction();
+        let result = false;
+        try {
+            result = await fun(runner.manager);
+        }
+        catch (e) {
+            result = false;
+            this.log.warn(`Failed running transaction: ${e.toString()}`);
+        }
+        if (result) {
+            await runner.commitTransaction();
+        }
+        else {
+            await runner.rollbackTransaction();
+        }
     }
     async init() {
         this.db = await typeorm_1.createConnection({
@@ -75,16 +96,18 @@ class DataManager {
             const player = CloudReplayPlayer_1.CloudReplayPlayer.fromPlayerInfo(p);
             return player;
         });
-        await this.db.transaction(async (mdb) => {
+        await this.transaction(async (mdb) => {
             try {
                 const nreplay = await mdb.save(replay);
                 for (let player of players) {
                     player.cloudReplay = nreplay;
                 }
                 await mdb.save(players);
+                return true;
             }
             catch (e) {
                 this.log.warn(`Failed to save replay R#${replay.id}: ${e.toString()}`);
+                return false;
             }
         });
     }
@@ -233,7 +256,6 @@ class DataManager {
         return allDuelLogs.map(duelLog => duelLog.replayFileName);
     }
     async clearDuelLog() {
-        //await this.db.transaction(async (mdb) => {
         const runner = this.db.createQueryRunner();
         try {
             await runner.connect();
@@ -248,7 +270,6 @@ class DataManager {
             await runner.rollbackTransaction();
             this.log.warn(`Failed to clear duel logs: ${e.toString()}`);
         }
-        //});
     }
     async saveDuelLog(name, roomId, cloudReplayId, replayFilename, roomMode, duelCount, playerInfos) {
         const duelLog = new DuelLog_1.DuelLog();
@@ -260,23 +281,25 @@ class DataManager {
         duelLog.roomMode = roomMode;
         duelLog.duelCount = duelCount;
         const players = playerInfos.map(p => DuelLogPlayer_1.DuelLogPlayer.fromDuelLogPlayerInfo(p));
-        await this.db.transaction(async (mdb) => {
+        await this.transaction(async (mdb) => {
             try {
                 const savedDuelLog = await mdb.save(duelLog);
                 for (let player of players) {
                     player.duelLog = savedDuelLog;
                 }
                 await mdb.save(players);
+                return true;
             }
             catch (e) {
                 this.log.warn(`Failed to save duel log ${name}: ${e.toString()}`);
+                return false;
             }
         });
     }
     async getUser(key) {
         const repo = this.db.getRepository(User_1.User);
         try {
-            const user = await repo.findOne(key);
+            const user = await repo.findOne(key, { relations: ["dialogues", "usedKeys"] });
             return user;
         }
         catch (e) {
@@ -300,7 +323,7 @@ class DataManager {
         }
         catch (e) {
             this.log.warn(`Failed to save user: ${e.toString()}`);
-            return null;
+            return user;
         }
     }
     async getUserChatColor(key) {
@@ -308,16 +331,47 @@ class DataManager {
         return user ? user.chatColor : null;
     }
     async setUserChatColor(key, color) {
-        let user = await this.getUser(key);
-        if (!user) {
-            user = new User_1.User();
-            user.key = key;
-        }
+        const user = await this.getOrCreateUser(key);
         user.chatColor = color;
         return await this.saveUser(user);
     }
+    async getUserDialogues(key, cardCode) {
+        try {
+            const dialogue = await this.db.getRepository(UserDialog_1.UserDialog)
+                .createQueryBuilder("dialog")
+                .where("dialog.cardCode = :cardCode and ", { cardCode, key })
+                .getOne();
+            if (dialogue) {
+                return dialogue.text;
+            }
+            else {
+                return null;
+            }
+        }
+        catch (e) {
+            this.log.warn(`Failed to find user dualogue ${key} ${cardCode}: ${e.toString()}`);
+            return null;
+        }
+    }
+    async getUserWords(key) {
+        const user = await this.getUser(key);
+        return user ? user.words : null;
+    }
+    async getUserVictoryWords(key) {
+        const user = await this.getUser(key);
+        return user ? user.victory : null;
+    }
+    async setUserDialogues(key, cardCode) {
+        const user = await this.getOrCreateUser(key);
+        try {
+        }
+        catch (e) {
+            this.log.warn(`Failed to save dialogue: ${e.toString()}`);
+            return user;
+        }
+    }
     async migrateChatColors(data) {
-        await this.db.transaction(async (mdb) => {
+        await this.transaction(async (mdb) => {
             try {
                 const users = [];
                 for (let key in data) {
@@ -331,12 +385,75 @@ class DataManager {
                     users.push(user);
                 }
                 await mdb.save(users);
+                return true;
             }
             catch (e) {
                 this.log.warn(`Failed to migrate chat color data: ${e.toString()}`);
-                return null;
+                return false;
             }
         });
+    }
+    async getVipKeys(keyType) {
+        const repo = this.db.getRepository(VipKey_1.VipKey);
+        const queryCondition = {
+            type: keyType,
+            isUsed: 0
+        };
+        try {
+            const keys = await repo.find(queryCondition);
+            return keys.map(k => k.toJSON());
+        }
+        catch (e) {
+            this.log.warn(`Failed to fetch keys of keyType ${keyType}: ${e.toString()}`);
+            return [];
+        }
+    }
+    async generateVipKeys(keyType, count) {
+        const vipKeys = underscore_1.default.range(count).map(() => {
+            const keyText = Math.floor(Math.random() * 10000000000000000).toString();
+            const key = new VipKey_1.VipKey();
+            key.key = keyText;
+            key.type = keyType;
+            return key;
+        });
+        try {
+            await this.db.manager.save(vipKeys);
+        }
+        catch (e) {
+            this.log.warn(`Failed to generate keys of keyType ${keyType}: ${e.toString()}`);
+        }
+    }
+    async useVipKey(userKey, vipKeyText) {
+        let user = await this.getOrCreateUser(userKey);
+        let result = 0;
+        await this.transaction(async (mdb) => {
+            try {
+                const vipKey = await mdb.findOne(VipKey_1.VipKey, { key: vipKeyText, isUsed: 0 });
+                if (!vipKey) {
+                    return false;
+                }
+                const keyType = vipKey.type;
+                const previousDate = user.vipExpireDate;
+                if (previousDate && moment_1.default().isBefore(previousDate)) {
+                    user.vipExpireDate = moment_1.default(previousDate).add(keyType, "d").toDate();
+                }
+                else {
+                    user.vipExpireDate = moment_1.default().add(keyType, "d").toDate();
+                }
+                user = await mdb.save(user);
+                vipKey.isUsed = 1;
+                vipKey.usedBy = user;
+                await mdb.save(vipKey);
+                result = previousDate ? 2 : 1;
+                return true;
+            }
+            catch (e) {
+                this.log.warn(`Failed to use VIP key for user ${userKey} ${vipKeyText}: ${e.toString()}`);
+                result = 0;
+                return false;
+            }
+        });
+        return result;
     }
 }
 exports.DataManager = DataManager;

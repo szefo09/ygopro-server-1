@@ -11,6 +11,7 @@ import {Deck} from "./DeckEncoder";
 import {DuelLogPlayer} from "./entities/DuelLogPlayer";
 import {User} from "./entities/User";
 import {VipKey} from "./entities/VipKey";
+import {UserDialog} from "./entities/UserDialog";
 
 interface BasePlayerInfo {
 	name: string;
@@ -324,7 +325,7 @@ export class DataManager {
 	async getUser(key: string) {
 		const repo = this.db.getRepository(User);
 		try {
-			const user = await repo.findOne(key, {relations: ["dialogues"]});
+			const user = await repo.findOne(key, {relations: ["dialogues", "usedKeys"]});
 			return user;
 		} catch (e) {
 			this.log.warn(`Failed to fetch user: ${e.toString()}`);
@@ -346,7 +347,7 @@ export class DataManager {
 			return await repo.save(user);
 		} catch (e) {
 			this.log.warn(`Failed to save user: ${e.toString()}`);
-			return null;
+			return user;
 		}
 	}
 	async getUserChatColor(key: string) {
@@ -354,13 +355,67 @@ export class DataManager {
 		return user ? user.chatColor : null;
 	}
 	async setUserChatColor(key: string, color: string) {
-		let user = await this.getUser(key);
-		if(!user) {
-			user = new User();
-			user.key = key;
-		}
+		const user = await this.getOrCreateUser(key);
 		user.chatColor = color;
 		return await this.saveUser(user);
+	}
+	async getUserDialogueText(key: string, cardCode: number) {
+		try {
+			const dialogue = await this.db.getRepository(UserDialog)
+				.createQueryBuilder("dialog")
+				.where("cardCode = :cardCode and userKey = :key", {cardCode, key})
+				.getOne();
+			if(dialogue) {
+				return dialogue.text;
+			} else {
+				return null;
+			}
+		} catch(e) {
+			this.log.warn(`Failed to find user dualogue ${key} ${cardCode}: ${e.toString()}`);
+			return null;
+		}
+	}
+	async getUserWords(key: string) {
+		const user = await this.getUser(key);
+		return user ? user.words : null;
+	}
+	async getUserVictoryWords(key: string) {
+		const user = await this.getUser(key);
+		return user ? user.victory : null;
+	}
+	async setUserWords(key: string, word: string) {
+		const user = await this.getOrCreateUser(key);
+		user.words = word;
+		return await this.saveUser(user);
+	}
+	async setUserVictoryWords(key: string, word: string) {
+		const user = await this.getOrCreateUser(key);
+		user.victory = word;
+		return await this.saveUser(user);
+	}
+	async setUserDialogues(key: string, cardCode: number, text: string) {
+		const user = await this.getOrCreateUser(key);
+		await this.transaction(async mdb => {
+			try {
+				let dialogue = await mdb.getRepository(UserDialog)
+					.createQueryBuilder("dialog")
+					.where("cardCode = :cardCode and userKey = :key", {cardCode, key})
+					.innerJoinAndSelect("dialog.user", "user")
+					.getOne();
+				if(!dialogue) {
+					dialogue = new UserDialog();
+					dialogue.user = user;
+					dialogue.cardCode = cardCode;
+				}
+				dialogue.text = text;
+				await mdb.save(dialogue);
+				return true;
+			} catch (e) {
+				this.log.warn(`Failed to save dialogue: ${e.toString()}`);
+				return false;
+			}
+		});
+
 	}
 
 	async migrateChatColors(data: any) {
@@ -402,14 +457,29 @@ export class DataManager {
 		}
 	}
 
+	async generateVipKeys(keyType: number, count: number){
+		const vipKeys = _.range(count).map(() => {
+			const keyText = Math.floor(Math.random() * 10000000000000000).toString();
+			const key = new VipKey();
+			key.key = keyText;
+			key.type = keyType;
+			return key;
+		});
+		try {
+			await this.db.manager.save(vipKeys);
+		} catch (e) {
+			this.log.warn(`Failed to generate keys of keyType ${keyType}: ${e.toString()}`);
+		}
+	}
+
 	async useVipKey(userKey: string, vipKeyText: string) {
 		let user = await this.getOrCreateUser(userKey);
 		let result = 0;
-		await this.db.transaction(async (mdb) => {
+		await this.transaction(async (mdb) => {
 			try {
 				const vipKey = await mdb.findOne(VipKey, {key: vipKeyText, isUsed: 0});
 				if(!vipKey) {
-					return;
+					return false;
 				}
 				const keyType = vipKey.type;
 				const previousDate = user.vipExpireDate;
@@ -423,13 +493,64 @@ export class DataManager {
 				vipKey.usedBy = user;
 				await mdb.save(vipKey);
 				result = previousDate ? 2 : 1;
+				return true;
 			} catch (e) {
 				this.log.warn(`Failed to use VIP key for user ${userKey} ${vipKeyText}: ${e.toString()}`);
 				result = 0;
-				return;
+				return false;
 			}
 		});
 		return result;
 	}
 
+	async migrateFromOldVipInfo(vipInfo: any) {
+		await this.transaction(async (mdb) => {
+			try {
+				const vipKeyList = vipInfo.cdkeys;
+				const newKeys: VipKey[] = [];
+				for(let keyTypeString in vipKeyList) {
+					const keyType = parseInt(keyTypeString);
+					const keysTexts: string[] = vipKeyList[keyTypeString];
+					for(let keyText of keysTexts) {
+						const newKey = new VipKey()
+						newKey.type = keyType;
+						newKey.key = keyText;
+						newKeys.push(newKey);
+					}
+				}
+				await mdb.save(newKeys);
+				for(let vipUserName in vipInfo.players) {
+					const oldVipUserInfo = vipInfo.players[vipUserName];
+					const userKey = vipUserName + '$' + oldVipUserInfo.password;
+					let user = await mdb.findOne(User, userKey);
+					if(user && user.isVip()) {
+						continue;
+					}
+					if(!user) {
+						user = new User();
+						user.key = userKey;
+					}
+					user.vipExpireDate = moment(oldVipUserInfo.expire_date).toDate();
+					user.victory = oldVipUserInfo.victory || null;
+					user.words = oldVipUserInfo.words || null;
+					user = await mdb.save(user);
+					const newDialogues: UserDialog[] = [];
+					for(let dialogueCardCodeText in oldVipUserInfo.dialogues) {
+						const cardCode = parseInt(dialogueCardCodeText);
+						const dialogueText = oldVipUserInfo.dialogues[dialogueCardCodeText];
+						const dialogue = new UserDialog();
+						dialogue.text = dialogueText;
+						dialogue.cardCode = cardCode;
+						dialogue.user = user;
+						newDialogues.push(dialogue);
+					}
+					await mdb.save(newDialogues);
+				}
+				return true;
+			} catch (e) {
+				this.log.warn(`Failed to migrate vip info from previous one: ${e.toString()}`);
+				return false;
+			}
+		});
+	}
 }
