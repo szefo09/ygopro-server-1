@@ -335,11 +335,11 @@ class DataManager {
         user.chatColor = color;
         return await this.saveUser(user);
     }
-    async getUserDialogues(key, cardCode) {
+    async getUserDialogueText(key, cardCode) {
         try {
             const dialogue = await this.db.getRepository(UserDialog_1.UserDialog)
                 .createQueryBuilder("dialog")
-                .where("dialog.cardCode = :cardCode and ", { cardCode, key })
+                .where("cardCode = :cardCode and userKey = :key", { cardCode, key })
                 .getOne();
             if (dialogue) {
                 return dialogue.text;
@@ -361,14 +361,39 @@ class DataManager {
         const user = await this.getUser(key);
         return user ? user.victory : null;
     }
-    async setUserDialogues(key, cardCode) {
+    async setUserWords(key, word) {
         const user = await this.getOrCreateUser(key);
-        try {
-        }
-        catch (e) {
-            this.log.warn(`Failed to save dialogue: ${e.toString()}`);
-            return user;
-        }
+        user.words = word;
+        return await this.saveUser(user);
+    }
+    async setUserVictoryWords(key, word) {
+        const user = await this.getOrCreateUser(key);
+        user.victory = word;
+        return await this.saveUser(user);
+    }
+    async setUserDialogues(key, cardCode, text) {
+        const user = await this.getOrCreateUser(key);
+        await this.transaction(async (mdb) => {
+            try {
+                let dialogue = await mdb.getRepository(UserDialog_1.UserDialog)
+                    .createQueryBuilder("dialog")
+                    .where("cardCode = :cardCode and userKey = :key", { cardCode, key })
+                    .innerJoinAndSelect("dialog.user", "user")
+                    .getOne();
+                if (!dialogue) {
+                    dialogue = new UserDialog_1.UserDialog();
+                    dialogue.user = user;
+                    dialogue.cardCode = cardCode;
+                }
+                dialogue.text = text;
+                await mdb.save(dialogue);
+                return true;
+            }
+            catch (e) {
+                this.log.warn(`Failed to save dialogue: ${e.toString()}`);
+                return false;
+            }
+        });
     }
     async migrateChatColors(data) {
         await this.transaction(async (mdb) => {
@@ -454,6 +479,57 @@ class DataManager {
             }
         });
         return result;
+    }
+    async migrateFromOldVipInfo(vipInfo) {
+        await this.transaction(async (mdb) => {
+            try {
+                const vipKeyList = vipInfo.cdkeys;
+                const newKeys = [];
+                for (let keyTypeString in vipKeyList) {
+                    const keyType = parseInt(keyTypeString);
+                    const keysTexts = vipKeyList[keyTypeString];
+                    for (let keyText of keysTexts) {
+                        const newKey = new VipKey_1.VipKey();
+                        newKey.type = keyType;
+                        newKey.key = keyText;
+                        newKeys.push(newKey);
+                    }
+                }
+                await mdb.save(newKeys);
+                for (let vipUserName in vipInfo.players) {
+                    const oldVipUserInfo = vipInfo.players[vipUserName];
+                    const userKey = vipUserName + '$' + oldVipUserInfo.password;
+                    let user = await mdb.findOne(User_1.User, userKey);
+                    if (user && user.isVip()) {
+                        continue;
+                    }
+                    if (!user) {
+                        user = new User_1.User();
+                        user.key = userKey;
+                    }
+                    user.vipExpireDate = moment_1.default(oldVipUserInfo.expire_date).toDate();
+                    user.victory = oldVipUserInfo.victory || null;
+                    user.words = oldVipUserInfo.words || null;
+                    user = await mdb.save(user);
+                    const newDialogues = [];
+                    for (let dialogueCardCodeText in oldVipUserInfo.dialogues) {
+                        const cardCode = parseInt(dialogueCardCodeText);
+                        const dialogueText = oldVipUserInfo.dialogues[dialogueCardCodeText];
+                        const dialogue = new UserDialog_1.UserDialog();
+                        dialogue.text = dialogueText;
+                        dialogue.cardCode = cardCode;
+                        dialogue.user = user;
+                        newDialogues.push(dialogue);
+                    }
+                    await mdb.save(newDialogues);
+                }
+                return true;
+            }
+            catch (e) {
+                this.log.warn(`Failed to migrate vip info from previous one: ${e.toString()}`);
+                return false;
+            }
+        });
     }
 }
 exports.DataManager = DataManager;
