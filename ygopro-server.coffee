@@ -264,6 +264,7 @@ athleticChecker = null
 users_cache = {}
 geoip = null
 dataManager = null
+windbots = []
 disconnect_list = {} # {old_client, old_server, room_id, timeout, deckbuf}
 
 challonge = null
@@ -383,6 +384,24 @@ init = () ->
   #finish
   if imported
     await setting_save(settings)
+  if settings.modules.mysql.enabled
+    DataManager = require('./data-manager/DataManager.js').DataManager
+    dataManager = global.dataManager = new DataManager(settings.modules.mysql.db, log)
+    await dataManager.init()
+  else
+    log.warn("Some functions may be limited without MySQL .")
+    if settings.modules.cloud_replay.enabled
+      settings.modules.cloud_replay.enabled = false
+      await setting_save(settings)
+      log.warn("Cloud replay cannot be enabled because no MySQL.")
+    if settings.modules.enable_recover.enabled
+      settings.modules.enable_recover.enabled = false
+      await setting_save(settings)
+      log.warn("Recover mode cannot be enabled because no MySQL.")
+    if settings.modules.chat_color.enabled
+      settings.modules.chat_color.enabled = false
+      await setting_save(settings)
+      log.warn("Chat color cannot be enabled because no MySQL.")
   # 读取数据
   default_data = await loadJSONAsync('./data/default_data.json')
   try
@@ -410,12 +429,14 @@ init = () ->
   catch
     badwords = global.badwords = default_data.badwords
     await setting_save(badwords)
-  if settings.modules.chat_color.enabled
+  if settings.modules.chat_color.enabled and await checkFileExists('./config/chat_color.json')
     try
-      chat_color = global.chat_color = await loadJSONAsync('./config/chat_color.json')
+      chat_color = await loadJSONAsync('./config/chat_color.json')
+      if chat_color
+        await dataManager.migrateChatColors(chat_color.save_list);
+        await fs.promises.unlink('./config/chat_color.json')
+        log.info("Chat color migrated.")
     catch
-      chat_color = global.chat_color = default_data.chat_color
-      await setting_save(chat_color)
   try
     cppversion = parseInt(await fs.promises.readFile('ygopro/gframe/game.cpp', 'utf8').match(/PRO_VERSION = ([x\dABCDEF]+)/)[1], '16')
     await setting_change(settings, "version", cppversion)
@@ -428,7 +449,7 @@ init = () ->
   await loadLFList('ygopro/lflist.conf')
 
   if settings.modules.windbot.enabled
-    windbots = global.windbots = await loadJSONAsync(settings.modules.windbot.botlist).windbots
+    windbots = global.windbots = (await loadJSONAsync(settings.modules.windbot.botlist)).windbots
     real_windbot_server_ip = global.real_windbot_server_ip = settings.modules.windbot.server_ip
     if !settings.modules.windbot.server_ip.includes("127.0.0.1")
       dns = require('dns')
@@ -447,24 +468,6 @@ init = () ->
     roomlist = global.roomlist = require './roomlist.js'
   if settings.modules.i18n.auto_pick
     geoip = require('geoip-country-lite')
-  if settings.modules.mysql.enabled
-    DataManager = require('./data-manager/DataManager.js').DataManager
-    dataManager = global.dataManager = new DataManager(settings.modules.mysql.db, log)
-    await dataManager.init()
-  else
-    log.warn("Some functions may be limited without MySQL .")
-    if settings.modules.cloud_replay.enabled
-      settings.modules.cloud_replay.enabled = false
-      await setting_save(settings)
-      log.warn("Cloud replay cannot be enabled because no MySQL.")
-    if settings.modules.enable_recover.enabled
-      settings.modules.enable_recover.enabled = false
-      await setting_save(settings)
-      log.warn("Recover mode cannot be enabled because no MySQL.")
-    if settings.modules.chat_color.enabled
-      settings.modules.chat_color.enabled = false
-      await setting_save(settings)
-      log.warn("Chat color cannot be enabled because no MySQL.")
 
   if settings.modules.mycard.enabled
     pgClient = require('pg').Client
@@ -584,18 +587,19 @@ init = () ->
       scores_by_win = _.sortBy(scores_by_lose, (score)-> return score[1].win).reverse() # 然后胜场由低到高，再逆转，就是先排胜场再排败场
       scores = _.first(scores_by_win, 10)
       #log.info scores
-      request.post { url : settings.modules.random_duel.post_match_scores , form : {
-        accesskey: settings.modules.random_duel.post_match_accesskey,
-        rank: JSON.stringify(scores)
-      }}, (error, response, body)=>
-        if error
-          log.warn 'RANDOM SCORE POST ERROR', error
-        else
-          if response.statusCode != 204 and response.statusCode != 200
-            log.warn 'RANDOM SCORE POST FAIL', response.statusCode, response.statusMessage, body
-          #else
-          #  log.info 'RANDOM SCORE POST OK', response.statusCode, response.statusMessage
-        return
+
+      try
+        await axios.post(settings.modules.random_duel.post_match_scores, {
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          data: qs.stringify({
+            accesskey: settings.modules.random_duel.post_match_accesskey,
+            rank: JSON.stringify(scores)
+            responseType: "json"
+          })
+        })
+      catch e
+        log.warn 'RANDOM SCORE POST ERROR', e.toString()
+
       return
     , 60000)
 
@@ -632,7 +636,6 @@ init = () ->
           CLIENT_kick(room.waiting_for_player)
         else if time_passed >= (settings.modules.random_duel.hang_timeout - 20) and not (time_passed % 10)
           ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${afk_warn_part1}#{settings.modules.random_duel.hang_timeout - time_passed}${afk_warn_part2}", ygopro.constants.COLORS.RED)
-      return
       
       if true # settings.modules.arena_mode.punish_quit_before_match
         for room in ROOM_all when room and room.arena and room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and room.get_playing_player().length < 2
@@ -706,6 +709,8 @@ init = () ->
     plugin_path = process.cwd() + "/plugins/" + plugin_filename
     require(plugin_path)
     log.info("Plugin loaded:", plugin_filename)
+
+  return
 
 # 获取可用内存
 memory_usage = global.memory_usage = 0
@@ -3344,27 +3349,18 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
             for cname,cvalue of ygopro.constants.COLORS when cvalue > 10
               ygopro.stoc_send_chat(client, cname, cvalue)
           else if cmsg.toLowerCase() == "default"
-            if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip
-              delete vip_info.players[client.name].chat_color
-              setting_save(vip_info)
-            else
-              delete chat_color.save_list[cip]
-            setting_save(chat_color)
+            await dataManager.setUserChatColor(cip, null)
             ygopro.stoc_send_chat(client, "${set_chat_color_default}", ygopro.constants.COLORS.BABYBLUE)
           else
             ccolor = cmsg.toUpperCase()
             if ygopro.constants.COLORS[ccolor] and ygopro.constants.COLORS[ccolor] > 10 and ygopro.constants.COLORS[ccolor] < 20
-              if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip
-                vip_info.players[client.name].chat_color = ccolor
-                setting_save(vip_info)
-              else
-                chat_color.save_list[cip] = ccolor
-              setting_save(chat_color)
+              await dataManager.setUserChatColor(cip, ccolor)
               ygopro.stoc_send_chat(client, "${set_chat_color_part1}" + ccolor + "${set_chat_color_part2}", ygopro.constants.COLORS.BABYBLUE)
             else
               ygopro.stoc_send_chat(client, "${color_not_found_part1}" + ccolor + "${color_not_found_part2}", ygopro.constants.COLORS.RED)
         else
-          if color = (if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip then vip_info.players[client.name].chat_color else chat_color.save_list[cip])
+          color = await dataManager.getUserChatColor(cip)
+          if color
             ygopro.stoc_send_chat(client, "${get_chat_color_part1}" + color + "${get_chat_color_part2}", ygopro.constants.COLORS.BABYBLUE)
           else
             ygopro.stoc_send_chat(client, "${get_chat_color_default}", ygopro.constants.COLORS.BABYBLUE)
@@ -3742,8 +3738,8 @@ ygopro.stoc_follow 'CHAT', true, (buffer, info, client, server, datas)->
       pid = 1 - pid
   for player in room.players when player and player.pos == pid
     tplayer = player
-  return unless tplayer and (!(settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip) or tplayer.vip)
-  tcolor = if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip then vip_info.players[tplayer.name].chat_color else chat_color.save_list[CLIENT_get_authorize_key(tplayer)]
+  return unless tplayer
+  tcolor = await dataManager.getUserChatColor(CLIENT_get_authorize_key(tplayer));
   if tcolor
     ygopro.stoc_send client, 'CHAT', {
         player: ygopro.constants.COLORS[tcolor]
@@ -4071,15 +4067,13 @@ if true
           response.writeHead(404)
           response.end("bad filename")
           return
-        fs.readFile(settings.modules.tournament_mode.replay_path + filename, (error, buffer)->
-          if error
-            response.writeHead(404)
-            response.end("未找到文件 " + filename)
-          else
-            response.writeHead(200, { "Content-Type": "application/octet-stream", "Content-Disposition": "attachment" })
-            response.end(buffer)
-          return
-        )
+        try 
+          buffer = await fs.promises.readFile(settings.modules.tournament_mode.replay_path + filename)
+          response.writeHead(200, { "Content-Type": "application/octet-stream", "Content-Disposition": "attachment" })
+          response.end(buffer)
+        catch e
+          response.writeHead(404)
+          response.end("未找到文件 " + filename)
 
     else if u.pathname == '/api/message'
       #if !pass_validated
