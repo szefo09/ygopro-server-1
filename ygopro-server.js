@@ -152,6 +152,9 @@
 
   CLIENT_check_vip = global.CLIENT_check_vip = async function(client) {
     var key;
+    if (!settings.modules.vip.enabled || !client.vpass) {
+      return false;
+    }
     key = CLIENT_get_authorize_key(client);
     return (await dataManager.isUserVip(key));
   };

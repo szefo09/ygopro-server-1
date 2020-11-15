@@ -140,6 +140,8 @@ CLIENT_get_save_data = global.CLIENT_get_save_data = (client) ->
   return await dataManager.getUser(CLIENT_get_authorize_key(client))
 
 CLIENT_check_vip = global.CLIENT_check_vip = (client) ->
+  if !settings.modules.vip.enabled or !client.vpass
+    return false
   key = CLIENT_get_authorize_key(client)
   return await dataManager.isUserVip(key)
 
