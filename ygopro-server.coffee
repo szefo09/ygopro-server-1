@@ -21,6 +21,7 @@ request = require 'request'
 axios = require 'axios'
 qs = require "querystring"
 zlib = require 'zlib'
+axios = require 'axios'
 
 bunyan = require 'bunyan'
 log = global.log = bunyan.createLogger name: "mycard"
@@ -84,79 +85,33 @@ merge = require 'deepmerge'
 
 loadJSON = require('load-json-file').sync
 
+loadJSONAsync = require('load-json-file')
+
 util = require("util")
 
 Q = require("q")
 
 #heapdump = require 'heapdump'
 
-# 配置
-# 导入旧配置
-if not fs.existsSync('./config')
-  fs.mkdirSync('./config')
-try
-  oldconfig=loadJSON('./config.user.json')
-  if oldconfig.tips
-    oldtips = {}
-    oldtips.file = './config/tips.json'
-    oldtips.tips = oldconfig.tips
-    oldtips.tips_zh = []
-    fs.writeFileSync(oldtips.file, JSON.stringify(oldtips, null, 2))
-    delete oldconfig.tips
-  if oldconfig.words
-    oldwords = {}
-    oldwords.file = './config/words.json'
-    oldwords.words = oldconfig.words
-    fs.writeFileSync(oldwords.file, JSON.stringify(oldwords, null, 2))
-    delete oldconfig.words
-  if oldconfig.dialogues
-    olddialogues = {}
-    olddialogues.file = './config/dialogues.json'
-    olddialogues.dialogues = oldconfig.dialogues
-    olddialogues.dialogues_custom = {}
-    fs.writeFileSync(olddialogues.file, JSON.stringify(olddialogues, null, 2))
-    delete oldconfig.dialogues
-  if oldconfig.modules
-    if oldconfig.modules.tournament_mode and oldconfig.modules.tournament_mode.duel_log
-      oldduellog = {}
-      oldduellog.file = './config/duel_log.json'
-      oldduellog.duel_log = oldconfig.modules.tournament_mode.duel_log
-      fs.writeFileSync(oldduellog.file, JSON.stringify(oldduellog, null, 2))
-      delete oldconfig.oldduellog
-  oldbadwords={}
-  if oldconfig.ban
-    if oldconfig.ban.badword_level0
-      oldbadwords.level0 = oldconfig.ban.badword_level0
-    if oldconfig.ban.badword_level1
-      oldbadwords.level1 = oldconfig.ban.badword_level1
-    if oldconfig.ban.badword_level2
-      oldbadwords.level2 = oldconfig.ban.badword_level2
-    if oldconfig.ban.badword_level3
-      oldbadwords.level3 = oldconfig.ban.badword_level3
-  if not _.isEmpty(oldbadwords)
-    oldbadwords.file = './config/badwords.json'
-    fs.writeFileSync(oldbadwords.file, JSON.stringify(oldbadwords, null, 2))
-    delete oldconfig.ban.badword_level0
-    delete oldconfig.ban.badword_level1
-    delete oldconfig.ban.badword_level2
-    delete oldconfig.ban.badword_level3
-  if not _.isEmpty(oldconfig)
-    # log.info oldconfig
-    fs.writeFileSync('./config/config.json', JSON.stringify(oldconfig, null, 2))
-    log.info 'imported old config from config.user.json'
-  fs.renameSync('./config.user.json', './config.user.bak')
-catch e
-  log.info e unless e.code == 'ENOENT'
+checkFileExists = (path) =>
+  try
+    await fs.promises.access(path)
+    return true
+  catch e
+    return false
 
-setting_save = global.setting_save = (settings, callback) ->
-  if !callback
-    callback = (err) ->
-      if(err)
-        log.warn("setting save fail", err.toString())
-  fs.writeFile(settings.file, JSON.stringify(settings, null, 2), callback)
+createDirectoryIfNotExists = (path) =>
+  if !await checkFileExists(path)
+    await fs.promises.mkdir(path, {recursive: true})
+
+setting_save = global.setting_save = (settings) ->
+  try
+    await fs.promises.writeFile(settings.file, JSON.stringify(settings, null, 2))
+  catch e
+    log.warn("setting save fail", e.toString())
   return
 
-setting_change = global.setting_change = (settings, path, val, callback) ->
+setting_change = global.setting_change = (settings, path, val) ->
   # path should be like "modules:welcome"
   log.info("setting changed", path, val) if _.isString(val)
   path=path.split(':')
@@ -169,7 +124,7 @@ setting_change = global.setting_change = (settings, path, val, callback) ->
       target=target[key]
     key = path.shift()
     target[key] = val
-  setting_save(settings, callback)
+  await setting_save(settings)
   return
 
 VIP_generate_cdkeys = global.VIP_generate_cdkeys = (key_type, count) ->
@@ -251,230 +206,84 @@ concat_name = global.concat_name = (name, num) ->
     count++
   return res
 
-# 读取配置
-default_config = loadJSON('./data/default_config.json')
-if fs.existsSync('./config/config.json')
+importOldConfig = () ->
   try
-    config = loadJSON('./config/config.json')
+    oldconfig=await loadJSONAsync('./config.user.json')
+    if oldconfig.tips
+      oldtips = {}
+      oldtips.file = './config/tips.json'
+      oldtips.tips = oldconfig.tips
+      await fs.promises.writeFile(oldtips.file, JSON.stringify(oldtips, null, 2))
+      delete oldconfig.tips
+    if oldconfig.dialogues
+      olddialogues = {}
+      olddialogues.file = './config/dialogues.json'
+      olddialogues.dialogues = oldconfig.dialogues
+      await fs.promises.writeFile(olddialogues.file, JSON.stringify(olddialogues, null, 2))
+      delete oldconfig.dialogues
+    oldbadwords={}
+    if oldconfig.ban
+      if oldconfig.ban.badword_level0
+        oldbadwords.level0 = oldconfig.ban.badword_level0
+      if oldconfig.ban.badword_level1
+        oldbadwords.level1 = oldconfig.ban.badword_level1
+      if oldconfig.ban.badword_level2
+        oldbadwords.level2 = oldconfig.ban.badword_level2
+      if oldconfig.ban.badword_level3
+        oldbadwords.level3 = oldconfig.ban.badword_level3
+    if not _.isEmpty(oldbadwords)
+      oldbadwords.file = './config/badwords.json'
+      await fs.promises.writeFile(oldbadwords.file, JSON.stringify(oldbadwords, null, 2))
+      delete oldconfig.ban.badword_level0
+      delete oldconfig.ban.badword_level1
+      delete oldconfig.ban.badword_level2
+      delete oldconfig.ban.badword_level3
+    if not _.isEmpty(oldconfig)
+  # log.info oldconfig
+      await fs.promises.writeFile('./config/config.json', JSON.stringify(oldconfig, null, 2))
+      log.info 'imported old config from config.user.json'
+    await fs.promises.rename('./config.user.json', './config.user.bak')
   catch e
-    console.error("Failed reading config: ", e.toString())
-    process.exit(1)
-else
-  config = {}
-
-settings = global.settings = merge(default_config, config, { arrayMerge: (destination, source) -> source })
+    log.info e unless e.code == 'ENOENT'
 
 auth = global.auth = require './ygopro-auth.js'
-
-#import old configs
-imported = false
-#reset http.quick_death_rule from true to 1
-if settings.modules.http.quick_death_rule == true
-  settings.modules.http.quick_death_rule = 1
-  imported = true
-#import the old passwords to new admin user system
-if settings.modules.http.password
-  auth.add_user("olduser", settings.modules.http.password, true, {
-        "get_rooms": true,
-        "shout": true,
-        "stop": true,
-        "change_settings": true,
-        "ban_user": true,
-        "kick_user": true,
-        "start_death": true
-  })
-  delete settings.modules.http.password
-  imported = true
-if settings.modules.tournament_mode.password
-  auth.add_user("tournament", settings.modules.tournament_mode.password, true, {
-        "duel_log": true,
-        "download_replay": true,
-        "clear_duel_log": true,
-        "deck_dashboard_read": true,
-        "deck_dashboard_write": true,
-  })
-  delete settings.modules.tournament_mode.password
-  imported = true
-if settings.modules.pre_util.password
-  auth.add_user("pre", settings.modules.pre_util.password, true, {
-        "pre_dashboard": true
-  })
-  delete settings.modules.pre_util.password
-  imported = true
-if settings.modules.update_util.password
-  auth.add_user("update", settings.modules.update_util.password, true, {
-        "update_dashboard": true
-  })
-  delete settings.modules.update_util.password
-  imported = true
-#import the old enable_priority hostinfo
-if settings.hostinfo.enable_priority or settings.hostinfo.enable_priority == false
-  if settings.hostinfo.enable_priority
-    settings.hostinfo.duel_rule = 3
-  else
-    settings.hostinfo.duel_rule = 5
-  delete settings.hostinfo.enable_priority
-  imported = true
-#import the old Challonge api key option
-if settings.modules.challonge.api_key
-  settings.modules.challonge.options.apiKey = settings.modules.challonge.api_key
-  delete settings.modules.challonge.api_key
-  imported = true
-#import the old random_duel.blank_pass_match option
-if settings.modules.random_duel.blank_pass_match == true
-  settings.modules.random_duel.blank_pass_modes = {"S":true,"M":true,"T":false}
-  delete settings.modules.random_duel.blank_pass_match
-  imported = true
-if settings.modules.random_duel.blank_pass_match == false
-  settings.modules.random_duel.blank_pass_modes = {"S":true,"M":false,"T":false}
-  delete settings.modules.random_duel.blank_pass_match
-  imported = true
-#finish
-if imported
-  setting_save(settings)
-
-# 读取数据
-default_data = loadJSON('./data/default_data.json')
-try
-  tips = global.tips = loadJSON('./config/tips.json')
-  if !tips.tips_zh
-    tips.tips_zh = []
-    setting_save(tips);
-catch
-  tips = global.tips = default_data.tips
-  setting_save(tips)
-try
-  words = global.words = loadJSON('./config/words.json')
-catch
-  words = global.words = default_data.words
-  setting_save(words)
-try
-  dialogues = global.dialogues = loadJSON('./config/dialogues.json')
-  if !dialogues.dialogues_custom
-    dialogues.dialogues_custom = {}
-    setting_save(dialogues);
-catch
-  dialogues = global.dialogues = default_data.dialogues
-  setting_save(dialogues)
-try
-  badwords = global.badwords = loadJSON('./config/badwords.json')
-catch
-  badwords = global.badwords = default_data.badwords
-  setting_save(badwords)
-try
-  duel_log = global.duel_log = loadJSON('./config/duel_log.json')
-catch
-  duel_log = global.duel_log = default_data.duel_log
-  setting_save(duel_log)
-try
-  chat_color = global.chat_color = loadJSON('./config/chat_color.json')
-catch
-  chat_color = global.chat_color = default_data.chat_color
-  setting_save(chat_color)
-try
-  vip_info = global.vip_info = loadJSON('./config/vip_info.json')
-catch
-  vip_info = global.vip_info = default_data.vip_info
-  setting_save(vip_info)
-
-try
-  cppversion = parseInt(fs.readFileSync('ygopro/gframe/game.cpp', 'utf8').match(/PRO_VERSION = ([x\dABCDEF]+)/)[1], '16')
-  setting_change(settings, "version", cppversion)
-  log.info "ygopro version 0x"+settings.version.toString(16), "(from source code)"
-catch
-  #settings.version = settings.version_default
-  log.info "ygopro version 0x"+settings.version.toString(16), "(from config)"
-# load the lflist of current date
-lflists = global.lflists = []
-# expansions/lflist
-try
-  for list in fs.readFileSync('ygopro/expansions/lflist.conf', 'utf8').match(/!.*/g)
-    date=list.match(/!([\d\.]+)/)
-    continue unless date
-    lflists.push({date: moment(list.match(/!([\d\.]+)/)[1], 'YYYY.MM.DD').utcOffset("-08:00"), tcg: list.indexOf('TCG') != -1})
-catch
-# lflist
-try
-  for list in fs.readFileSync('ygopro/lflist.conf', 'utf8').match(/!.*/g)
-    date=list.match(/!([\d\.]+)/)
-    continue unless date
-    lflists.push({date: moment(list.match(/!([\d\.]+)/)[1], 'YYYY.MM.DD').utcOffset("-08:00"), tcg: list.indexOf('TCG') != -1})
-catch
-
-if settings.modules.windbot.enabled
-  windbots = global.windbots = loadJSON(settings.modules.windbot.botlist).windbots
-  real_windbot_server_ip = global.real_windbot_server_ip = settings.modules.windbot.server_ip
-  if !settings.modules.windbot.server_ip.includes("127.0.0.1")
-    dns = require('dns')
-    dns.lookup(settings.modules.windbot.server_ip,(err,addr) ->
-      if(!err)
-        real_windbot_server_ip = global.real_windbot_server_ip = addr
-    )
-
-
-if settings.modules.heartbeat_detection.enabled
-  long_resolve_cards = global.long_resolve_cards = loadJSON('./data/long_resolve_cards.json')
-
-if settings.modules.tournament_mode.enable_recover
-  ReplayParser = global.ReplayParser = require "./Replay.js"
-
-if settings.modules.athletic_check.enabled
-  AthleticChecker = require("./athletic-check.js").AthleticChecker
-  athleticChecker = global.athleticChecker = new AthleticChecker(settings.modules.athletic_check)
-
-# 组件
 ygopro = global.ygopro = require './ygopro.js'
-roomlist = global.roomlist = require './roomlist.js' if settings.modules.http.websocket_roomlist
+roomlist = null
 
-if settings.modules.i18n.auto_pick
-  geoip = require('geoip-country-lite')
-
-# cache users of mycard login
+settings = {}
+tips = null
+words = null
+vip_info = null
+dialogues = null
+badwords = null
+lflists = global.lflists = []
+real_windbot_server_ip = null
+long_resolve_cards = []
+ReplayParser = null
+athleticChecker = null
 users_cache = {}
+geoip = null
+dataManager = null
+disconnect_list = {} # {old_client, old_server, room_id, timeout, deckbuf}
 
-if settings.modules.mysql.enabled
-  DataManager = require('./data-manager/DataManager.js').DataManager
-  dataManager = global.dataManager = new DataManager(settings.modules.mysql.db, log)
-  dataManager.init().then(() -> log.info("Database ready."))
-else
-  if settings.modules.cloud_replay.enabled
-    settings.modules.cloud_replay.enabled = false
-    setting_save(settings)
-    log.warn("Cloud replay cannot be enabled because no MySQL.")
+challonge = null
+challonge_cache = {
+  participants: null
+  matches: null
+}
+challonge_queue_callbacks = {
+  participants: []
+  matches: []
+}
+is_challonge_requesting = {
+  participants: null
+  matches: null
+}
+get_callback = () ->
 
-if settings.modules.mycard.enabled
-  pgClient = require('pg').Client
-  pg_client = global.pg_client = new pgClient(settings.modules.mycard.auth_database)
-  pg_client.on 'error', (err) ->
-    log.warn "PostgreSQL ERROR: ", err
-    return
-  pg_query = pg_client.query('SELECT username, id from users')
-  pg_query.on 'error', (err) ->
-    log.warn "PostgreSQL Query ERROR: ", err
-    return
-  pg_query.on 'row', (row) ->
-    #log.info "load user", row.username, row.id
-    users_cache[row.username] = row.id
-    return
-  pg_query.on 'end', (result) ->
-    log.info "users loaded", result.rowCount
-    return
-  pg_client.on 'drain', pg_client.end.bind(pg_client)
-  log.info "loading mycard user..."
-  pg_client.connect()
-  if settings.modules.arena_mode.enabled and settings.modules.arena_mode.init_post.enabled
-    request.post { url : settings.modules.arena_mode.init_post.url , qs : {
-      ak: settings.modules.arena_mode.init_post.accesskey,
-      arena: settings.modules.arena_mode.mode
-    }}, (error, response, body)=>
-      if error
-        log.warn 'ARENA INIT POST ERROR', error
-      else
-        if response.statusCode >= 400
-          log.warn 'ARENA INIT POST FAIL', response.statusCode, response.statusMessage, body
-        #else
-        #  log.info 'ARENA INIT POST OK', response.statusCode, response.statusMessage
-      return
+replaced_index = () ->
+
+refresh_challonge_cache = () ->
 
 class ResolveData
   constructor: (@func) ->
@@ -486,103 +295,423 @@ class ResolveData
     @func(err, data)
     return true
 
-if settings.modules.challonge.enabled
-  challonge_module_name = 'challonge'
-  if settings.modules.challonge.use_custom_module
-    challonge_module_name = settings.modules.challonge.use_custom_module
-  challonge = global.challonge = require(challonge_module_name).createClient(settings.modules.challonge.options)
-  if settings.modules.challonge.cache_ttl
+
+loadLFList = (path) ->
+  try
+    for list in fs.promises.readFile(path, 'utf8').match(/!.*/g)
+      date=list.match(/!([\d\.]+)/)
+      continue unless date
+      lflists.push({date: moment(list.match(/!([\d\.]+)/)[1], 'YYYY.MM.DD').utcOffset("-08:00"), tcg: list.indexOf('TCG') != -1})
+  catch
+
+init = () ->
+  await createDirectoryIfNotExists("./config")
+  await importOldConfig()
+  defaultConfig = await loadJSONAsync('./data/default_config.json')
+  if await checkFileExists("./config/config.json")
+    try
+      config = await loadJSONAsync('./config/config.json')
+    catch e
+      console.error("Failed reading config: ", e.toString())
+      process.exit(1)
+  else
+    config = {}
+  settings = global.settings = merge(defaultConfig, config, { arrayMerge: (destination, source) -> source })
+  #import old configs
+  imported = false
+  #reset http.quick_death_rule from true to 1
+  if settings.modules.http.quick_death_rule == true
+    settings.modules.http.quick_death_rule = 1
+    imported = true
+  #import the old passwords to new admin user system
+  if settings.modules.http.password
+    await auth.add_user("olduser", settings.modules.http.password, true, {
+      "get_rooms": true,
+      "shout": true,
+      "stop": true,
+      "change_settings": true,
+      "ban_user": true,
+      "kick_user": true,
+      "start_death": true
+    })
+    delete settings.modules.http.password
+    imported = true
+  if settings.modules.tournament_mode.password
+    await auth.add_user("tournament", settings.modules.tournament_mode.password, true, {
+      "duel_log": true,
+      "download_replay": true,
+      "clear_duel_log": true,
+      "deck_dashboard_read": true,
+      "deck_dashboard_write": true,
+    })
+    delete settings.modules.tournament_mode.password
+    imported = true
+  if settings.modules.pre_util.password
+    await auth.add_user("pre", settings.modules.pre_util.password, true, {
+      "pre_dashboard": true
+    })
+    delete settings.modules.pre_util.password
+    imported = true
+  if settings.modules.update_util.password
+    await auth.add_user("update", settings.modules.update_util.password, true, {
+      "update_dashboard": true
+    })
+    delete settings.modules.update_util.password
+    imported = true
+  #import the old enable_priority hostinfo
+  if settings.hostinfo.enable_priority or settings.hostinfo.enable_priority == false
+    if settings.hostinfo.enable_priority
+      settings.hostinfo.duel_rule = 3
+    else
+      settings.hostinfo.duel_rule = 5
+    delete settings.hostinfo.enable_priority
+    imported = true
+  #import the old Challonge api key option
+  if settings.modules.challonge.api_key
+    settings.modules.challonge.options.apiKey = settings.modules.challonge.api_key
+    delete settings.modules.challonge.api_key
+    imported = true
+  #import the old random_duel.blank_pass_match option
+  if settings.modules.random_duel.blank_pass_match == true
+    settings.modules.random_duel.blank_pass_modes = {"S":true,"M":true,"T":false}
+    delete settings.modules.random_duel.blank_pass_match
+    imported = true
+  if settings.modules.random_duel.blank_pass_match == false
+    settings.modules.random_duel.blank_pass_modes = {"S":true,"M":false,"T":false}
+    delete settings.modules.random_duel.blank_pass_match
+    imported = true
+  #finish
+  if imported
+    await setting_save(settings)
+  # 读取数据
+  default_data = await loadJSONAsync('./data/default_data.json')
+  try
+    tips = global.tips = await loadJSONAsync('./config/tips.json')
+  catch
+    tips = global.tips = default_data.tips
+    await setting_save(tips)
+  try
+    dialogues = global.dialogues = await loadJSONAsync('./config/dialogues.json')
+  catch
+    dialogues = global.dialogues = default_data.dialogues
+    await setting_save(dialogues)
+  try
+    words = global.words = await loadJSONAsync('./config/words.json')
+  catch
+    words = global.words = default_data.words
+    await setting_save(words)
+  try
+    vip_info = global.vip_info = await loadJSONAsync('./config/vip_info.json')
+  catch
+    vip_info = global.vip_info = default_data.vip_info
+    await setting_save(vip_info)
+  try
+    badwords = global.badwords = await loadJSONAsync('./config/badwords.json')
+  catch
+    badwords = global.badwords = default_data.badwords
+    await setting_save(badwords)
+  if settings.modules.chat_color.enabled
+    try
+      chat_color = global.chat_color = await loadJSONAsync('./config/chat_color.json')
+    catch
+      chat_color = global.chat_color = default_data.chat_color
+      await setting_save(chat_color)
+  try
+    cppversion = parseInt(await fs.promises.readFile('ygopro/gframe/game.cpp', 'utf8').match(/PRO_VERSION = ([x\dABCDEF]+)/)[1], '16')
+    await setting_change(settings, "version", cppversion)
+    log.info "ygopro version 0x"+settings.version.toString(16), "(from source code)"
+  catch
+  #settings.version = settings.version_default
+    log.info "ygopro version 0x"+settings.version.toString(16), "(from config)"
+  # load the lflist of current date
+  await loadLFList('ygopro/expansions/lflist.conf')
+  await loadLFList('ygopro/lflist.conf')
+
+  if settings.modules.windbot.enabled
+    windbots = global.windbots = await loadJSONAsync(settings.modules.windbot.botlist).windbots
+    real_windbot_server_ip = global.real_windbot_server_ip = settings.modules.windbot.server_ip
+    if !settings.modules.windbot.server_ip.includes("127.0.0.1")
+      dns = require('dns')
+      real_windbot_server_ip = global.real_windbot_server_ip = await util.promisify(dns.lookup)(settings.modules.windbot.server_ip)
+  if settings.modules.heartbeat_detection.enabled
+    long_resolve_cards = global.long_resolve_cards = await loadJSONAsync('./data/long_resolve_cards.json')
+
+  if settings.modules.tournament_mode.enable_recover
+    ReplayParser = global.ReplayParser = require "./Replay.js"
+
+  if settings.modules.athletic_check.enabled
+    AthleticChecker = require("./athletic-check.js").AthleticChecker
+    athleticChecker = global.athleticChecker = new AthleticChecker(settings.modules.athletic_check)
+
+  if settings.modules.http.websocket_roomlist
+    roomlist = global.roomlist = require './roomlist.js'
+  if settings.modules.i18n.auto_pick
+    geoip = require('geoip-country-lite')
+  if settings.modules.mysql.enabled
+    DataManager = require('./data-manager/DataManager.js').DataManager
+    dataManager = global.dataManager = new DataManager(settings.modules.mysql.db, log)
+    await dataManager.init()
+  else
+    log.warn("Some functions may be limited without MySQL .")
+    if settings.modules.cloud_replay.enabled
+      settings.modules.cloud_replay.enabled = false
+      await setting_save(settings)
+      log.warn("Cloud replay cannot be enabled because no MySQL.")
+    if settings.modules.enable_recover.enabled
+      settings.modules.enable_recover.enabled = false
+      await setting_save(settings)
+      log.warn("Recover mode cannot be enabled because no MySQL.")
+    if settings.modules.chat_color.enabled
+      settings.modules.chat_color.enabled = false
+      await setting_save(settings)
+      log.warn("Chat color cannot be enabled because no MySQL.")
+
+  if settings.modules.mycard.enabled
+    pgClient = require('pg').Client
+    pg_client = global.pg_client = new pgClient(settings.modules.mycard.auth_database)
+    pg_client.on 'error', (err) ->
+      log.warn "PostgreSQL ERROR: ", err
+      return
+    pg_query = pg_client.query('SELECT username, id from users')
+    pg_query.on 'error', (err) ->
+      log.warn "PostgreSQL Query ERROR: ", err
+      return
+    pg_query.on 'row', (row) ->
+      #log.info "load user", row.username, row.id
+      users_cache[row.username] = row.id
+      return
+    pg_query.on 'end', (result) ->
+      log.info "users loaded", result.rowCount
+      return
+    pg_client.on 'drain', pg_client.end.bind(pg_client)
+    log.info "loading mycard user..."
+    pg_client.connect()
+    if settings.modules.arena_mode.enabled and settings.modules.arena_mode.init_post.enabled
+      postData = qs.stringify({
+        ak: settings.modules.arena_mode.init_post.accesskey,
+        arena: settings.modules.arena_mode.mode
+      })
+      try
+        await axios.post(settings.modules.arena_mode.init_post.url + "?" + postData, {
+          responseType: "json"
+        })
+      catch e
+        log.warn 'ARENA INIT POST ERROR', e
+
+  if settings.modules.challonge.enabled
+    challonge_module_name = 'challonge'
+    if settings.modules.challonge.use_custom_module
+      challonge_module_name = settings.modules.challonge.use_custom_module
+    challonge = global.challonge = require(challonge_module_name).createClient(settings.modules.challonge.options)
     challonge_cache = {
       participants: null
       matches: null
     }
-  challonge_queue_callbacks = {
-    participants: []
-    matches: []
-  }
-  is_challonge_requesting = {
-    participants: null
-    matches: null
-  }
-  get_callback = (challonge_type, resolve_data) ->
-    return ((err, data) ->
-      if settings.modules.challonge.cache_ttl and !err and data
-        challonge_cache[challonge_type] = data
-      is_challonge_requesting[challonge_type] = null
-      resolve_data.resolve(err, data)
-      while challonge_queue_callbacks[challonge_type].length
-        cur_resolve_data = challonge_queue_callbacks[challonge_type].splice(0, 1)[0]
-        cur_resolve_data.resolve(err, data)
+    challonge_queue_callbacks = {
+      participants: []
+      matches: []
+    }
+    is_challonge_requesting = {
+      participants: null
+      matches: null
+    }
+    get_callback = (challonge_type, resolve_data) ->
+      return ((err, data) ->
+        if settings.modules.challonge.cache_ttl and !err and data
+          challonge_cache[challonge_type] = data
+        is_challonge_requesting[challonge_type] = null
+        resolve_data.resolve(err, data)
+        while challonge_queue_callbacks[challonge_type].length
+          cur_resolve_data = challonge_queue_callbacks[challonge_type].splice(0, 1)[0]
+          cur_resolve_data.resolve(err, data)
+        return
+      )
+    replaced_index = (challonge_type) ->
+      return (_data) ->
+        resolve_data = new ResolveData(_data.callback)
+        if settings.modules.challonge.cache_ttl and !_data.no_cache and challonge_cache[challonge_type]
+          resolve_data.resolve(null, challonge_cache[challonge_type])
+        else if is_challonge_requesting[challonge_type] and moment() - is_challonge_requesting[challonge_type] <= 5000
+          challonge_queue_callbacks[challonge_type].push(resolve_data)
+        else
+          _data.callback = get_callback(challonge_type, resolve_data)
+          is_challonge_requesting[challonge_type] = moment()
+          try
+            challonge[challonge_type].index(_data)
+          catch err
+            _data.callback(err, null)
+        return
+    for challonge_type in ["participants", "matches"]
+      challonge[challonge_type]._index = replaced_index(challonge_type)
+    challonge.matches._update = (_data) ->
+      try
+        challonge.matches.update(_data)
+      catch err
+        log.warn("Errored pushing scores to Challonge.", err)
       return
-    )
-  replaced_index = (challonge_type) ->
-    return (_data) ->
-      resolve_data = new ResolveData(_data.callback)
-      if settings.modules.challonge.cache_ttl and !_data.no_cache and challonge_cache[challonge_type]
-        resolve_data.resolve(null, challonge_cache[challonge_type])
-      else if is_challonge_requesting[challonge_type] and moment() - is_challonge_requesting[challonge_type] <= 5000
-        challonge_queue_callbacks[challonge_type].push(resolve_data)
-      else
-        _data.callback = get_callback(challonge_type, resolve_data)
-        is_challonge_requesting[challonge_type] = moment()
-        try
-          challonge[challonge_type].index(_data)
-        catch err
-          _data.callback(err, null)
+    refresh_challonge_cache = global.refresh_challonge_cache = () ->
+      if settings.modules.challonge.cache_ttl
+        challonge_cache.participants = null
+        challonge_cache.matches = null
       return
-  for challonge_type in ["participants", "matches"]
-    challonge[challonge_type]._index = replaced_index(challonge_type)
-  challonge.matches._update = (_data) ->
-    try
-      challonge.matches.update(_data)
-    catch err
-      log.warn("Errored pushing scores to Challonge.", err)
-    return
-  refresh_challonge_cache = global.refresh_challonge_cache = () ->
+    refresh_challonge_cache()
     if settings.modules.challonge.cache_ttl
-      challonge_cache.participants = null
-      challonge_cache.matches = null
-    return
-  refresh_challonge_cache()
-  # challonge.participants._index({
-  #   id: settings.modules.challonge.tournament_id,
-  #   callback: (() ->
-  #     challonge.matches._index({
-  #       id: settings.modules.challonge.tournament_id,
-  #       callback: (() ->
-  #         return
-  #       )
-  #     })
-  #     return
-  #   )
-  # })
-  if settings.modules.challonge.cache_ttl
-    setInterval(refresh_challonge_cache, settings.modules.challonge.cache_ttl)
+      setInterval(refresh_challonge_cache, settings.modules.challonge.cache_ttl)
 
-if settings.modules.vip.enabled
-  for k,v of vip_info.cdkeys when v.length == 0
-    VIP_generate_cdkeys(k, settings.modules.vip.generate_count)
+  if settings.modules.tips.get
+    load_tips()
+  if settings.modules.tips.get_zh
+    load_tips_zh()
+
+  if settings.modules.tips.enabled
+    setInterval ()->
+      for room in ROOM_all when room and room.established
+        ygopro.stoc_send_random_tip_to_room(room) if room.duel_stage == ygopro.constants.DUEL_STAGE.SIDING or room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN
+      return
+    , 30000
+  
+  if settings.modules.dialogues.enabled and settings.modules.dialogues.get
+    load_dialogues()
+  if settings.modules.dialogues.enabled and settings.modules.dialogues.get_custom
+    load_dialogues_custom()
+  if settings.modules.words.get
+    load_words()
+
+  if settings.modules.random_duel.post_match_scores
+    setInterval(()->
+      scores_pair = _.pairs ROOM_players_scores
+      scores_by_lose = _.sortBy(scores_pair, (score)-> return score[1].lose).reverse() # 败场由高到低
+      scores_by_win = _.sortBy(scores_by_lose, (score)-> return score[1].win).reverse() # 然后胜场由低到高，再逆转，就是先排胜场再排败场
+      scores = _.first(scores_by_win, 10)
+      #log.info scores
+      request.post { url : settings.modules.random_duel.post_match_scores , form : {
+        accesskey: settings.modules.random_duel.post_match_accesskey,
+        rank: JSON.stringify(scores)
+      }}, (error, response, body)=>
+        if error
+          log.warn 'RANDOM SCORE POST ERROR', error
+        else
+          if response.statusCode != 204 and response.statusCode != 200
+            log.warn 'RANDOM SCORE POST FAIL', response.statusCode, response.statusMessage, body
+          #else
+          #  log.info 'RANDOM SCORE POST OK', response.statusCode, response.statusMessage
+        return
+      return
+    , 60000)
+
+  if settings.modules.random_duel.enabled
+    setInterval ()->
+      for room in ROOM_all when room and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and room.random_type and room.last_active_time and room.waiting_for_player and room.get_disconnected_count() == 0 and (!settings.modules.side_timeout or room.duel_stage != ygopro.constants.DUEL_STAGE.SIDING) and !room.recovered
+        time_passed = Math.floor((moment() - room.last_active_time) / 1000)
+        #log.info time_passed
+        if time_passed >= settings.modules.random_duel.hang_timeout
+          room.last_active_time = moment()
+          await ROOM_ban_player(room.waiting_for_player.name, room.waiting_for_player.ip, "${random_ban_reason_AFK}")
+          room.scores[room.waiting_for_player.name_vpass] = -9
+          #log.info room.waiting_for_player.name, room.scores[room.waiting_for_player.name_vpass]
+          ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+          CLIENT_send_replays(room.waiting_for_player, room)
+          CLIENT_kick(room.waiting_for_player)
+        else if time_passed >= (settings.modules.random_duel.hang_timeout - 20) and not (time_passed % 10)
+          ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${afk_warn_part1}#{settings.modules.random_duel.hang_timeout - time_passed}${afk_warn_part2}", ygopro.constants.COLORS.RED)
+          ROOM_unwelcome(room, room.waiting_for_player, "${random_ban_reason_AFK}")
+      return
+    , 1000
+
+  if settings.modules.mycard.enabled
+    setInterval ()->
+      for room in ROOM_all when room and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and room.arena and room.last_active_time and room.waiting_for_player and room.get_disconnected_count() == 0 and (!settings.modules.side_timeout or room.duel_stage != ygopro.constants.DUEL_STAGE.SIDING) and !room.recovered
+        time_passed = Math.floor((moment() - room.last_active_time) / 1000)
+        #log.info time_passed
+        if time_passed >= settings.modules.random_duel.hang_timeout
+          room.last_active_time = moment()
+          ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
+          room.scores[room.waiting_for_player.name_vpass] = -9
+          #log.info room.waiting_for_player.name, room.scores[room.waiting_for_player.name_vpass]
+          CLIENT_send_replays(room.waiting_for_player, room)
+          CLIENT_kick(room.waiting_for_player)
+        else if time_passed >= (settings.modules.random_duel.hang_timeout - 20) and not (time_passed % 10)
+          ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${afk_warn_part1}#{settings.modules.random_duel.hang_timeout - time_passed}${afk_warn_part2}", ygopro.constants.COLORS.RED)
+      return
+      
+      if true # settings.modules.arena_mode.punish_quit_before_match
+        for room in ROOM_all when room and room.arena and room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and room.get_playing_player().length < 2
+          player = room.get_playing_player()[0]
+          if player and player.join_time and !player.arena_quit_free
+            waited_time = moment() - player.join_time
+            if waited_time >= 30000
+              ygopro.stoc_send_chat(player, "${arena_wait_timeout}", ygopro.constants.COLORS.BABYBLUE)
+              player.arena_quit_free = true
+            else if waited_time >= 5000 and waited_time < 6000
+              ygopro.stoc_send_chat(player, "${arena_wait_hint}", ygopro.constants.COLORS.BABYBLUE)
+      return
+    , 1000
+
+  if settings.modules.heartbeat_detection.enabled
+    setInterval ()->
+      for room in ROOM_all when room and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and (room.hostinfo.time_limit == 0 or room.duel_stage != ygopro.constants.DUEL_STAGE.DUELING) and !room.windbot
+        for player in room.get_playing_player() when player and (room.duel_stage != ygopro.constants.DUEL_STAGE.SIDING or player.selected_preduel)
+          CLIENT_heartbeat_register(player, true)
+      return
+    , settings.modules.heartbeat_detection.interval
+
+  if settings.modules.windbot.enabled and settings.modules.windbot.spawn
+    spawn_windbot()
+
+  setInterval ()->
+    current_time = moment()
+    for room in ROOM_all when room and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and room.hostinfo.auto_death and !room.auto_death_triggered and current_time - moment(room.start_time) > 60000 * room.hostinfo.auto_death
+      room.auto_death_triggered = true
+      room.start_death()
+
+  , 1000
+
+  if settings.modules.vip.enabled
+    for k,v of vip_info.cdkeys when v.length == 0
+      VIP_generate_cdkeys(k, settings.modules.vip.generate_count)
+
+  net.createServer(netRequestHandler).listen settings.port, ->
+    log.info "server started", settings.port
+    return
+
+  if settings.modules.stop
+    log.info "NOTE: server not open due to config, ", settings.modules.stop
+
+  http_server = http.createServer(httpRequestListener)
+  http_server.listen settings.modules.http.port
+
+  if settings.modules.http.ssl.enabled
+    https = require 'https'
+    options =
+      cert: await fs.promises.readFile(settings.modules.http.ssl.cert)
+      key: await fs.promises.readFile(settings.modules.http.ssl.key)
+    https_server = https.createServer(options, httpRequestListener)
+    if settings.modules.http.websocket_roomlist and roomlist
+      roomlist.init https_server, ROOM_all
+    https_server.listen settings.modules.http.ssl.port
+
+  mkdirList = [
+    "./plugins",
+    settings.modules.tournament_mode.deck_path,
+    settings.modules.tournament_mode.replay_path,
+    settings.modules.tournament_mode.log_save_path,
+    settings.modules.deck_log.local
+  ]
+  
+  for path in mkdirList
+    await createDirectoryIfNotExists(path)
+
+  plugin_list = await fs.promises.readdir("./plugins")
+  for plugin_filename in plugin_list
+    plugin_path = process.cwd() + "/plugins/" + plugin_filename
+    require(plugin_path)
+    log.info("Plugin loaded:", plugin_filename)
 
 # 获取可用内存
 memory_usage = global.memory_usage = 0
-get_memory_usage = get_memory_usage = ()->
-  prc_free = exec("free")
-  prc_free.stdout.on 'data', (data)->
-    lines = data.toString().split(/\n/g)
-    line = lines[0].split(/\s+/)
-    new_free = if line[6] == 'available' then true else false
-    line = lines[1].split(/\s+/)
-    total = parseInt(line[1], 10)
-    free = parseInt(line[3], 10)
-    buffers = parseInt(line[5], 10)
-    if new_free
-      actualFree = parseInt(line[6], 10)
-    else
-      cached = parseInt(line[6], 10)
-      actualFree = free + buffers + cached
-    percentUsed = parseFloat(((1 - (actualFree / total)) * 100).toFixed(2))
-    memory_usage = global.memory_usage = percentUsed
-    return
+get_memory_usage = global.get_memory_usage = ()->
+  percentUsed = os.freemem() * os.totalmem() * 100
+  memory_usage = global.memory_usage = percentUsed
   return
 get_memory_usage()
 setInterval(get_memory_usage, 3000)
@@ -623,7 +752,7 @@ ROOM_kick = (name, callback)->
       done()
       return
     found = true
-    room.termiate()
+    room.terminate()
     done()
   , (err)->
     callback(null, found)
@@ -667,28 +796,6 @@ ROOM_player_get_score = global.ROOM_player_get_score = (player)->
     return "${random_score_part1}#{player.name} ${random_score_part2} #{Math.ceil(score.win/total*100)}${random_score_part3} #{Math.ceil(score.flee/total*100)}${random_score_part4}"
   return
 
-if settings.modules.random_duel.post_match_scores
-  setInterval(()->
-    scores_pair = _.pairs ROOM_players_scores
-    scores_by_lose = _.sortBy(scores_pair, (score)-> return score[1].lose).reverse() # 败场由高到低
-    scores_by_win = _.sortBy(scores_by_lose, (score)-> return score[1].win).reverse() # 然后胜场由低到高，再逆转，就是先排胜场再排败场
-    scores = _.first(scores_by_win, 10)
-    #log.info scores
-    request.post { url : settings.modules.random_duel.post_match_scores , form : {
-      accesskey: settings.modules.random_duel.post_match_accesskey,
-      rank: JSON.stringify(scores)
-    }}, (error, response, body)=>
-      if error
-        log.warn 'RANDOM SCORE POST ERROR', error
-      else
-        if response.statusCode != 204 and response.statusCode != 200
-          log.warn 'RANDOM SCORE POST FAIL', response.statusCode, response.statusMessage, body
-        #else
-        #  log.info 'RANDOM SCORE POST OK', response.statusCode, response.statusMessage
-      return
-    return
-  , 60000)
-
 ROOM_find_or_create_by_name = global.ROOM_find_or_create_by_name = (name, player_ip)->
   uname=name.toUpperCase()
   if settings.modules.windbot.enabled and (uname[0...2] == 'AI' or (!settings.modules.random_duel.enabled and uname == ''))
@@ -700,7 +807,12 @@ ROOM_find_or_create_by_name = global.ROOM_find_or_create_by_name = (name, player
   else if memory_usage >= 90
     return null
   else
-    return new Room(name)
+    room = new Room(name)
+    if room.recover_duel_log_id
+      success = await room.initialize_recover()
+      if !success
+        return {"error": "${cloud_replay_no}"}
+    return room
 
 ROOM_find_or_create_random = global.ROOM_find_or_create_random = (type, player_ip)->
   if settings.modules.mysql.enabled
@@ -1087,9 +1199,6 @@ CLIENT_kick_reconnect = global.CLIENT_kick_reconnect = (client, deckbuf) ->
   CLIENT_reconnect_unregister(client, true)
   return
 
-if settings.modules.reconnect.enabled
-  disconnect_list = {} # {old_client, old_server, room_id, timeout, deckbuf}
-
 CLIENT_heartbeat_unregister = global.CLIENT_heartbeat_unregister = (client) ->
   if !settings.modules.heartbeat_detection.enabled or !client.heartbeat_timeout
     return false
@@ -1317,14 +1426,7 @@ class Room
         @recovered = true
         @recovering = true
         @recover_from_turn = parseInt(param[4])
-        duel_log_id = parseInt(param[3])
-        @recover_duel_log = _.find(duel_log.duel_log, (duel) ->
-          return duel.id == duel_log_id and duel.roommode != 2 and duel.players[0].deck
-        )
-        if !@recover_duel_log || !fs.existsSync(settings.modules.tournament_mode.replay_path + @recover_duel_log.replay_filename)
-          @error = "${cloud_replay_no}"
-          return
-        @recover_replay = ReplayParser.fromFile(settings.modules.tournament_mode.replay_path + @recover_duel_log.replay_filename)
+        @recover_duel_log_id = parseInt(param[3])
         @recover_buffers = [[], [], [], []]
         @welcome = "${recover_hint}"
 
@@ -1335,12 +1437,16 @@ class Room
     if (settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.block_replay_to_player) or (@hostinfo.mode == 1 and settings.modules.replay_delay)
       @hostinfo.replay_mode |= 0x2
 
+    if !@recovered
+      @spawn()
+
+  spawn: (firstSeed) ->
     param = [0, @hostinfo.lflist, @hostinfo.rule, @hostinfo.mode, @hostinfo.duel_rule,
       (if @hostinfo.no_check_deck then 'T' else 'F'), (if @hostinfo.no_shuffle_deck then 'T' else 'F'),
       @hostinfo.start_lp, @hostinfo.start_hand, @hostinfo.draw_count, @hostinfo.time_limit, @hostinfo.replay_mode]
 
-    if @recovered
-      param.push(@recover_replay.header.seed)
+    if firstSeed
+      param.push(firstSeed)
       seeds = getSeedTimet(2)
       param.push(seeds[i]) for i in [0...2]
     else
@@ -1488,6 +1594,23 @@ class Room
     #ROOM_all.splice(index, 1) unless index == -1
     roomlist.delete this if !@windbot and @established and settings.modules.http.websocket_roomlist
     return
+
+  initialize_recover: ->
+    @recover_duel_log = await dataManager.getDuelLogFromId(@recover_duel_log_id)
+    #console.log(@recover_duel_log, fs.existsSync(settings.modules.tournament_mode.replay_path + @recover_duel_log.replayFileName))
+    if !@recover_duel_log || !fs.existsSync(settings.modules.tournament_mode.replay_path + @recover_duel_log.replayFileName)
+      @terminate()
+      return false
+    try
+      @recover_replay = await ReplayParser.fromFile(settings.modules.tournament_mode.replay_path + @recover_duel_log.replayFileName)
+      @spawn(@recover_replay.header.seed)
+      return true
+    catch e
+      log.warn("LOAD RECOVER REPLAY FAIL", e.toString())
+      @terminate()
+      return false
+
+
 
   get_playing_player: ->
     playing_player = []
@@ -1680,19 +1803,22 @@ class Room
     ygopro.stoc_send_chat_to_room(this, "${death_cancel}", ygopro.constants.COLORS.BABYBLUE)
     return true
   
-  termiate: ->
+  terminate: ->
     if @duel_stage != ygopro.constants.DUEL_STAGE.BEGIN
       @scores[@dueling_players[0].name_vpass] = 0
       @scores[@dueling_players[1].name_vpass] = 0
     @kicked = true
     @send_replays()
-    @process.kill()
+    if @process
+      try
+        @process.kill()
+      catch e
     @delete()
   
   finish_recover: (fail) ->
     if fail
       ygopro.stoc_send_chat_to_room(this, "${recover_fail}", ygopro.constants.COLORS.RED)
-      @termiate()
+      @terminate()
     else
       ygopro.stoc_send_chat_to_room(this, "${recover_success}", ygopro.constants.COLORS.BABYBLUE)
       @recovering = false
@@ -1715,7 +1841,7 @@ class Room
     await return
 
 # 网络连接
-net.createServer (client) ->
+netRequestHandler = (client) ->
   client.ip = client.remoteAddress
   client.is_local = client.ip and (client.ip.includes('127.0.0.1') or client.ip.includes(real_windbot_server_ip))
 
@@ -1895,12 +2021,6 @@ net.createServer (client) ->
 
     return
   return
-.listen settings.port, ->
-  log.info "server started", settings.port
-  return
-
-if settings.modules.stop
-  log.info "NOTE: server not open due to config, ", settings.modules.stop
 
 deck_name_match = global.deck_name_match = (deck_name, player_name) ->
   if deck_name == player_name or deck_name == player_name + ".ydk" or deck_name == player_name + ".ydk.ydk"
@@ -1991,26 +2111,14 @@ ygopro.ctos_follow 'JOIN_GAME', true, (buffer, info, client, server, datas)->
 
   else if info.pass.toUpperCase()=="RC" and settings.modules.tournament_mode.enable_recover
     ygopro.stoc_send_chat(client,"${recover_replay_hint}", ygopro.constants.COLORS.BABYBLUE)
-    available_logs = duel_log.duel_log.filter((duel) ->
-      return duel.id and duel.players[0].deck and duel.roommode != 2 and _.any(duel.players, (player) ->
-        return player.real_name == client.name_vpass
-      )
-    ).slice(0, 8)
-    _.each(available_logs, (duel) ->
-      player_names = duel.players[0].real_name.split("$")[0] + (if duel.players[2] then "+" + duel.players[2].real_name.split("$")[0] else "") +
-                    " VS " +
-                   (if duel.players[1] then duel.players[1].real_name.split("$")[0] else "AI") +
-                   (if duel.players[3] then "+" + duel.players[3].real_name.split("$")[0] else "")
-      ygopro.stoc_send_chat(client,"<#{duel.id}> #{player_names} #{duel.time}", ygopro.constants.COLORS.BABYBLUE)
-    )
-    # 强行等待异步执行完毕_(:з」∠)_
-    setTimeout (()->
-      ygopro.stoc_send client, 'ERROR_MSG',{
-        msg: 1
-        code: 9
-      }
-      CLIENT_kick(client)
-      return), 500
+    available_logs = await dataManager.getDuelLogFromRecoverSearch(client.name_vpass)
+    for duelLog in available_logs
+      ygopro.stoc_send_chat(client, duelLog.getViewString(), ygopro.constants.COLORS.BABYBLUE)
+    ygopro.stoc_send client, 'ERROR_MSG',{
+      msg: 1
+      code: 9
+    }
+    CLIENT_kick(client)
 
   else if info.pass[0...2].toUpperCase()=="R#" and settings.modules.cloud_replay.enabled
     replay_id=info.pass.split("#")[1]
@@ -2264,6 +2372,8 @@ ygopro.ctos_follow 'JOIN_GAME', true, (buffer, info, client, server, datas)->
       if(err)
         ygopro.stoc_die(client, err)
         return
+
+
       create_room_with_action(data.get_user.original, data.get_user.decrypted, data.match_permit)
     )
 
@@ -2542,65 +2652,12 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
   await return
 
 # 登场台词
-load_words = global.load_words = (callback) ->
-  request
-    url: settings.modules.words.get
-    json: true
-  , (error, response, body)->
-    if _.isString body
-      log.warn "words bad json", body
-    else if error or !body
-      log.warn 'words error', error, response
-    else
-      setting_change(words, "words", body)
-      log.info "words loaded", _.size words.words
-    if callback
-      callback(error, body)
-    return
-  return
-
-if settings.modules.words.get
-  load_words()
-
-load_dialogues = global.load_dialogues = (callback) ->
-  request
-    url: settings.modules.dialogues.get
-    json: true
-  , (error, response, body)->
-    if _.isString body
-      log.warn "dialogues bad json", body
-    else if error or !body
-      log.warn 'dialogues error', error, response
-    else
-      setting_change(dialogues, "dialogues", body)
-      log.info "dialogues loaded", _.size dialogues.dialogues
-    if callback
-      callback(error, body)
-    return
-  await return
-
-load_dialogues_custom = global.load_dialogues_custom = (callback) ->
-  request
-    url: settings.modules.dialogues.get_custom
-    json: true
-  , (error, response, body)->
-    if _.isString body
-      log.warn "custom dialogues bad json", body
-    else if error or !body
-      log.warn 'custom dialogues error', error, response
-    else
-      setting_change(dialogues, "dialogues_custom", body)
-      log.info "custom dialogues loaded", _.size dialogues.dialogues_custom
-    if callback
-      callback(error, body)
-    return
-  return
-
-if settings.modules.dialogues.enabled and settings.modules.dialogues.get
-  load_dialogues()
-
-if settings.modules.dialogues.enabled and settings.modules.dialogues.get_custom
-  load_dialogues_custom()
+load_dialogues = global.load_dialogues = () ->
+  return await loadRemoteData(dialogues, "dialogues", settings.modules.dialogues.get)
+load_dialogues_custom = global.load_dialogues_custom = () ->
+  return await loadRemoteData(dialogues, "dialogues_custom", settings.modules.dialogues.get_custom)
+load_words = global.load_words = () ->
+  return await loadRemoteData(words, "words", settings.modules.words.get)
 
 ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
@@ -3081,50 +3138,28 @@ ygopro.stoc_send_random_tip_to_room = (room)->
       ygopro.stoc_send_random_tip(player)
   await return
 
-load_tips = global.load_tips = (callback)->
-  request
-    url: settings.modules.tips.get
-    json: true
-  , (error, response, body)->
+loadRemoteData = global.loadRemoteData = (loadObject, name, url)->
+  try
+    body = (await axios.get(url, {
+      responseType: "json"
+    })).data
     if _.isString body
-      log.warn "tips bad json", body
-    else if error or !body
-      log.warn 'tips error', error, response
-    else
-      setting_change(tips, "tips", body)
-      log.info "tips loaded", tips.tips.length
-    if callback
-      callback(error, body)
-    return
-  await return
+      log.warn "#{name} bad json", body
+      return false
+    if !body
+      log.warn "#{name} empty", body
+      return false
+    await setting_change(loadObject, name, body)
+    log.info "#{name} loaded"
+    return true
+  catch e
+    log.warn "#{name} error", e
+    return false
 
-load_tips_zh = global.load_tips_zh = (callback)->
-  request
-    url: settings.modules.tips.get_zh
-    json: true
-  , (error, response, body)->
-    if _.isString body
-      log.warn "zh tips bad json", body
-    else if error or !body
-      log.warn 'zh tips error', error, response
-    else
-      setting_change(tips, "tips_zh", body)
-      log.info "zh tips loaded", tips.tips_zh.length
-    if callback
-      callback(error, body)
-    return
-  await return
-
-if settings.modules.tips.enabled and settings.modules.tips.get
-  load_tips()
-if settings.modules.tips.enabled and settings.modules.tips.get_zh
-  load_tips_zh()
-if settings.modules.tips.enabled
-  setInterval ()->
-    for room in ROOM_all when room and room.established
-      ygopro.stoc_send_random_tip_to_room(room) if room.duel_stage == ygopro.constants.DUEL_STAGE.SIDING or room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN
-    return
-  , 30000
+load_tips = global.load_tips = ()->
+  return await loadRemoteData(tips, "tips", settings.modules.tips.get)
+load_tips_zh = global.load_tips_zh = ()->
+  return await loadRemoteData(tips, "tips_zh", settings.modules.tips.get_zh)
 
 ygopro.stoc_follow 'DUEL_START', false, (buffer, info, client, server, datas)->
   room=ROOM_all[client.rid]
@@ -3556,13 +3591,14 @@ ygopro.ctos_follow 'UPDATE_DECK', true, (buffer, info, client, server, datas)->
     room.last_active_time = moment()
   if room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and room.recovering
     recover_player_data = _.find(room.recover_duel_log.players, (player) ->
-      return player.real_name == client.name_vpass and _.isEqual(buffer, Buffer.from(player.deckbuf, "base64"))
+      return player.realName == client.name_vpass and buffer.toString("base64") == player.startDeckBuffer
     )
     if recover_player_data
-      struct.set("mainc", recover_player_data.deck.main.length)
-      struct.set("sidec", recover_player_data.deck.side.length)
-      struct.set("deckbuf", recover_player_data.deck.main.concat(recover_player_data.deck.side))
-      if recover_player_data.is_first
+      recoveredDeck = recover_player_data.getCurrentDeck()
+      struct.set("mainc", recoveredDeck.main.length)
+      struct.set("sidec", recoveredDeck.side.length)
+      struct.set("deckbuf", recoveredDeck.main.concat(recoveredDeck.side))
+      if recover_player_data.isFirst
         room.determine_firstgo = client
     else
       struct.set("mainc", 1)
@@ -3812,10 +3848,9 @@ ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server, datas)->
   if !room.replays[room.duel_count - 1]
     # console.log("Replay saved: ", room.duel_count - 1, client.pos)
     room.replays[room.duel_count - 1] = buffer
-  if settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe or settings.modules.tournament_mode.enable_recover
+  if settings.modules.mysql.enabled
     if client.pos == 0
-      dueltime=moment().format('YYYY-MM-DD HH-mm-ss')
-      replay_filename=dueltime
+      replay_filename=moment().format("YYYY-MM-DD HH-mm-ss")
       if room.hostinfo.mode != 2
         for player,i in room.dueling_players
           replay_filename=replay_filename + (if i > 0 then " VS " else " ") + player.name
@@ -3823,101 +3858,33 @@ ygopro.stoc_follow 'REPLAY', true, (buffer, info, client, server, datas)->
         for player,i in room.dueling_players
           replay_filename=replay_filename + (if i > 0 then (if i == 2 then " VS " else " & ") else " ") + player.name
       replay_filename=replay_filename.replace(/[\/\\\?\*]/g, '_')+".yrp"
-      duellog = {
-        id: duel_log.duel_log.length + 1,
-        time: dueltime,
-        name: room.name + (if settings.modules.tournament_mode.show_info then (" (Duel:" + room.duel_count + ")") else ""),
-        roomid: room.process_pid.toString(),
-        cloud_replay_id: "R#"+room.cloud_replay_id,
-        replay_filename: replay_filename,
-        roommode: room.hostinfo.mode,
-        players: (for player in room.dueling_players
-          real_name: player.name_vpass,
-          deckbuf: player.start_deckbuf.toString("base64"),
+      playerInfos = room.dueling_players.map((player) ->
+        return {
+          name: player.name
+          pos: player.pos
+          realName: player.name_vpass
+          startDeckBuffer: player.start_deckbuf
           deck: {
             main: player.main,
             side: player.side
           }
-          pos: player.pos
-          is_first: player.is_first
-          name: player.name + (if settings.modules.tournament_mode.show_ip and !player.is_local then (" (IP: " + player.ip.slice(7) + ")") else "") + (if settings.modules.tournament_mode.show_info and not (room.hostinfo.mode == 2 and player.pos % 2 > 0) then (" (Score:" + room.scores[player.name_vpass] + " LP:" + (if player.lp? then player.lp else room.hostinfo.start_lp) + (if room.hostinfo.mode != 2 then (" Cards:" + (if player.card_count? then player.card_count else room.hostinfo.start_hand)) else "") + ")") else ""),
+          isFirst: player.is_first
           winner: player.pos == room.winner
-        )
-      }
-      duel_log.duel_log.unshift duellog
-      setting_save(duel_log)
+          ip: player.ip
+          score: room.scores[player.name_vpass]
+          lp: if player.lp? then player.lp else room.hostinfo.start_lp
+          cardCount: if player.card_count? then player.card_count else room.hostinfo.start_hand
+        }
+      )
       fs.writeFile(settings.modules.tournament_mode.replay_path + replay_filename, buffer, (err)->
         if err then log.warn "SAVE REPLAY ERROR", replay_filename, err
       )
+      dataManager.saveDuelLog(room.name, room.process_pid.toString(), room.cloud_replay_id, replay_filename, room.hostinfo.mode, room.duel_count, playerInfos) # no synchronize here because too slow
     if settings.modules.cloud_replay.enabled and settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.replay_safe
       ygopro.stoc_send_chat(client, "${cloud_replay_delay_part1}R##{room.cloud_replay_id}${cloud_replay_delay_part2}", ygopro.constants.COLORS.BABYBLUE)
     await return settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.block_replay_to_player or settings.modules.replay_delay and room.hostinfo.mode == 1
   else
     await return settings.modules.replay_delay and room.hostinfo.mode == 1
-
-if settings.modules.random_duel.enabled
-  setInterval ()->
-    for room in ROOM_all when room and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and room.random_type and room.last_active_time and room.waiting_for_player and room.get_disconnected_count() == 0 and (!settings.modules.side_timeout or room.duel_stage != ygopro.constants.DUEL_STAGE.SIDING) and !room.recovered
-      time_passed = Math.floor((moment() - room.last_active_time) / 1000)
-      #log.info time_passed
-      if time_passed >= settings.modules.random_duel.hang_timeout
-        room.last_active_time = moment()
-        await ROOM_ban_player(room.waiting_for_player.name, room.waiting_for_player.ip, "${random_ban_reason_AFK}")
-        room.scores[room.waiting_for_player.name_vpass] = -9
-        #log.info room.waiting_for_player.name, room.scores[room.waiting_for_player.name_vpass]
-        ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-        CLIENT_send_replays(room.waiting_for_player, room)
-        CLIENT_kick(room.waiting_for_player)
-      else if time_passed >= (settings.modules.random_duel.hang_timeout - 20) and not (time_passed % 10)
-        ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${afk_warn_part1}#{settings.modules.random_duel.hang_timeout - time_passed}${afk_warn_part2}", ygopro.constants.COLORS.RED)
-        ROOM_unwelcome(room, room.waiting_for_player, "${random_ban_reason_AFK}")
-    return
-  , 1000
-
-if settings.modules.mycard.enabled
-  setInterval ()->
-    for room in ROOM_all when room and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and room.arena and room.last_active_time and room.waiting_for_player and room.get_disconnected_count() == 0 and (!settings.modules.side_timeout or room.duel_stage != ygopro.constants.DUEL_STAGE.SIDING) and !room.recovered
-      time_passed = Math.floor((moment() - room.last_active_time) / 1000)
-      #log.info time_passed
-      if time_passed >= settings.modules.random_duel.hang_timeout
-        room.last_active_time = moment()
-        ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${kicked_by_system}", ygopro.constants.COLORS.RED)
-        room.scores[room.waiting_for_player.name_vpass] = -9
-        #log.info room.waiting_for_player.name, room.scores[room.waiting_for_player.name_vpass]
-        CLIENT_send_replays(room.waiting_for_player, room)
-        CLIENT_kick(room.waiting_for_player)
-      else if time_passed >= (settings.modules.random_duel.hang_timeout - 20) and not (time_passed % 10)
-        ygopro.stoc_send_chat_to_room(room, "#{room.waiting_for_player.name} ${afk_warn_part1}#{settings.modules.random_duel.hang_timeout - time_passed}${afk_warn_part2}", ygopro.constants.COLORS.RED)
-    return
-    
-    if true # settings.modules.arena_mode.punish_quit_before_match
-      for room in ROOM_all when room and room.arena and room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN and room.get_playing_player().length < 2
-        player = room.get_playing_player()[0]
-        if player and player.join_time and !player.arena_quit_free
-          waited_time = moment() - player.join_time
-          if waited_time >= 30000
-            ygopro.stoc_send_chat(player, "${arena_wait_timeout}", ygopro.constants.COLORS.BABYBLUE)
-            player.arena_quit_free = true
-          else if waited_time >= 5000 and waited_time < 6000
-            ygopro.stoc_send_chat(player, "${arena_wait_hint}", ygopro.constants.COLORS.BABYBLUE)
-    return
-  , 1000
-
-if settings.modules.heartbeat_detection.enabled
-  setInterval ()->
-    for room in ROOM_all when room and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and (room.hostinfo.time_limit == 0 or room.duel_stage != ygopro.constants.DUEL_STAGE.DUELING) and !room.windbot
-      for player in room.get_playing_player() when player and (room.duel_stage != ygopro.constants.DUEL_STAGE.SIDING or player.selected_preduel)
-        CLIENT_heartbeat_register(player, true)
-    return
-  , settings.modules.heartbeat_detection.interval
-
-setInterval ()->
-  current_time = moment()
-  for room in ROOM_all when room and room.duel_stage != ygopro.constants.DUEL_STAGE.BEGIN and room.hostinfo.auto_death and !room.auto_death_triggered and current_time - moment(room.start_time) > 60000 * room.hostinfo.auto_death
-    room.auto_death_triggered = true
-    room.start_death()
-
-, 1000
 
 # spawn windbot
 windbot_looplimit = 0
@@ -3955,18 +3922,15 @@ spawn_windbot = global.spawn_windbot = () ->
     return
   return
 
-if settings.modules.windbot.enabled and settings.modules.windbot.spawn
-  spawn_windbot()
-
 global.rebooted = false
 #http
-if settings.modules.http
+if true
 
   addCallback = (callback, text)->
     if not callback then return text
     return callback + "( " + text + " );"
 
-  requestListener = (request, response)->
+  httpRequestListener = (request, response)->
     parseQueryString = true
     u = url.parse(request.url, parseQueryString)
     #pass_validated = u.query.pass == settings.modules.http.password
@@ -4008,14 +3972,14 @@ if settings.modules.http
         )
 
 
-    else if u.pathname == '/api/duellog' and settings.modules.tournament_mode.enabled
+    else if u.pathname == '/api/duellog' and settings.modules.mysql.enabled
       if !await auth.auth(u.query.username, u.query.pass, "duel_log", "duel_log")
         response.writeHead(200)
         response.end(addCallback(u.query.callback, "[{name:'密码错误'}]"))
         return
       else
         response.writeHead(200)
-        duellog = JSON.stringify duel_log.duel_log, null, 2
+        duellog = JSON.stringify(await dataManager.getDuelLogJSON(settings.modules.tournament_mode), null, 2)
         response.end(addCallback(u.query.callback, duellog))
 
     else if u.pathname == '/api/getkeys' and settings.modules.vip.enabled
@@ -4034,7 +3998,7 @@ if settings.modules.http
           ret_keys = ret_keys + u.query.keytype + "D" + settings.port + ":" + key + "\n"
         response.end(addCallback(u.query.callback, ret_keys))
 
-    else if u.pathname == '/api/archive.zip' and settings.modules.tournament_mode.enabled
+    else if u.pathname == '/api/archive.zip' and settings.modules.mysql.enabled
       if !await auth.auth(u.query.username, u.query.pass, "download_replay", "download_replay_archive")
         response.writeHead(403)
         response.end("Invalid password.")
@@ -4044,9 +4008,9 @@ if settings.modules.http
           archive_name = moment().format('YYYY-MM-DD HH-mm-ss') + ".zip"
           archive_args = ["a", "-mx0", "-y", archive_name]
           check = false
-          for replay in duel_log.duel_log
+          for filename in await dataManager.getAllReplayFilenames()
             check = true
-            archive_args.push(replay.replay_filename)
+            archive_args.push(filename)
           if !check
             response.writeHead(403)
             response.end("Duel logs not found.")
@@ -4077,7 +4041,7 @@ if settings.modules.http
           response.writeHead(403)
           response.end("Failed reading replays. " + error)
 
-    else if u.pathname == '/api/clearlog' and settings.modules.tournament_mode.enabled
+    else if u.pathname == '/api/clearlog' and settings.modules.mysql.enabled
       if !await auth.auth(u.query.username, u.query.pass, "clear_duel_log", "clear_duel_log")
         response.writeHead(200)
         response.end(addCallback(u.query.callback, "[{name:'密码错误'}]"))
@@ -4085,15 +4049,14 @@ if settings.modules.http
       else
         response.writeHead(200)
         if settings.modules.tournament_mode.log_save_path
-          fs.writeFile(settings.modules.tournament_mode.log_save_path + 'duel_log.' + moment().format('YYYY-MM-DD HH-mm-ss') + '.json', JSON.stringify(duel_log, null, 2), (err) ->
+          fs.writeFile(settings.modules.tournament_mode.log_save_path + 'duel_log.' + moment().format('YYYY-MM-DD HH-mm-ss') + '.json', JSON.stringify(await dataManager.getDuelLogJSON(settings.modules.tournament_mode), null, 2), (err) ->
             if err
               log.warn 'DUEL LOG SAVE ERROR', err
           )
-        duel_log.duel_log = []
-        setting_save(duel_log)
+        await dataManager.clearDuelLog()
         response.end(addCallback(u.query.callback, "[{name:'Success'}]"))
 
-    else if _.startsWith(u.pathname, '/api/replay') and settings.modules.tournament_mode.enabled
+    else if _.startsWith(u.pathname, '/api/replay') and settings.modules.mysql.enabled
       if !await auth.auth(u.query.username, u.query.pass, "download_replay", "download_replay")
         response.writeHead(403)
         response.end("密码错误")
@@ -4144,7 +4107,7 @@ if settings.modules.http
           u.query.stop = false
         response.writeHead(200)
         try
-          await util.promisify(setting_change)(settings, 'modules:stop', u.query.stop)
+          await setting_change(settings, 'modules:stop', u.query.stop)
           response.end(addCallback(u.query.callback, "['stop ok', '" + u.query.stop + "']"))
         catch err
           response.end(addCallback(u.query.callback, "['stop fail', '" + u.query.stop + "']"))
@@ -4155,7 +4118,7 @@ if settings.modules.http
           response.end(addCallback(u.query.callback, "['密码错误', 0]"))
           return
         try
-          await util.promisify(setting_change)(settings, 'modules:welcome', u.query.welcome)
+          await setting_change(settings, 'modules:welcome', u.query.welcome)
           response.end(addCallback(u.query.callback, "['welcome ok', '" + u.query.welcome + "']"))
         catch err
           response.end(addCallback(u.query.callback, "['welcome fail', '" + u.query.welcome + "']"))
@@ -4173,36 +4136,26 @@ if settings.modules.http
           response.writeHead(200)
           response.end(addCallback(u.query.callback, "['密码错误', 0]"))
           return
-        tasks = {
-          tips: load_tips
-        }
-        if settings.modules.tips.get_zh
-          tasks.tips_zh = load_tips_zh
-        _async.auto(tasks, (err)->
-          response.writeHead(200)
-          if(err)
-            response.end(addCallback(u.query.callback, "['tip fail', '" + settings.modules.tips.get + "']"))
-          else
-            response.end(addCallback(u.query.callback, "['tip ok', '" +  settings.modules.tips.get + "']"))
-        )
+        success = await load_tips()
+        response.writeHead(200)
+        if success
+          response.end(addCallback(u.query.callback, "['tip ok', '" +  settings.modules.tips.get + "']"))
+        else
+          response.end(addCallback(u.query.callback, "['tip fail', '" + settings.modules.tips.get + "']"))
 
       else if u.query.loaddialogues
         if !await auth.auth(u.query.username, u.query.pass, "change_settings", "change_dialogues")
           response.writeHead(200)
           response.end(addCallback(u.query.callback, "['密码错误', 0]"))
           return
-        tasks = {
-          dialogues: load_dialogues
-        }
+        success = await load_dialogues()
         if settings.modules.dialogues.get_custom
-          tasks.dialogues_custom = load_dialogues_custom
-        _async.auto(tasks, (err)->
-          response.writeHead(200)
-          if(err)
-            response.end(addCallback(u.query.callback, "['dialogues fail', '" + settings.modules.dialogues.get + "']"))
-          else
-            response.end(addCallback(u.query.callback, "['dialogues ok', '" +settings.modules.dialogues.get + "']"))
-        )
+          success = await load_dialogues_custom() and success
+        response.writeHead(200)
+        if success
+          response.end(addCallback(u.query.callback, "['dialogue ok', '" +  settings.modules.tips.get + "']"))
+        else
+          response.end(addCallback(u.query.callback, "['dialogue fail', '" + settings.modules.tips.get + "']"))
 
       else if u.query.ban
         if !await auth.auth(u.query.username, u.query.pass, "ban_user", "ban_user")
@@ -4311,24 +4264,4 @@ if settings.modules.http
       response.end()
     return
 
-  http_server = http.createServer(requestListener)
-  http_server.listen settings.modules.http.port
-
-  if settings.modules.http.ssl.enabled
-    https = require 'https'
-    options =
-      cert: fs.readFileSync(settings.modules.http.ssl.cert)
-      key: fs.readFileSync(settings.modules.http.ssl.key)
-    https_server = https.createServer(options, requestListener)
-    if settings.modules.http.websocket_roomlist and roomlist
-      roomlist.init https_server, ROOM_all
-    https_server.listen settings.modules.http.ssl.port
-
-if not fs.existsSync('./plugins')
-  fs.mkdirSync('./plugins')
-
-plugin_list = fs.readdirSync("./plugins")
-for plugin_filename in plugin_list
-  plugin_path = process.cwd() + "/plugins/" + plugin_filename
-  require(plugin_path)
-  log.info("Plugin loaded:", plugin_filename)
+init()
