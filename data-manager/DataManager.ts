@@ -463,9 +463,11 @@ export class DataManager {
 
 	async getVipKeys(keyType: number) {
 		const repo = this.db.getRepository(VipKey);
-		const queryCondition = {
-			type: keyType,
+		const queryCondition: any = {
 			isUsed: 0
+		};
+		if (keyType) {
+			queryCondition.type = keyType;
 		}
 		try {
 			const keys = await repo.find(queryCondition);

@@ -12,37 +12,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VipKey = void 0;
 const typeorm_1 = require("typeorm");
 const User_1 = require("./User");
-let VipKey = /** @class */ (() => {
-    let VipKey = class VipKey {
-        toJSON() {
-            return { key: this.key, type: this.type };
-        }
-    };
-    __decorate([
-        typeorm_1.PrimaryGeneratedColumn({ unsigned: true, type: "bigint" }),
-        __metadata("design:type", Number)
-    ], VipKey.prototype, "id", void 0);
-    __decorate([
-        typeorm_1.Index({ unique: true }),
-        typeorm_1.Column("varchar", { length: 30 }),
-        __metadata("design:type", String)
-    ], VipKey.prototype, "key", void 0);
-    __decorate([
-        typeorm_1.Column("int", { unsigned: true }),
-        __metadata("design:type", Number)
-    ], VipKey.prototype, "type", void 0);
-    __decorate([
-        typeorm_1.Column("tinyint", { unsigned: true, default: 0 }),
-        __metadata("design:type", Number)
-    ], VipKey.prototype, "isUsed", void 0);
-    __decorate([
-        typeorm_1.ManyToOne(() => User_1.User, user => user.usedKeys),
-        __metadata("design:type", User_1.User)
-    ], VipKey.prototype, "usedBy", void 0);
-    VipKey = __decorate([
-        typeorm_1.Entity()
-    ], VipKey);
-    return VipKey;
-})();
+let VipKey = class VipKey {
+    toJSON() {
+        return { key: this.key, type: this.type };
+    }
+};
+__decorate([
+    typeorm_1.PrimaryGeneratedColumn({ unsigned: true, type: "bigint" }),
+    __metadata("design:type", Number)
+], VipKey.prototype, "id", void 0);
+__decorate([
+    typeorm_1.Index({ unique: true }),
+    typeorm_1.Column("varchar", { length: 30 }),
+    __metadata("design:type", String)
+], VipKey.prototype, "key", void 0);
+__decorate([
+    typeorm_1.Column("int", { unsigned: true }),
+    __metadata("design:type", Number)
+], VipKey.prototype, "type", void 0);
+__decorate([
+    typeorm_1.Column("tinyint", { unsigned: true, default: 0 }),
+    __metadata("design:type", Number)
+], VipKey.prototype, "isUsed", void 0);
+__decorate([
+    typeorm_1.ManyToOne(() => User_1.User, user => user.usedKeys),
+    __metadata("design:type", User_1.User)
+], VipKey.prototype, "usedBy", void 0);
+VipKey = __decorate([
+    typeorm_1.Entity()
+], VipKey);
 exports.VipKey = VipKey;
 //# sourceMappingURL=VipKey.js.map

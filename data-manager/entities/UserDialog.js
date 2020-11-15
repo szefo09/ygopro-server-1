@@ -12,30 +12,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserDialog = void 0;
 const typeorm_1 = require("typeorm");
 const User_1 = require("./User");
-let UserDialog = /** @class */ (() => {
-    let UserDialog = class UserDialog {
-    };
-    __decorate([
-        typeorm_1.PrimaryGeneratedColumn({ unsigned: true, type: "bigint" }),
-        __metadata("design:type", Number)
-    ], UserDialog.prototype, "id", void 0);
-    __decorate([
-        typeorm_1.Index(),
-        typeorm_1.Column("int", { unsigned: true }),
-        __metadata("design:type", Number)
-    ], UserDialog.prototype, "cardCode", void 0);
-    __decorate([
-        typeorm_1.Column("text"),
-        __metadata("design:type", String)
-    ], UserDialog.prototype, "text", void 0);
-    __decorate([
-        typeorm_1.ManyToOne(() => User_1.User, user => user.dialogues),
-        __metadata("design:type", User_1.User)
-    ], UserDialog.prototype, "user", void 0);
-    UserDialog = __decorate([
-        typeorm_1.Entity()
-    ], UserDialog);
-    return UserDialog;
-})();
+let UserDialog = class UserDialog {
+};
+__decorate([
+    typeorm_1.PrimaryGeneratedColumn({ unsigned: true, type: "bigint" }),
+    __metadata("design:type", Number)
+], UserDialog.prototype, "id", void 0);
+__decorate([
+    typeorm_1.Index(),
+    typeorm_1.Column("int", { unsigned: true }),
+    __metadata("design:type", Number)
+], UserDialog.prototype, "cardCode", void 0);
+__decorate([
+    typeorm_1.Column("text"),
+    __metadata("design:type", String)
+], UserDialog.prototype, "text", void 0);
+__decorate([
+    typeorm_1.ManyToOne(() => User_1.User, user => user.dialogues),
+    __metadata("design:type", User_1.User)
+], UserDialog.prototype, "user", void 0);
+UserDialog = __decorate([
+    typeorm_1.Entity()
+], UserDialog);
 exports.UserDialog = UserDialog;
 //# sourceMappingURL=UserDialog.js.map

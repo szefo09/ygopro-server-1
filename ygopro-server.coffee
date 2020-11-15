@@ -1912,6 +1912,10 @@ netRequestHandler = (client) ->
     CLIENT_kick(client)
     return
 
+  client.playLines = (lines) ->
+    for line in _.lines lines
+      ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK)
+
   if settings.modules.cloud_replay.enabled
     client.open_cloud_replay = (replay)->
       if !replay
@@ -2244,9 +2248,9 @@ ygopro.ctos_follow 'JOIN_GAME', true, (buffer, info, client, server, datas)->
           client.rid = _.indexOf(ROOM_all, room)
           client.is_post_watcher = true
           if settings.modules.vip.enabled and await CLIENT_check_vip(client)
-            words = await dataManager.getUserWords(CLIENT_get_authorize_key(client))
-            if words
-              room.playLines(words)
+            playWords = await dataManager.getUserWords(CLIENT_get_authorize_key(client))
+            if playWords
+              room.playLines(playWords)
           else if settings.modules.words.enabled and words.words[client.name]
             room.playLines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
           ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
@@ -2435,9 +2439,9 @@ ygopro.ctos_follow 'JOIN_GAME', true, (buffer, info, client, server, datas)->
             client.rid = _.indexOf(ROOM_all, room)
             client.is_post_watcher = true
             if settings.modules.vip.enabled and await CLIENT_check_vip(client)
-              words = await dataManager.getUserWords(CLIENT_get_authorize_key(client))
-              if words
-                room.playLines(words)
+              playWords = await dataManager.getUserWords(CLIENT_get_authorize_key(client))
+              if playWords
+                room.playLines(playWords)
             else if settings.modules.words.enabled and words.words[client.name]
               room.playLines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
             ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
@@ -2523,9 +2527,9 @@ ygopro.ctos_follow 'JOIN_GAME', true, (buffer, info, client, server, datas)->
         client.rid = _.indexOf(ROOM_all, room)
         client.is_post_watcher = true
         if settings.modules.vip.enabled and await CLIENT_check_vip(client)
-            words = await dataManager.getUserWords(CLIENT_get_authorize_key(client))
-            if words
-              room.playLines(words)
+            playWords = await dataManager.getUserWords(CLIENT_get_authorize_key(client))
+            if playWords
+              room.playLines(playWords)
         else if settings.modules.words.enabled and words.words[client.name]
           room.playLines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
         ygopro.stoc_send_chat_to_room(room, "#{client.name} ${watch_join}")
@@ -2550,9 +2554,9 @@ ygopro.stoc_follow 'JOIN_GAME', false, (buffer, info, client, server, datas)->
   if !room.join_game_buffer
     room.join_game_buffer = buffer
   if settings.modules.vip.enabled and await CLIENT_check_vip(client)
-    words = await dataManager.getUserWords(CLIENT_get_authorize_key(client))
-    if words
-      room.playLines(words)
+    playWords = await dataManager.getUserWords(CLIENT_get_authorize_key(client))
+    if playWords
+      room.playLines(playWords)
   else if settings.modules.words.enabled and words.words[client.name]
     room.playLines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
   if settings.modules.welcome
@@ -2705,6 +2709,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
     if settings.modules.retry_handle.enabled
       client.retry_count = 0
       client.last_game_msg = null
+    if client.pos < 3 and settings.modules.vip.enabled and await CLIENT_check_vip(client)
+      client.victory_words = await dataManager.getUserVictoryWords(CLIENT_get_authorize_key(client))
 
   #ygopro.stoc_send_chat_to_room(room, "LP跟踪调试信息: #{client.name} 初始LP #{client.lp}")
 
@@ -2776,9 +2782,8 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
         victoryWordPlayerList = [room.dueling_players[pos]]
         if room.hostinfo.mode == 2
           victoryWordPlayerList.push(room.dueling_players[pos + 1])
-        for player in victoryWordPlayerList when await CLIENT_check_vip(player) and await dataManager.getUserVictoryWords(CLIENT_get_authorize_key(player))
-          words = await dataManager.getUserVictoryWords(CLIENT_get_authorize_key(player))
-          room.playLines(words)
+        for player in victoryWordPlayerList when player.victory_words
+          room.playLines(player.victory_words)
           break
     if room.death
       if settings.modules.http.quick_death_rule == 1 or settings.modules.http.quick_death_rule == 3
@@ -2910,13 +2915,13 @@ ygopro.stoc_follow 'GAME_MSG', true, (buffer, info, client, server, datas)->
         act_pos = act_pos * 2
       if ygopro.constants.MSG[msg] != 'CHAINING' or (trigger_location & 0x8) and client.ready_trap
         if settings.modules.vip.enabled and await CLIENT_check_vip(room.dueling_players[act_pos]) and await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)
-          room.playLines await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)
+          client.playLines await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)
         else if settings.modules.vip.enabled and room.hostinfo.mode == 2 and await CLIENT_check_vip(room.dueling_players[act_pos + 1]) and await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)
-          room.playLines await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)
+          client.playLines await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)
         else if settings.modules.dialogues.enabled and dialogues.dialogues[card]
-          room.playLines dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]
+          client.playLines dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]
         else if settings.modules.dialogues.enabled and dialogues.dialogues_custom[card]
-          room.playLines dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]
+          client.playLines dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]
     if ygopro.constants.MSG[msg] == 'POS_CHANGE'
       loc = buffer.readUInt8(6)
       ppos = buffer.readUInt8(8)
@@ -3944,7 +3949,7 @@ if true
         response.end(addCallback(u.query.callback, "Unauthorized."))
         return
       else
-        ret_keys = JSON.stringify(await dataMager.getVipKeys(parseInt(u.query.keytype)), null, 2)
+        ret_keys = JSON.stringify(await dataManager.getVipKeys(if u.query.keytype then parseInt(u.query.keytype) else undefined), null, 2)
         response.writeHead(200)
         response.end(addCallback(u.query.callback, ret_keys))
 

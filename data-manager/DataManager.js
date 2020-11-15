@@ -439,9 +439,11 @@ class DataManager {
     async getVipKeys(keyType) {
         const repo = this.db.getRepository(VipKey_1.VipKey);
         const queryCondition = {
-            type: keyType,
             isUsed: 0
         };
+        if (keyType) {
+            queryCondition.type = keyType;
+        }
         try {
             const keys = await repo.find(queryCondition);
             return keys.map(k => k.toJSON());

@@ -2594,6 +2594,16 @@
       CLIENT_kick(client);
       return;
     }
+    client.playLines = function(lines) {
+      var j, len, line, ref, results;
+      ref = _.lines(lines);
+      results = [];
+      for (j = 0, len = ref.length; j < len; j++) {
+        line = ref[j];
+        results.push(ygopro.stoc_send_chat(client, line, ygopro.constants.COLORS.PINK));
+      }
+      return results;
+    };
     if (settings.modules.cloud_replay.enabled) {
       client.open_cloud_replay = async function(replay) {
         var buffer, e, replay_buffer;
@@ -2791,7 +2801,7 @@
   });
 
   ygopro.ctos_follow('JOIN_GAME', true, async function(buffer, info, client, server, datas) {
-    var available_logs, check_buffer_indentity, create_room_with_action, duelLog, exactBan, index, j, l, len, len1, len2, len3, m, n, name, pre_room, recover_match, ref, ref1, replay, replay_id, replays, room, struct;
+    var available_logs, check_buffer_indentity, create_room_with_action, duelLog, exactBan, index, j, l, len, len1, len2, len3, m, n, name, playWords, pre_room, recover_match, ref, ref1, replay, replay_id, replays, room, struct;
     //log.info info
     info.pass = info.pass.trim();
     client.pass = info.pass;
@@ -2869,7 +2879,7 @@
         return (checksum & 0xFF) === 0;
       };
       create_room_with_action = async function(buffer, decrypted_buffer, match_permit) {
-        var action, len2, len3, m, n, name, opt1, opt2, opt3, options, player, ref, ref1, room, room_title, title;
+        var action, len2, len3, m, n, name, opt1, opt2, opt3, options, playWords, player, ref, ref1, room, room_title, title;
         if (client.closed) {
           return;
         }
@@ -2997,9 +3007,9 @@
             client.rid = _.indexOf(ROOM_all, room);
             client.is_post_watcher = true;
             if (settings.modules.vip.enabled && (await CLIENT_check_vip(client))) {
-              words = (await dataManager.getUserWords(CLIENT_get_authorize_key(client)));
-              if (words) {
-                room.playLines(words);
+              playWords = (await dataManager.getUserWords(CLIENT_get_authorize_key(client)));
+              if (playWords) {
+                room.playLines(playWords);
               }
             } else if (settings.modules.words.enabled && words.words[client.name]) {
               room.playLines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
@@ -3167,7 +3177,7 @@
             });
           }
         }, async function(err, datas) {
-          var create_room_name, found, k, len3, len4, match, n, o, player, ref1, ref2, ref3, ref4, user;
+          var create_room_name, found, k, len3, len4, match, n, o, playWords, player, ref1, ref2, ref3, ref4, user;
           if (client.closed) {
             return;
           }
@@ -3226,9 +3236,9 @@
               client.rid = _.indexOf(ROOM_all, room);
               client.is_post_watcher = true;
               if (settings.modules.vip.enabled && (await CLIENT_check_vip(client))) {
-                words = (await dataManager.getUserWords(CLIENT_get_authorize_key(client)));
-                if (words) {
-                  room.playLines(words);
+                playWords = (await dataManager.getUserWords(CLIENT_get_authorize_key(client)));
+                if (playWords) {
+                  room.playLines(playWords);
                 }
               } else if (settings.modules.words.enabled && words.words[client.name]) {
                 room.playLines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
@@ -3322,9 +3332,9 @@
           client.rid = _.indexOf(ROOM_all, room);
           client.is_post_watcher = true;
           if (settings.modules.vip.enabled && (await CLIENT_check_vip(client))) {
-            words = (await dataManager.getUserWords(CLIENT_get_authorize_key(client)));
-            if (words) {
-              room.playLines(words);
+            playWords = (await dataManager.getUserWords(CLIENT_get_authorize_key(client)));
+            if (playWords) {
+              room.playLines(playWords);
             }
           } else if (settings.modules.words.enabled && words.words[client.name]) {
             room.playLines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
@@ -3351,7 +3361,7 @@
   });
 
   ygopro.stoc_follow('JOIN_GAME', false, async function(buffer, info, client, server, datas) {
-    var j, len, player, recorder, ref, room, watcher;
+    var j, len, playWords, player, recorder, ref, room, watcher;
     //欢迎信息
     room = ROOM_all[client.rid];
     if (!(room && !client.reconnecting)) {
@@ -3361,9 +3371,9 @@
       room.join_game_buffer = buffer;
     }
     if (settings.modules.vip.enabled && (await CLIENT_check_vip(client))) {
-      words = (await dataManager.getUserWords(CLIENT_get_authorize_key(client)));
-      if (words) {
-        room.playLines(words);
+      playWords = (await dataManager.getUserWords(CLIENT_get_authorize_key(client)));
+      if (playWords) {
+        room.playLines(playWords);
       }
     } else if (settings.modules.words.enabled && words.words[client.name]) {
       room.playLines(words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]);
@@ -3562,6 +3572,9 @@
         client.retry_count = 0;
         client.last_game_msg = null;
       }
+      if (client.pos < 3 && settings.modules.vip.enabled && (await CLIENT_check_vip(client))) {
+        client.victory_words = (await dataManager.getUserVictoryWords(CLIENT_get_authorize_key(client)));
+      }
     }
     //ygopro.stoc_send_chat_to_room(room, "LP跟踪调试信息: #{client.name} 初始LP #{client.lp}")
     if (ygopro.constants.MSG[msg] === 'HINT') {
@@ -3654,11 +3667,10 @@
           }
           for (l = 0, len1 = victoryWordPlayerList.length; l < len1; l++) {
             player = victoryWordPlayerList[l];
-            if (!((await CLIENT_check_vip(player)) && (await dataManager.getUserVictoryWords(CLIENT_get_authorize_key(player))))) {
+            if (!player.victory_words) {
               continue;
             }
-            words = (await dataManager.getUserVictoryWords(CLIENT_get_authorize_key(player)));
-            room.playLines(words);
+            room.playLines(player.victory_words);
             break;
           }
         }
@@ -3846,13 +3858,13 @@
         }
         if (ygopro.constants.MSG[msg] !== 'CHAINING' || (trigger_location & 0x8) && client.ready_trap) {
           if (settings.modules.vip.enabled && (await CLIENT_check_vip(room.dueling_players[act_pos])) && (await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card))) {
-            room.playLines((await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)));
+            client.playLines((await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos]), card)));
           } else if (settings.modules.vip.enabled && room.hostinfo.mode === 2 && (await CLIENT_check_vip(room.dueling_players[act_pos + 1])) && (await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card))) {
-            room.playLines((await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)));
+            client.playLines((await dataManager.getUserDialogueText(CLIENT_get_authorize_key(room.dueling_players[act_pos + 1]), card)));
           } else if (settings.modules.dialogues.enabled && dialogues.dialogues[card]) {
-            room.playLines(dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]);
+            client.playLines(dialogues.dialogues[card][Math.floor(Math.random() * dialogues.dialogues[card].length)]);
           } else if (settings.modules.dialogues.enabled && dialogues.dialogues_custom[card]) {
-            room.playLines(dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]);
+            client.playLines(dialogues.dialogues_custom[card][Math.floor(Math.random() * dialogues.dialogues_custom[card].length)]);
           }
         }
       }
@@ -5301,7 +5313,7 @@
           response.end(addCallback(u.query.callback, "Unauthorized."));
           return;
         } else {
-          ret_keys = JSON.stringify((await dataMager.getVipKeys(parseInt(u.query.keytype))), null, 2);
+          ret_keys = JSON.stringify((await dataManager.getVipKeys(u.query.keytype ? parseInt(u.query.keytype) : void 0)), null, 2);
           response.writeHead(200);
           response.end(addCallback(u.query.callback, ret_keys));
         }

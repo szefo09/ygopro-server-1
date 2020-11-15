@@ -17,45 +17,42 @@ const typeorm_1 = require("typeorm");
 const UserDialog_1 = require("./UserDialog");
 const VipKey_1 = require("./VipKey");
 const moment_1 = __importDefault(require("moment"));
-let User = /** @class */ (() => {
-    let User = class User {
-        isVip() {
-            return this.vipExpireDate && moment_1.default().isBefore(this.vipExpireDate);
-        }
-    };
-    __decorate([
-        typeorm_1.PrimaryColumn({ type: "varchar", length: 128 }),
-        __metadata("design:type", String)
-    ], User.prototype, "key", void 0);
-    __decorate([
-        typeorm_1.Column("varchar", { length: 16, nullable: true }),
-        __metadata("design:type", String)
-    ], User.prototype, "chatColor", void 0);
-    __decorate([
-        typeorm_1.Index(),
-        typeorm_1.Column("datetime", { nullable: true }),
-        __metadata("design:type", Date)
-    ], User.prototype, "vipExpireDate", void 0);
-    __decorate([
-        typeorm_1.Column("text", { nullable: true }),
-        __metadata("design:type", String)
-    ], User.prototype, "victory", void 0);
-    __decorate([
-        typeorm_1.Column("text", { nullable: true }),
-        __metadata("design:type", String)
-    ], User.prototype, "words", void 0);
-    __decorate([
-        typeorm_1.OneToMany(() => UserDialog_1.UserDialog, dialog => dialog.user),
-        __metadata("design:type", Array)
-    ], User.prototype, "dialogues", void 0);
-    __decorate([
-        typeorm_1.OneToMany(() => VipKey_1.VipKey, vipKey => vipKey.usedBy),
-        __metadata("design:type", Array)
-    ], User.prototype, "usedKeys", void 0);
-    User = __decorate([
-        typeorm_1.Entity()
-    ], User);
-    return User;
-})();
+let User = class User {
+    isVip() {
+        return this.vipExpireDate && moment_1.default().isBefore(this.vipExpireDate);
+    }
+};
+__decorate([
+    typeorm_1.PrimaryColumn({ type: "varchar", length: 128 }),
+    __metadata("design:type", String)
+], User.prototype, "key", void 0);
+__decorate([
+    typeorm_1.Column("varchar", { length: 16, nullable: true }),
+    __metadata("design:type", String)
+], User.prototype, "chatColor", void 0);
+__decorate([
+    typeorm_1.Index(),
+    typeorm_1.Column("datetime", { nullable: true }),
+    __metadata("design:type", Date)
+], User.prototype, "vipExpireDate", void 0);
+__decorate([
+    typeorm_1.Column("text", { nullable: true }),
+    __metadata("design:type", String)
+], User.prototype, "victory", void 0);
+__decorate([
+    typeorm_1.Column("text", { nullable: true }),
+    __metadata("design:type", String)
+], User.prototype, "words", void 0);
+__decorate([
+    typeorm_1.OneToMany(() => UserDialog_1.UserDialog, dialog => dialog.user),
+    __metadata("design:type", Array)
+], User.prototype, "dialogues", void 0);
+__decorate([
+    typeorm_1.OneToMany(() => VipKey_1.VipKey, vipKey => vipKey.usedBy),
+    __metadata("design:type", Array)
+], User.prototype, "usedKeys", void 0);
+User = __decorate([
+    typeorm_1.Entity()
+], User);
 exports.User = User;
 //# sourceMappingURL=User.js.map
