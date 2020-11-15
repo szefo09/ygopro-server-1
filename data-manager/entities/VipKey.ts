@@ -1,4 +1,5 @@
-import {Column, Entity, Index, PrimaryGeneratedColumn} from "typeorm";
+import {Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
+import {User} from "./User";
 
 @Entity()
 export class VipKey {
@@ -11,6 +12,12 @@ export class VipKey {
 
     @Column("int", {unsigned: true})
     type: number;
+
+    @Column("tinyint", {unsigned: true})
+    isUsed: number;
+
+    @ManyToOne(() => User, user => user.usedKeys)
+    usedBy: User;
 
     toJSON() {
         return {key: this.key, type: this.type};

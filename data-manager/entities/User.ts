@@ -1,5 +1,6 @@
 import {Column, Entity, Index, OneToMany, PrimaryColumn} from "typeorm";
 import {UserDialog} from "./UserDialog";
+import {VipKey} from "./VipKey";
 
 @Entity()
 export class User {
@@ -11,7 +12,7 @@ export class User {
 
     @Index()
     @Column("datetime", {nullable: true})
-    vipExpireDate: string;
+    vipExpireDate: Date;
 
     @Column("text", {nullable: true})
     victory: string;
@@ -21,4 +22,7 @@ export class User {
 
     @OneToMany(() => UserDialog, dialog => dialog.user)
     dialogues: UserDialog[];
+
+    @OneToMany(() => VipKey, vipKey => vipKey.usedBy)
+    usedKeys: VipKey[];
 }

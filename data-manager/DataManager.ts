@@ -10,6 +10,7 @@ import {DuelLog} from "./entities/DuelLog";
 import {Deck} from "./DeckEncoder";
 import {DuelLogPlayer} from "./entities/DuelLogPlayer";
 import {User} from "./entities/User";
+import {VipKey} from "./entities/VipKey";
 
 interface BasePlayerInfo {
 	name: string;
@@ -304,7 +305,7 @@ export class DataManager {
 	async getUser(key: string) {
 		const repo = this.db.getRepository(User);
 		try {
-			const user = await repo.findOne(key);
+			const user = await repo.findOne(key, {relations: ["dialogues"]});
 			return user;
 		} catch (e) {
 			this.log.warn(`Failed to fetch user: ${e.toString()}`);
@@ -365,4 +366,50 @@ export class DataManager {
 		});
 
 	}
+
+	async getVipKeys(keyType: number) {
+		const repo = this.db.getRepository(VipKey);
+		const queryCondition = {
+			type: keyType,
+			isUsed: 0
+		}
+		try {
+			const keys = await repo.find(queryCondition);
+			return keys.map(k => k.toJSON());
+		} catch (e) {
+			this.log.warn(`Failed to fetch keys of keyType ${keyType}: ${e.toString()}`);
+			return [];
+		}
+	}
+
+	async useVipKey(userKey: string, vipKeyText: string) {
+		let user = await this.getOrCreateUser(userKey);
+		let result = 0;
+		await this.db.transaction(async (mdb) => {
+			try {
+				const vipKey = await mdb.findOne(VipKey, {key: vipKeyText, isUsed: 0});
+				if(!vipKey) {
+					return;
+				}
+				const keyType = vipKey.type;
+				const previousDate = user.vipExpireDate;
+				if(previousDate && moment().isBefore(previousDate)) {
+					user.vipExpireDate = moment(previousDate).add(keyType, "d").toDate();
+				} else {
+					user.vipExpireDate = moment().add(keyType, "d").toDate();
+				}
+				user = await mdb.save(user);
+				vipKey.isUsed = 1;
+				vipKey.usedBy = user;
+				await mdb.save(vipKey);
+				result = previousDate ? 2 : 1;
+			} catch (e) {
+				this.log.warn(`Failed to use VIP key for user ${userKey} ${vipKeyText}: ${e.toString()}`);
+				result = 0;
+				return;
+			}
+		});
+		return result;
+	}
+
 }
