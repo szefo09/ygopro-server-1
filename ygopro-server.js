@@ -879,7 +879,7 @@
 
   get_memory_usage = global.get_memory_usage = function() {
     var percentUsed;
-    percentUsed = os.freemem() * os.totalmem() * 100;
+    percentUsed = os.freemem() / os.totalmem() * 100;
     memory_usage = global.memory_usage = percentUsed;
   };
 
