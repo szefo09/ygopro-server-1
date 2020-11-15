@@ -414,7 +414,7 @@ export class DataManager {
 				let dialogue = await mdb.getRepository(UserDialog)
 					.createQueryBuilder("dialog")
 					.where("cardCode = :cardCode and userKey = :key", {cardCode, key})
-					.innerJoinAndSelect("dialog.user", "user")
+					.leftJoinAndSelect("dialog.user", "user")
 					.getOne();
 				if(!dialogue) {
 					dialogue = new UserDialog();

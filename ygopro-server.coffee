@@ -2048,8 +2048,6 @@ ygopro.ctos_follow 'PLAYER_INFO', true, (buffer, info, client, server, datas)->
   client.vpass = vpass
   client.name_vpass = if vpass then name + "$" + vpass else name
   #console.log client.name, client.vpass
-  if settings.modules.vip.enabled and await CLIENT_check_vip(client)
-    client.vip = true
 
   if not settings.modules.i18n.auto_pick or client.is_local
     client.lang=settings.modules.i18n.default
@@ -3260,6 +3258,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
   cancel = _.startsWith(msg, "/")
   room.last_active_time = moment() unless cancel or not (room.random_type or room.arena) or room.duel_stage == ygopro.constants.DUEL_STAGE.FINGER or room.duel_stage == ygopro.constants.DUEL_STAGE.FIRSTGO or room.duel_stage == ygopro.constants.DUEL_STAGE.SIDING
   cmd = msg.split(' ')
+  isVip = await CLIENT_check_vip(client)
   switch cmd[0]
     when '/投降', '/surrender'
       if room.duel_stage == ygopro.constants.DUEL_STAGE.BEGIN or (room.hostinfo.mode==2 and !settings.modules.tag_duel_surrender)
@@ -3281,13 +3280,14 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
         sur_player.surrend_confirm = true
 
     when '/help'
+
       ygopro.stoc_send_chat(client, "${chat_order_main}")
       ygopro.stoc_send_chat(client, "${chat_order_help}")
       ygopro.stoc_send_chat(client, "${chat_order_roomname}") if !settings.modules.mycard.enabled
       ygopro.stoc_send_chat(client, "${chat_order_windbot}") if settings.modules.windbot.enabled
       ygopro.stoc_send_chat(client, "${chat_order_tip}") if settings.modules.tips.enabled
-      ygopro.stoc_send_chat(client, "${chat_order_chatcolor_1}") if settings.modules.chat_color.enabled and (!(settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip) or client.vip)
-      ygopro.stoc_send_chat(client, "${chat_order_chatcolor_2}") if settings.modules.chat_color.enabled and (!(settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip) or client.vip)
+      ygopro.stoc_send_chat(client, "${chat_order_chatcolor_1}") if settings.modules.chat_color.enabled and (!(settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip) or isVip)
+      ygopro.stoc_send_chat(client, "${chat_order_chatcolor_2}") if settings.modules.chat_color.enabled and (!(settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip) or isVip)
       ygopro.stoc_send_chat(client, "${chat_order_vip}") if settings.modules.vip.enabled
 
     when '/tip'
@@ -3315,7 +3315,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
     when '/color'
       if settings.modules.chat_color.enabled
         cip = CLIENT_get_authorize_key(client)
-        if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip and !client.vip
+        if settings.modules.vip.enabled and settings.modules.chat_color.restrict_to_vip and !isVip
           CLIENT_send_vip_status(client)
         else if cmsg = cmd[1]
           if cmsg.toLowerCase() == "help"
@@ -3367,7 +3367,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
                   when 2
                     ygopro.stoc_send_chat(client, "${vip_success_renew}", ygopro.constants.COLORS.BABYBLUE)
             when 'dialogues'
-              if !await CLIENT_check_vip(client)
+              if !isVip
                 CLIENT_send_vip_status(client)
               else
                 code = cmd[2]
@@ -3381,7 +3381,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
                   await dataManager.setUserDialogues(CLIENT_get_authorize_key(client), parseInt(code), word)
                   ygopro.stoc_send_chat(client, "${vip_set_dialogues_part1}" + code + "${vip_set_dialogues_part2}", ygopro.constants.COLORS.BABYBLUE)
             when 'words'
-              if !client.vip
+              if !isVip
                 CLIENT_send_vip_status(client)
               else
                 word = concat_name(cmd, 2)
@@ -3392,7 +3392,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
                   await dataManager.setUserWords(CLIENT_get_authorize_key(client), word)
                   ygopro.stoc_send_chat(client, "${vip_set_words}", ygopro.constants.COLORS.BABYBLUE)
             when 'victory'
-              if !client.vip
+              if !isVip
                 CLIENT_send_vip_status(client)
               else
                 word = concat_name(cmd, 2)
@@ -3403,7 +3403,7 @@ ygopro.ctos_follow 'CHAT', true, (buffer, info, client, server, datas)->
                   await dataManager.setUserVictoryWords(CLIENT_get_authorize_key(client), word)
                   ygopro.stoc_send_chat(client, "${vip_set_victory}", ygopro.constants.COLORS.BABYBLUE)
             #when 'password'
-            #  if !client.vip
+            #  if !isVip
             #    CLIENT_send_vip_status(client)
             #  else
             #    word = cmd[2]

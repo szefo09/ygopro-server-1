@@ -2778,9 +2778,6 @@
     client.vpass = vpass;
     client.name_vpass = vpass ? name + "$" + vpass : name;
     //console.log client.name, client.vpass
-    if (settings.modules.vip.enabled && (await CLIENT_check_vip(client))) {
-      client.vip = true;
-    }
     if (!settings.modules.i18n.auto_pick || client.is_local) {
       client.lang = settings.modules.i18n.default;
     } else {
@@ -4370,7 +4367,7 @@
   //else
   //log.info 'BIG BROTHER OK', response.statusCode, roomname, body
   ygopro.ctos_follow('CHAT', true, async function(buffer, info, client, server, datas) {
-    var buy_result, cancel, ccolor, cip, cmd, cmsg, cname, code, color, cvalue, key, msg, name, oldmsg, ref, room, struct, sur_player, uname, windbot, word;
+    var buy_result, cancel, ccolor, cip, cmd, cmsg, cname, code, color, cvalue, isVip, key, msg, name, oldmsg, ref, room, struct, sur_player, uname, windbot, word;
     room = ROOM_all[client.rid];
     if (!room) {
       return;
@@ -4381,6 +4378,7 @@
       room.last_active_time = moment();
     }
     cmd = msg.split(' ');
+    isVip = (await CLIENT_check_vip(client));
     switch (cmd[0]) {
       case '/投降':
       case '/surrender':
@@ -4419,10 +4417,10 @@
         if (settings.modules.tips.enabled) {
           ygopro.stoc_send_chat(client, "${chat_order_tip}");
         }
-        if (settings.modules.chat_color.enabled && (!(settings.modules.vip.enabled && settings.modules.chat_color.restrict_to_vip) || client.vip)) {
+        if (settings.modules.chat_color.enabled && (!(settings.modules.vip.enabled && settings.modules.chat_color.restrict_to_vip) || isVip)) {
           ygopro.stoc_send_chat(client, "${chat_order_chatcolor_1}");
         }
-        if (settings.modules.chat_color.enabled && (!(settings.modules.vip.enabled && settings.modules.chat_color.restrict_to_vip) || client.vip)) {
+        if (settings.modules.chat_color.enabled && (!(settings.modules.vip.enabled && settings.modules.chat_color.restrict_to_vip) || isVip)) {
           ygopro.stoc_send_chat(client, "${chat_order_chatcolor_2}");
         }
         if (settings.modules.vip.enabled) {
@@ -4464,7 +4462,7 @@
       case '/color':
         if (settings.modules.chat_color.enabled) {
           cip = CLIENT_get_authorize_key(client);
-          if (settings.modules.vip.enabled && settings.modules.chat_color.restrict_to_vip && !client.vip) {
+          if (settings.modules.vip.enabled && settings.modules.chat_color.restrict_to_vip && !isVip) {
             CLIENT_send_vip_status(client);
           } else if (cmsg = cmd[1]) {
             if (cmsg.toLowerCase() === "help") {
@@ -4534,7 +4532,7 @@
                 }
                 break;
               case 'dialogues':
-                if (!(await CLIENT_check_vip(client))) {
+                if (!isVip) {
                   CLIENT_send_vip_status(client);
                 } else {
                   code = cmd[2];
@@ -4551,7 +4549,7 @@
                 }
                 break;
               case 'words':
-                if (!client.vip) {
+                if (!isVip) {
                   CLIENT_send_vip_status(client);
                 } else {
                   word = concat_name(cmd, 2);
@@ -4565,7 +4563,7 @@
                 }
                 break;
               case 'victory':
-                if (!client.vip) {
+                if (!isVip) {
                   CLIENT_send_vip_status(client);
                 } else {
                   word = concat_name(cmd, 2);
@@ -4580,7 +4578,7 @@
             }
           } else {
             //when 'password'
-            //  if !client.vip
+            //  if !isVip
             //    CLIENT_send_vip_status(client)
             //  else
             //    word = cmd[2]
