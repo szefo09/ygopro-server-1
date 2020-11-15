@@ -13,6 +13,7 @@ export class VipKey {
     @Column("int", {unsigned: true})
     type: number;
 
+    @Index()
     @Column("tinyint", {unsigned: true, default: 0})
     isUsed: number;
 

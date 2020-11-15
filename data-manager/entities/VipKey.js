@@ -31,6 +31,7 @@ __decorate([
     __metadata("design:type", Number)
 ], VipKey.prototype, "type", void 0);
 __decorate([
+    typeorm_1.Index(),
     typeorm_1.Column("tinyint", { unsigned: true, default: 0 }),
     __metadata("design:type", Number)
 ], VipKey.prototype, "isUsed", void 0);
