@@ -9,38 +9,30 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = void 0;
+exports.UserDialog = void 0;
 const typeorm_1 = require("typeorm");
-const UserDialog_1 = require("./UserDialog");
-let User = class User {
+const User_1 = require("./User");
+let UserDialog = class UserDialog {
 };
 __decorate([
-    typeorm_1.PrimaryColumn({ type: "varchar", length: 128 }),
-    __metadata("design:type", String)
-], User.prototype, "key", void 0);
-__decorate([
-    typeorm_1.Column("varchar", { length: 16, nullable: true }),
-    __metadata("design:type", String)
-], User.prototype, "chatColor", void 0);
+    typeorm_1.PrimaryGeneratedColumn({ unsigned: true, type: "bigint" }),
+    __metadata("design:type", Number)
+], UserDialog.prototype, "id", void 0);
 __decorate([
     typeorm_1.Index(),
-    typeorm_1.Column("datetime", { nullable: true }),
-    __metadata("design:type", String)
-], User.prototype, "vipExpireDate", void 0);
+    typeorm_1.Column("int", { unsigned: true }),
+    __metadata("design:type", Number)
+], UserDialog.prototype, "cardCode", void 0);
 __decorate([
-    typeorm_1.Column("text", { nullable: true }),
+    typeorm_1.Column("text"),
     __metadata("design:type", String)
-], User.prototype, "victory", void 0);
+], UserDialog.prototype, "text", void 0);
 __decorate([
-    typeorm_1.Column("text", { nullable: true }),
-    __metadata("design:type", String)
-], User.prototype, "words", void 0);
-__decorate([
-    typeorm_1.OneToMany(() => UserDialog_1.UserDialog, dialog => dialog.user),
-    __metadata("design:type", Array)
-], User.prototype, "dialogues", void 0);
-User = __decorate([
+    typeorm_1.ManyToOne(() => User_1.User, user => user.dialogues),
+    __metadata("design:type", User_1.User)
+], UserDialog.prototype, "user", void 0);
+UserDialog = __decorate([
     typeorm_1.Entity()
-], User);
-exports.User = User;
-//# sourceMappingURL=User.js.map
+], UserDialog);
+exports.UserDialog = UserDialog;
+//# sourceMappingURL=UserDialog.js.map
