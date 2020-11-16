@@ -543,10 +543,10 @@ export class DataManager {
 			try {
 				const vipKeyList = vipInfo.cdkeys;
 				const newKeys: VipKey[] = [];
-				for(let keyTypeString in vipKeyList) {
+				for (let keyTypeString in vipKeyList) {
 					const keyType = parseInt(keyTypeString);
 					const keysTexts: string[] = vipKeyList[keyTypeString];
-					for(let keyText of keysTexts) {
+					for (let keyText of keysTexts) {
 						const newKey = new VipKey()
 						newKey.type = keyType;
 						newKey.key = keyText;
@@ -554,14 +554,14 @@ export class DataManager {
 					}
 				}
 				await mdb.save(newKeys);
-				for(let vipUserName in vipInfo.players) {
+				for (let vipUserName in vipInfo.players) {
 					const oldVipUserInfo = vipInfo.players[vipUserName];
 					const userKey = vipUserName + '$' + oldVipUserInfo.password;
 					let user = await mdb.findOne(User, userKey);
-					if(user && user.isVip()) {
+					if (user && user.isVip()) {
 						continue;
 					}
-					if(!user) {
+					if (!user) {
 						user = new User();
 						user.key = userKey;
 					}
@@ -570,7 +570,7 @@ export class DataManager {
 					user.words = oldVipUserInfo.words || null;
 					user = await mdb.save(user);
 					const newDialogues: UserDialog[] = [];
-					for(let dialogueCardCodeText in oldVipUserInfo.dialogues) {
+					for (let dialogueCardCodeText in oldVipUserInfo.dialogues) {
 						const cardCode = parseInt(dialogueCardCodeText);
 						const dialogueText = oldVipUserInfo.dialogues[dialogueCardCodeText];
 						const dialogue = new UserDialog();
@@ -587,6 +587,7 @@ export class DataManager {
 				return false;
 			}
 		});
+	}
 	async getRandomDuelScore(name: string) {
 		const repo = this.db.getRepository(RandomDuelScore);
 		try {

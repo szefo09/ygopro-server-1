@@ -14,12 +14,9 @@ const underscore_1 = __importDefault(require("underscore"));
 const DuelLog_1 = require("./entities/DuelLog");
 const DuelLogPlayer_1 = require("./entities/DuelLogPlayer");
 const User_1 = require("./entities/User");
-<<<<<<< HEAD
 const VipKey_1 = require("./entities/VipKey");
 const UserDialog_1 = require("./entities/UserDialog");
-=======
 const RandomDuelScore_1 = require("./entities/RandomDuelScore");
->>>>>>> database
 class DataManager {
     constructor(config, log) {
         this.config = config;
@@ -450,7 +447,6 @@ class DataManager {
             }
         });
     }
-<<<<<<< HEAD
     async getVipKeys(keyType) {
         const repo = this.db.getRepository(VipKey_1.VipKey);
         const queryCondition = {
@@ -567,7 +563,7 @@ class DataManager {
                 return false;
             }
         });
-=======
+    }
     async getRandomDuelScore(name) {
         const repo = this.db.getRepository(RandomDuelScore_1.RandomDuelScore);
         try {
@@ -640,7 +636,6 @@ class DataManager {
             this.log.warn(`Failed to fetch random duel score ${name}: ${e.toString()}`);
             return [];
         }
->>>>>>> database
     }
 }
 exports.DataManager = DataManager;
