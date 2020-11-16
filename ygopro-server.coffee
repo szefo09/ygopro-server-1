@@ -375,6 +375,11 @@ init = () ->
       settings.modules.vip.enabled = false
       await setting_save(settings)
       log.warn("VIP mode cannot be enabled because no MySQL.")
+    if settings.modules.random_duel.record_match_scores
+      settings.modules.random_duel.record_match_scores = false
+      await setting_save(settings)
+      log.warn("Cannot record random match scores because no MySQL.")
+
   # 读取数据
   default_data = await loadJSONAsync('./data/default_data.json')
   try
@@ -556,7 +561,7 @@ init = () ->
   if settings.modules.words.get
     load_words()
 
-  if settings.modules.random_duel.post_match_scores
+  if settings.modules.random_duel.post_match_scores and settings.modules.mysql.enabled
     setInterval(()->
       scores = await dataManager.getRandomScoreTop10()
 
