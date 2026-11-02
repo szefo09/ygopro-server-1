@@ -13,6 +13,8 @@ spawnSync = require('child_process').spawnSync
 # ts utility
 utility = require './utility.js'
 DuelFinalization = require('./duel-finalization.js').DuelFinalization
+MycardSpectatorReplay = require('./mycard-spectator-replay.js').MycardSpectatorReplay
+mycardSpectatorReplay = new MycardSpectatorReplay()
 
 # 三方库
 _ = global._ = require 'underscore'
@@ -1326,6 +1328,8 @@ CLIENT_get_partner = global.CLIENT_get_partner = (client) ->
     return room.dueling_players[5 - client.pos]
 
 CLIENT_send_replays = global.CLIENT_send_replays = (client, room) ->
+  if settings.modules.mycard.enabled and settings.modules.mycard.restrict_spectator_replay and (client.is_post_watcher or client.pos == 7) and mycardSpectatorReplay.blocked(client)
+    return false
   return false unless settings.modules.replay_delay and not (settings.modules.tournament_mode.enabled and settings.modules.tournament_mode.block_replay_to_player) and room.replays.length and room.hostinfo.mode == 1 and !client.replays_sent and !client.isClosed
   client.replays_sent = true
   i = 0
@@ -1421,13 +1425,20 @@ CLIENT_set_ip = global.CLIENT_set_ip = (client, xff_ip) ->
   client.is_local = client.ip and (client.ip.includes('127.0.0.1') or client.ip.includes(real_windbot_server_ip))
 
   connect_count = ROOM_connected_ip[client.ip] or 0
-  if !settings.modules.test_mode.no_connect_count_limit and !client.is_local and !isTrustedProxy(client.ip)
+  counted = !settings.modules.test_mode.no_connect_count_limit and !client.is_local and !isTrustedProxy(client.ip)
+  client.ip_count_released = false
+  if counted
     connect_count++
   ROOM_connected_ip[client.ip] = connect_count
   # log.info "connect", client.ip, ROOM_connected_ip[client.ip]
 
   if ROOM_bad_ip[client.ip] > 5 or ROOM_connected_ip[client.ip] > 10
     log.info 'BAD IP', client.ip
+    if counted
+      ROOM_connected_ip[client.ip]--
+      if ROOM_connected_ip[client.ip] <= 0
+        delete ROOM_connected_ip[client.ip]
+    client.ip_count_released = true
     client.destroy()
     return true
 
@@ -1745,6 +1756,7 @@ class Room
       @error = "${create_room_failed}"
   delete: ->
     return if @deleted
+    mycardSpectatorReplay.clearRoom(@name)
     #log.info 'room-delete', this.name, ROOM_all.length
     score_array=[]
     for name_vpass, score of @scores
@@ -2135,6 +2147,7 @@ class Room
           @playLines words.words[client.name][Math.floor(Math.random() * words.words[client.name].length)]
         ygopro.stoc_send_chat_to_room(this, "#{client.name} ${watch_join}")
         @watchers.push client
+        mycardSpectatorReplay.observe(client, @name) if settings.modules.mycard.restrict_spectator_replay
         ygopro.stoc_send_chat(client, "${watch_watching}", ygopro.constants.COLORS.BABYBLUE)
         for buffer in @watcher_buffers
           await ygopro.helper.send(client, buffer)
@@ -2218,13 +2231,14 @@ netRequestHandler = (client) ->
       return
     room=ROOM_all[client.rid]
     connect_count = ROOM_connected_ip[client.ip]
-    if connect_count and connect_count > 0
+    if !client.ip_count_released and connect_count and connect_count > 0
       connect_count--
       if connect_count == 0
         delete ROOM_connected_ip[client.ip]
       else
         ROOM_connected_ip[client.ip] = connect_count
     client.isClosed = true
+    mycardSpectatorReplay.leave(client)
     if settings.modules.heartbeat_detection.enabled
       CLIENT_heartbeat_unregister(client)
     if room
@@ -2774,6 +2788,7 @@ ygopro.ctos_follow 'JOIN_GAME', true, (buffer, info, client, server, datas)->
     if !decrypted_buffer
       ygopro.stoc_die(client, '${invalid_password_unauthorized}')
       return
+    mycardSpectatorReplay.authenticate(client, userData.user) if settings.modules.mycard.restrict_spectator_replay
     return create_room_with_action(decrypted_buffer)
 
   else if settings.modules.challonge.enabled
@@ -3282,6 +3297,12 @@ ygopro.stoc_follow 'TYPE_CHANGE', true, (buffer, info, client, server, datas)->
   #   return true
   client.is_host = is_host
   client.pos = selftype
+  if settings.modules.mycard.enabled and settings.modules.mycard.restrict_spectator_replay
+    room = ROOM_all[client.rid]
+    if room and selftype == 7
+      mycardSpectatorReplay.observe(client, room.name)
+    else
+      mycardSpectatorReplay.unobserve(client)
   #console.log "TYPE_CHANGE to #{client.name}:", info, selftype, is_host
   await return false
 
